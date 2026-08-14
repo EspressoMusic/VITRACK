@@ -1,0 +1,18 @@
+{
+  "name": "vitatrack-backend",
+  "version": "1.0.0",
+  "description": "Vision-analysis proxy for VitaTrack — identifies food in a photo and estimates its vitamin/mineral content.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "openai": "^4.104.0"
+  }
+}

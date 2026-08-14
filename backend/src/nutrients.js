@@ -1,0 +1,38 @@
+// Keep this id list in sync with frontend/src/lib/nutrients.ts
+export const NUTRIENT_IDS = [
+  'vitaminA',
+  'vitaminC',
+  'vitaminD',
+  'vitaminE',
+  'vitaminK',
+  'vitaminB1',
+  'vitaminB2',
+  'vitaminB3',
+  'vitaminB6',
+  'vitaminB9',
+  'vitaminB12',
+  'calcium',
+  'iron',
+  'magnesium',
+  'zinc',
+  'potassium',
+]
+
+export const NUTRIENT_UNITS = {
+  vitaminA: 'mcg',
+  vitaminC: 'mg',
+  vitaminD: 'mcg',
+  vitaminE: 'mg',
+  vitaminK: 'mcg',
+  vitaminB1: 'mg',
+  vitaminB2: 'mg',
+  vitaminB3: 'mg',
+  vitaminB6: 'mg',
+  vitaminB9: 'mcg',
+  vitaminB12: 'mcg',
+  calcium: 'mg',
+  iron: 'mg',
+  magnesium: 'mg',
+  zinc: 'mg',
+  potassium: 'mg',
+}

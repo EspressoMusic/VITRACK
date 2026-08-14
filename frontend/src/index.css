@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: 'Merriweather Sans';
+  src: url('/fonts/merriweather-sans.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --surface-0: #fde3a3;
+  --surface-1: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: #c3c2b7;
+
+  --accent: #d9a441;
+  --accent-strong: #b8842a;
+  --accent-soft: #f6e4bb;
+
+  --status-good: #0ca30c;
+  --status-good-soft: #e3f5e3;
+  --status-warning: #fab219;
+  --status-warning-soft: #fdf0d9;
+  --status-serious: #ec835a;
+  --status-serious-soft: #fbe6dd;
+  --status-critical: #d03b3b;
+  --status-critical-soft: #fbe1e1;
+  --status-none: #c3c2b7;
+  --status-none-soft: #f1f0ec;
+}
+
+.dark {
+  color-scheme: light;
+  --surface-0: #fde3a3;
+  --surface-1: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: #c3c2b7;
+
+  --accent: #d9a441;
+  --accent-strong: #b8842a;
+  --accent-soft: #f6e4bb;
+
+  --status-good: #0ca30c;
+  --status-good-soft: #e3f5e3;
+  --status-warning: #fab219;
+  --status-warning-soft: #fdf0d9;
+  --status-serious: #ec835a;
+  --status-serious-soft: #fbe6dd;
+  --status-critical: #d03b3b;
+  --status-critical-soft: #fbe1e1;
+  --status-none: #c3c2b7;
+  --status-none-soft: #f1f0ec;
+}
+
+html {
+  font-size: 19px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: #fde3a3;
+  color: var(--text-primary);
+  font-family: 'Merriweather Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  background-image: url('/background.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+* {
+  border-color: var(--border);
+}
+
+button {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+button:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+::selection {
+  background-color: var(--accent-soft);
+}
+
+/* Compact scrollbars for the day-detail / insights lists */
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 9999px;
+}
