@@ -4,9 +4,9 @@ export function WeeklyGoalGlass({ percent }: { percent: number }) {
 
   return (
     <div
-      className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full"
+      className="relative mx-auto flex h-56 w-56 shrink-0 items-center justify-center overflow-hidden rounded-full"
       style={{
-        border: '3px solid rgba(255,255,255,0.75)',
+        border: '5px solid rgba(255,255,255,0.75)',
         backgroundColor: 'rgba(255,255,255,0.18)',
         boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.12)',
       }}
@@ -26,7 +26,7 @@ export function WeeklyGoalGlass({ percent }: { percent: number }) {
 
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-2 top-3 h-12 w-6 rounded-full"
+        className="pointer-events-none absolute -left-3 top-6 h-24 w-12 rounded-full"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.85), transparent 70%)',
           transform: 'rotate(15deg)',
@@ -34,7 +34,7 @@ export function WeeklyGoalGlass({ percent }: { percent: number }) {
       />
 
       <span
-        className="relative z-10 text-xl font-bold"
+        className="relative z-10 text-4xl font-bold"
         style={{
           color: lightFill ? 'var(--text-primary)' : 'white',
           textShadow: lightFill ? 'none' : '0 1px 3px rgba(0,0,0,0.35)',

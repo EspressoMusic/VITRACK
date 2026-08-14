@@ -23,7 +23,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
     try {
       await signInWithGoogle()
     } catch {
-      setAuthError('Sign-in is not set up yet — connect Supabase in backend/.env first.')
+      setAuthError('Sign-in not set up yet.')
     }
   }
 
@@ -33,25 +33,29 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
       setConfirmingDeleteAccount(false)
       onClose()
     } catch {
-      setAuthError('Could not delete the account. Try again later.')
+      setAuthError('Could not delete account.')
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
       <div
-        className="relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl p-5"
-        style={{ backgroundColor: '#f7e4ad', border: '1px solid var(--border)' }}
+        className="modal-backdrop-enter absolute inset-0"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        onClick={onClose}
+      />
+      <div
+        className="modal-card-enter relative z-10 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl p-5"
+        style={{ backgroundColor: '#f7e4ad', border: '2px solid #1a1a19' }}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="relative mb-5 flex items-center justify-center">
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
             Settings
           </h2>
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="flex h-8 w-8 items-center justify-center rounded-full"
+            className="absolute right-0 flex h-8 w-8 items-center justify-center rounded-full"
             style={{ color: 'var(--text-secondary)' }}
           >
             <CloseIcon className="h-5 w-5" />
@@ -95,7 +99,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               ) : (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
-                    This permanently deletes your account and all synced meal data. This can't be undone.
+                    Deletes everything. Can't be undone.
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -110,7 +114,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                       className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white"
                       style={{ backgroundColor: 'var(--status-critical)' }}
                     >
-                      Delete account
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -118,9 +122,6 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Sign in to sync your meal history across devices.
-              </p>
               <button
                 onClick={handleSignIn}
                 className="flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium"
@@ -130,7 +131,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               </button>
               {!isSupabaseConfigured && (
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Not connected yet — add Supabase credentials to enable sign-in.
+                  Not connected yet.
                 </p>
               )}
             </div>
@@ -169,18 +170,16 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
             )}
           </div>
           <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            Payments aren't live yet — this is a preview of the upgrade screen.
+            Coming soon.
           </p>
         </div>
 
-        <div>
+        <div className="mb-5">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
             Data
           </p>
           <p className="mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {user
-              ? 'Your meal photos and nutrition history sync to your account.'
-              : 'All meal photos and nutrition history are stored only on this device, in this browser.'}
+            {user ? 'Synced to your account.' : 'Stored on this device only.'}
           </p>
 
           {!confirmingClear ? (
@@ -194,7 +193,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           ) : (
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
-                This permanently deletes every logged meal. This can't be undone.
+                Deletes everything. Can't be undone.
               </p>
               <div className="flex gap-2">
                 <button
@@ -209,11 +208,41 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                   className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white"
                   style={{ backgroundColor: 'var(--status-critical)' }}
                 >
-                  Delete everything
+                  Delete
                 </button>
               </div>
             </div>
           )}
+        </div>
+
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Support
+          </p>
+          <a
+            href="mailto:shilohdhd1@gmail.com"
+            className="flex w-full items-center justify-center rounded-full py-2.5 text-sm font-medium"
+            style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}
+          >
+            Contact support
+          </a>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Credits
+          </p>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Icons by{' '}
+            <a
+              href="https://www.flaticon.com/free-icons/avocado"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+            >
+              justicon - Flaticon
+            </a>
+          </p>
         </div>
       </div>
     </div>

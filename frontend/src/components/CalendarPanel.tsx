@@ -71,7 +71,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const selectedLabel = selectedDate === today ? `Today · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
 
   return (
-    <div className="mx-auto flex max-w-md flex-col px-4 pb-6 pt-16 text-center">
+    <div className="mx-auto flex max-w-md flex-col px-4 pb-6 pt-8 text-center">
       <div
         className="mx-auto w-[90%] rounded-3xl p-4"
         style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
@@ -131,7 +131,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
                     style={{
                       color: inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                       background,
-                      border: isSelected ? '4px solid #d9a441' : '3px solid #1a1a19',
+                      border: isSelected ? '5px solid #b8842a' : '4px solid #d9a441',
                       opacity: inMonth ? 1 : 0.4,
                     }}
                   >

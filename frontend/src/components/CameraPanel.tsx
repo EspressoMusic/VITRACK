@@ -230,7 +230,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           </button>
           <label
             className="cursor-pointer rounded-full py-2.5 text-center text-base font-medium"
-            style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)' }}
+            style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3' }}
           >
             Upload a photo
             <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />

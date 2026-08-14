@@ -47,7 +47,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   if (meals.length === 0) {
     return (
-      <div className="mx-auto flex max-w-[75%] flex-col items-center gap-3 py-16 text-center">
+      <div className="mx-auto flex max-w-[75%] flex-col items-center gap-3 pb-16 pt-6 text-center">
         <WeeklyGoalGlass percent={0} />
         <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
           Nothing here yet
