@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { NavBar, type Tab } from './components/NavBar'
@@ -6,6 +6,9 @@ import { CameraPanel } from './components/CameraPanel'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
+import { OnboardingFlow } from './components/OnboardingFlow'
+import { PaywallPanel } from './components/PaywallPanel'
+import { hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
 
 function AppShell() {
   const [tab, setTab] = useState<Tab>('camera')
@@ -52,6 +55,29 @@ function AppShell() {
 }
 
 export default function App() {
+  const [onboarded, setOnboarded] = useState(hasOnboarded)
+  const [subscribed, setSubscribed] = useState(isSubscribed)
+
+  useEffect(() => {
+    loadPersistedGoals()
+  }, [])
+
+  if (!onboarded) {
+    return (
+      <ThemeProvider>
+        <OnboardingFlow onComplete={() => setOnboarded(true)} />
+      </ThemeProvider>
+    )
+  }
+
+  if (!subscribed) {
+    return (
+      <ThemeProvider>
+        <PaywallPanel onSubscribed={() => setSubscribed(true)} />
+      </ThemeProvider>
+    )
+  }
+
   return (
     <ThemeProvider>
       <AuthProvider>

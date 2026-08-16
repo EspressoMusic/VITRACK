@@ -2,14 +2,22 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
+import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
 import { CloseIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon } from './icons'
 
 export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void; onDataCleared: () => void }) {
   const { user, signInWithGoogle, signOut, deleteAccount } = useAuth()
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
-  const [isPro, setIsPro] = useState(false)
+  const [confirmingRetake, setConfirmingRetake] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const isPro = isSubscribed()
+  const plan = getBillingPlan()
+
+  function handleRetakeQuestionnaire() {
+    resetOnboarding()
+    window.location.reload()
+  }
 
   async function handleClear() {
     await clearAllMeals()
@@ -156,22 +164,53 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 <StarIcon className="h-5 w-5" />
               </span>
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                {isPro ? 'Pro plan' : 'Free plan'}
+                {isPro ? `Pro plan · ${plan === 'yearly' ? 'Yearly' : 'Monthly'}` : 'Free plan'}
               </span>
             </div>
-            {!isPro && (
-              <button
-                onClick={() => setIsPro(true)}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ backgroundColor: 'var(--accent)' }}
-              >
-                Upgrade
-              </button>
-            )}
           </div>
           <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            Coming soon.
+            Demo checkout — no card has been charged.
           </p>
+        </div>
+
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Health profile
+          </p>
+          <p className="mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Your daily vitamin & mineral targets are based on the questionnaire you answered at sign-up.
+          </p>
+          {!confirmingRetake ? (
+            <button
+              onClick={() => setConfirmingRetake(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium"
+              style={{ border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}
+            >
+              Retake questionnaire
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                This recalculates your targets from scratch.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmingRetake(false)}
+                  className="flex-1 rounded-full py-2.5 text-sm font-medium"
+                  style={{ border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRetakeQuestionnaire}
+                  className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white"
+                  style={{ backgroundColor: 'var(--accent-strong)' }}
+                >
+                  Retake
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-5">

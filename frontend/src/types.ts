@@ -37,3 +37,20 @@ export interface MealEntry {
 }
 
 export type ThemeMode = 'light' | 'dark'
+
+export type Sex = 'male' | 'female'
+
+export type ActivityLevel = 'sedentary' | 'moderate' | 'active'
+
+export type DietType = 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian'
+
+export interface OnboardingProfile {
+  age: number
+  sex: Sex
+  weightKg: number
+  heightCm: number
+  activityLevel: ActivityLevel
+  diet: DietType
+}
+
+export type BillingPlan = 'monthly' | 'yearly'

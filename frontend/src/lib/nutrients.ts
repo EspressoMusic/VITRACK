@@ -176,8 +176,24 @@ export const STATUS_LABEL: Record<CoverageStatus, string> = {
   good: 'On track',
 }
 
+/** Generic adult RDA, used until the user has completed onboarding with personalized goals. */
+export const DEFAULT_GOALS: NutrientAmounts = Object.fromEntries(
+  NUTRIENTS.map((n) => [n.id, n.rda])
+) as NutrientAmounts
+
+let activeGoals: NutrientAmounts | null = null
+
+/** Set by lib/profile.ts once the user's personalized daily targets are known. */
+export function setActiveGoals(goals: NutrientAmounts | null): void {
+  activeGoals = goals
+}
+
+export function targetFor(id: NutrientId): number {
+  return (activeGoals ?? DEFAULT_GOALS)[id]
+}
+
 export function percentOfRda(id: NutrientId, amount: number): number {
-  const rda = NUTRIENT_MAP[id].rda
-  if (rda <= 0) return 0
-  return Math.min(200, Math.round((amount / rda) * 100))
+  const target = targetFor(id)
+  if (target <= 0) return 0
+  return Math.min(200, Math.round((amount / target) * 100))
 }

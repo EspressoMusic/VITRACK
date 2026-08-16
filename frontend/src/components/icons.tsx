@@ -105,3 +105,67 @@ export function TrashIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+export function ScaleIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="12" cy="14.5" r="6.5" />
+      <path d="M12 11v3.5l2.2 2.2" />
+      <path d="M9.5 4.5h5M12 4.5V8" />
+    </svg>
+  )
+}
+
+export function RulerIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="4" y="8" width="16" height="8" rx="1.5" transform="rotate(-45 12 12)" />
+      <path d="M9.5 9.5 11 11M12.5 6.5 14 8M6.5 12.5 8 14" />
+    </svg>
+  )
+}
+
+export function ActivityIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M3 13h3.5l2-6 3 12 2-9 1.5 3H21" />
+    </svg>
+  )
+}
+
+export function LeafIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M19 5c-8.5 0-14 5.5-14 14 8.5 0 14-5.5 14-14Z" />
+      <path d="M6 18 16 8" />
+    </svg>
+  )
+}
+
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  )
+}
+
+export function SparkleIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M12 3.5c.5 3 2 5 5 5.5-3 .5-4.5 2.5-5 5.5-.5-3-2-5-5-5.5 3-.5 4.5-2.5 5-5.5Z" />
+      <path d="M18.5 15.5c.3 1.5 1 2.2 2.5 2.5-1.5.3-2.2 1-2.5 2.5-.3-1.5-1-2.2-2.5-2.5 1.5-.3 2.2-1 2.5-2.5Z" />
+    </svg>
+  )
+}
+
+export function CakeIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M4 20v-6.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2V20" />
+      <path d="M3 20h18" />
+      <path d="M8 11.5V8M12 11.5V8M16 11.5V8" />
+      <path d="M8 5.5c0-1 .6-1.3.6-2S8 2 8 2M12 5.5c0-1 .6-1.3.6-2S12 2 12 2M16 5.5c0-1 .6-1.3.6-2S16 2 16 2" />
+    </svg>
+  )
+}
