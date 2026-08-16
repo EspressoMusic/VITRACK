@@ -159,6 +159,25 @@ export function SparkleIcon({ className }: IconProps) {
   )
 }
 
+export function DocumentIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M7 3.5h7.2L18 7.3V19a1.2 1.2 0 0 1-1.2 1.2H7A1.2 1.2 0 0 1 5.8 19V4.7A1.2 1.2 0 0 1 7 3.5Z" />
+      <path d="M14 3.5V7a1 1 0 0 0 1 1h3" />
+      <path d="M8.5 12h7M8.5 15.3h7M8.5 8.7h2.5" />
+    </svg>
+  )
+}
+
+export function LockIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7.5a4 4 0 0 1 8 0V11" />
+    </svg>
+  )
+}
+
 export function CakeIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

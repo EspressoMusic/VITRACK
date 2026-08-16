@@ -3,9 +3,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
-  font-family: 'Merriweather Sans';
-  src: url('/fonts/merriweather-sans.ttf') format('truetype-variations');
-  font-weight: 100 900;
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-variable.ttf') format('truetype-variations');
+  font-weight: 200 800;
   font-style: normal;
   font-display: swap;
 }
@@ -15,6 +15,8 @@
   --surface-0: #fde3a3;
   --surface-1: #fcfcfb;
   --surface-2: #f1f0ec;
+  --surface-tint: rgba(11, 11, 11, 0.07);
+  --surface-cream: #fdf3d9;
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
   --text-muted: #898781;
@@ -42,6 +44,8 @@
   --surface-0: #fde3a3;
   --surface-1: #fcfcfb;
   --surface-2: #f1f0ec;
+  --surface-tint: rgba(11, 11, 11, 0.07);
+  --surface-cream: #fdf3d9;
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
   --text-muted: #898781;
@@ -65,19 +69,21 @@
 }
 
 html {
-  font-size: 19px;
+  font-size: 23px;
 }
 
 html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   background-color: #fde3a3;
   color: var(--text-primary);
-  font-family: 'Merriweather Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -118,6 +124,55 @@ button:active {
   animation: panel-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.step-enter {
+  animation: step-in 0.22s ease-out both;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-slow {
+  animation: spin-slow 1.6s linear infinite;
+}
+
+@keyframes tap-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes tap-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(184, 132, 42, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 9px rgba(184, 132, 42, 0);
+  }
+}
+.tap-effect {
+  animation: tap-pulse 0.25s ease-out, tap-glow 0.5s ease-out;
+}
+
 @keyframes modal-backdrop-in {
   from {
     opacity: 0;
@@ -143,11 +198,96 @@ button:active {
   animation: modal-card-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0.9;
+  }
+}
+.confetti-piece {
+  position: absolute;
+  top: -10vh;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@keyframes card-shine {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+@keyframes liquid-wave-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.liquid-wave-layer {
+  transform: translateY(-50%);
+}
+.liquid-wave-svg {
+  animation: liquid-wave-scroll 3.2s linear infinite;
+}
+.liquid-wave-layer-2 .liquid-wave-svg {
+  animation-duration: 5s;
+  animation-direction: reverse;
+}
+
+.shine-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: card-shine 2.2s linear infinite;
+}
+
+@keyframes feature-gold-chase {
+  0%,
+  8% {
+    background-color: var(--accent-soft);
+    color: var(--accent-strong);
+    transform: scale(1.18);
+  }
+  20%,
+  100% {
+    background-color: var(--status-good-soft);
+    color: var(--status-good);
+    transform: scale(1);
+  }
+}
+.feature-check-chase {
+  animation: feature-gold-chase 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
-  .modal-card-enter {
+  .modal-card-enter,
+  .step-enter,
+  .spin-slow,
+  .tap-effect,
+  .feature-check-chase {
     animation: none;
+  }
+  .confetti-layer {
+    display: none;
+  }
+  .shine-sweep {
+    animation: none;
+    display: none;
   }
 }
 

@@ -18,7 +18,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Vit A',
     unit: 'mcg',
     rda: 900,
-    foodSources: ['Carrots', 'Sweet potatoes', 'Spinach', 'Kale', 'Eggs', 'Mango'],
+    foodSources: [
+      'Carrots', 'Sweet potatoes', 'Spinach', 'Kale', 'Eggs', 'Mango',
+      'Butternut squash', 'Cantaloupe', 'Apricots', 'Red bell peppers', 'Liver', 'Butter',
+    ],
   },
   {
     id: 'vitaminC',
@@ -26,7 +29,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Vit C',
     unit: 'mg',
     rda: 90,
-    foodSources: ['Oranges', 'Bell peppers', 'Strawberries', 'Broccoli', 'Kiwi'],
+    foodSources: [
+      'Oranges', 'Bell peppers', 'Strawberries', 'Broccoli', 'Kiwi',
+      'Brussels sprouts', 'Grapefruit', 'Papaya', 'Pineapple', 'Tomatoes', 'Cauliflower', 'Guava',
+    ],
   },
   {
     id: 'vitaminD',
@@ -34,7 +40,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Vit D',
     unit: 'mcg',
     rda: 20,
-    foodSources: ['Sunlight exposure', 'Salmon', 'Mackerel', 'Egg yolks', 'Mushrooms'],
+    foodSources: [
+      'Sunlight exposure', 'Salmon', 'Mackerel', 'Egg yolks', 'Mushrooms',
+      'Sardines', 'Tuna', 'Fortified milk', 'Fortified orange juice', 'Cod liver oil', 'Fortified cereal',
+    ],
   },
   {
     id: 'vitaminE',
@@ -42,7 +51,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Vit E',
     unit: 'mg',
     rda: 15,
-    foodSources: ['Almonds', 'Sunflower seeds', 'Spinach', 'Avocado'],
+    foodSources: [
+      'Almonds', 'Sunflower seeds', 'Spinach', 'Avocado',
+      'Hazelnuts', 'Peanut butter', 'Olive oil', 'Butternut squash', 'Kiwi', 'Broccoli',
+    ],
   },
   {
     id: 'vitaminK',
@@ -50,7 +62,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Vit K',
     unit: 'mcg',
     rda: 120,
-    foodSources: ['Kale', 'Spinach', 'Broccoli', 'Brussels sprouts'],
+    foodSources: [
+      'Kale', 'Spinach', 'Broccoli', 'Brussels sprouts',
+      'Cabbage', 'Asparagus', 'Green beans', 'Lettuce', 'Parsley', 'Olive oil',
+    ],
   },
   {
     id: 'vitaminB1',
@@ -58,7 +73,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B1',
     unit: 'mg',
     rda: 1.2,
-    foodSources: ['Whole grains', 'Pork', 'Legumes', 'Sunflower seeds'],
+    foodSources: [
+      'Whole grains', 'Pork', 'Legumes', 'Sunflower seeds',
+      'Brown rice', 'Oats', 'Trout', 'Green peas', 'Flax seeds', 'Macadamia nuts',
+    ],
   },
   {
     id: 'vitaminB2',
@@ -66,7 +84,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B2',
     unit: 'mg',
     rda: 1.3,
-    foodSources: ['Eggs', 'Milk', 'Almonds', 'Leafy greens'],
+    foodSources: [
+      'Eggs', 'Milk', 'Almonds', 'Leafy greens',
+      'Yogurt', 'Mushrooms', 'Beef', 'Quinoa', 'Fortified cereal', 'Spinach',
+    ],
   },
   {
     id: 'vitaminB3',
@@ -74,7 +95,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B3',
     unit: 'mg',
     rda: 16,
-    foodSources: ['Chicken', 'Tuna', 'Peanuts', 'Whole grains'],
+    foodSources: [
+      'Chicken', 'Tuna', 'Peanuts', 'Whole grains',
+      'Turkey', 'Salmon', 'Mushrooms', 'Brown rice', 'Avocado', 'Sunflower seeds',
+    ],
   },
   {
     id: 'vitaminB6',
@@ -82,7 +106,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B6',
     unit: 'mg',
     rda: 1.7,
-    foodSources: ['Chickpeas', 'Poultry', 'Potatoes', 'Bananas'],
+    foodSources: [
+      'Chickpeas', 'Poultry', 'Potatoes', 'Bananas',
+      'Salmon', 'Beef liver', 'Fortified cereal', 'Spinach', 'Sunflower seeds', 'Pistachios',
+    ],
   },
   {
     id: 'vitaminB9',
@@ -90,7 +117,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B9',
     unit: 'mcg',
     rda: 400,
-    foodSources: ['Leafy greens', 'Beans', 'Lentils', 'Avocado'],
+    foodSources: [
+      'Leafy greens', 'Beans', 'Lentils', 'Avocado',
+      'Asparagus', 'Broccoli', 'Peanuts', 'Oranges', 'Fortified bread', 'Brussels sprouts',
+    ],
   },
   {
     id: 'vitaminB12',
@@ -98,7 +128,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'B12',
     unit: 'mcg',
     rda: 2.4,
-    foodSources: ['Fish', 'Meat', 'Eggs', 'Dairy', 'Fortified cereal'],
+    foodSources: [
+      'Fish', 'Meat', 'Eggs', 'Dairy', 'Fortified cereal',
+      'Clams', 'Salmon', 'Tuna', 'Beef liver', 'Yogurt', 'Nutritional yeast',
+    ],
   },
   {
     id: 'calcium',
@@ -106,7 +139,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Ca',
     unit: 'mg',
     rda: 1000,
-    foodSources: ['Dairy', 'Tofu', 'Leafy greens', 'Almonds'],
+    foodSources: [
+      'Dairy', 'Tofu', 'Leafy greens', 'Almonds',
+      'Yogurt', 'Cheese', 'Sardines', 'Fortified plant milk', 'Kale', 'Chia seeds',
+    ],
   },
   {
     id: 'iron',
@@ -114,7 +150,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Fe',
     unit: 'mg',
     rda: 18,
-    foodSources: ['Red meat', 'Lentils', 'Spinach', 'Pumpkin seeds'],
+    foodSources: [
+      'Red meat', 'Lentils', 'Spinach', 'Pumpkin seeds',
+      'Chickpeas', 'Tofu', 'Quinoa', 'Dark chocolate', 'Cashews', 'Beef liver',
+    ],
   },
   {
     id: 'magnesium',
@@ -122,7 +161,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Mg',
     unit: 'mg',
     rda: 400,
-    foodSources: ['Nuts', 'Seeds', 'Whole grains', 'Dark chocolate'],
+    foodSources: [
+      'Nuts', 'Seeds', 'Whole grains', 'Dark chocolate',
+      'Spinach', 'Black beans', 'Avocado', 'Almonds', 'Cashews', 'Brown rice',
+    ],
   },
   {
     id: 'zinc',
@@ -130,7 +172,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'Zn',
     unit: 'mg',
     rda: 11,
-    foodSources: ['Meat', 'Shellfish', 'Legumes', 'Seeds'],
+    foodSources: [
+      'Meat', 'Shellfish', 'Legumes', 'Seeds',
+      'Oysters', 'Cashews', 'Chickpeas', 'Pumpkin seeds', 'Yogurt', 'Oats',
+    ],
   },
   {
     id: 'potassium',
@@ -138,7 +183,10 @@ export const NUTRIENTS: NutrientDef[] = [
     shortLabel: 'K',
     unit: 'mg',
     rda: 4700,
-    foodSources: ['Bananas', 'Potatoes', 'Beans', 'Avocado'],
+    foodSources: [
+      'Bananas', 'Potatoes', 'Beans', 'Avocado',
+      'Sweet potatoes', 'Spinach', 'Oranges', 'Coconut water', 'Salmon', 'Yogurt',
+    ],
   },
 ]
 

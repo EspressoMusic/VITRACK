@@ -24,21 +24,21 @@ function AppShell() {
       style={{ '--panel-bg': `url('/${panelBg}.png')` } as React.CSSProperties}
     >
       <div
-        className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-end px-3 pt-3"
+        className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-end px-3 pt-1.5"
         style={{ pointerEvents: 'none' }}
       >
         <button
           onClick={() => setSettingsOpen(true)}
           aria-label="Open settings"
-          className="flex h-12 w-12 items-center justify-center transition"
+          className="flex h-9 w-9 items-center justify-center transition"
           style={{ pointerEvents: 'auto' }}
         >
-          <img src="/icons/settings.png" alt="" className="h-9 w-9" />
+          <img src="/icons/settings.png" alt="" className="h-7 w-7" />
         </button>
       </div>
 
-      <main className="flex-1 overflow-y-auto">
-        <div key={tab} className="panel-enter">
+      <main className="flex-1 overflow-hidden">
+        <div key={tab} className="panel-enter h-full">
           {tab === 'camera' && <CameraPanel onLogged={bumpRefresh} />}
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}

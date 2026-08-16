@@ -3,10 +3,9 @@ import type { MealEntry } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
 import { NUTRIENTS, NUTRIENT_MAP, sumNutrients, percentOfRda, coverageStatus, type CoverageStatus } from '../lib/nutrients'
-import { STATUS_VAR } from './StatusDot'
+import { MealDetailModal } from './MealDetailModal'
 
 const GRID_COLS = 'grid-cols-7'
-const WEEKEND = new Set([0, 6])
 
 function dayOverallStatus(entries: MealEntry[]): CoverageStatus | null {
   if (entries.length === 0) return null
@@ -36,6 +35,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     return { year: now.getFullYear(), month: now.getMonth() }
   })
   const [selectedDate, setSelectedDate] = useState(todayKey())
+  const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
 
   useEffect(() => {
     getAllMeals().then(setMeals)
@@ -71,12 +71,12 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const selectedLabel = selectedDate === today ? `Today · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
 
   return (
-    <div className="mx-auto flex max-w-md flex-col px-4 pb-6 pt-8 text-center">
+    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4 pt-2 text-center">
       <div
-        className="mx-auto w-[90%] rounded-3xl p-4"
-        style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+        className="mx-auto w-[78%] shrink-0 rounded-3xl p-3"
+        style={{ backgroundColor: '#e5c184', border: '3px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-2.5 flex items-center justify-between">
           <button
             onClick={() => changeMonth(-1)}
             aria-label="Previous month"
@@ -85,7 +85,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
           >
             ‹
           </button>
-          <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
             {monthLabel(cursor.year, cursor.month)}
           </span>
           <button
@@ -98,9 +98,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
           </button>
         </div>
 
-        <div className={`mb-2 grid ${GRID_COLS} gap-1 text-center text-xs font-medium`}>
-          {WEEKDAY_NAMES.map((w, i) => (
-            <span key={w} style={{ color: WEEKEND.has(i) ? 'var(--text-muted)' : 'var(--accent)' }}>
+        <div className={`mb-1.5 grid ${GRID_COLS} gap-1 text-center text-xs font-medium`}>
+          {WEEKDAY_NAMES.map((w) => (
+            <span key={w} style={{ color: '#000000' }}>
               {w}
             </span>
           ))}
@@ -115,31 +115,26 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
                 const status = dayOverallStatus(mealsByDate.get(key) ?? [])
                 const isToday = key === today
                 const isSelected = key === selectedDate
-                const background =
-                  status === 'good'
-                    ? 'var(--status-good-soft)'
-                    : status
-                      ? 'var(--status-critical-soft)'
-                      : isToday
-                        ? 'var(--accent-soft)'
-                        : 'rgba(255,255,255,0.35)'
+                const background = status
+                  ? status === 'good'
+                    ? 'var(--status-good)'
+                    : 'var(--status-critical)'
+                  : isToday
+                    ? 'var(--accent-soft)'
+                    : 'var(--surface-cream)'
                 return (
                   <button
                     key={key}
                     onClick={() => setSelectedDate(key)}
-                    className="flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg text-sm transition"
+                    className="flex aspect-square flex-col items-center justify-center rounded-lg text-sm font-semibold transition"
                     style={{
-                      color: inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+                      color: status ? '#ffffff' : inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                       background,
-                      border: isSelected ? '5px solid #b8842a' : '4px solid #d9a441',
+                      border: isSelected ? '5px solid #000000' : '4px solid #000000',
                       opacity: inMonth ? 1 : 0.4,
                     }}
                   >
                     <span className="leading-none">{date.getDate()}</span>
-                    <span
-                      className="h-1.5 w-1.5 shrink-0 rounded-full leading-none"
-                      style={{ backgroundColor: status ? STATUS_VAR[status] : 'transparent' }}
-                    />
                   </button>
                 )
               })}
@@ -149,10 +144,10 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
       </div>
 
       <div
-        className="mx-auto mt-4 w-[90%] rounded-3xl p-4"
-        style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+        className="mx-auto mt-3 flex w-[78%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl p-4"
+        style={{ backgroundColor: '#e5c184', border: '3px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <h2 className="mb-2 shrink-0 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
           {selectedLabel}
         </h2>
 
@@ -161,35 +156,38 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
             No meals logged this day.
           </p>
         ) : (
-          <div className="flex flex-col">
-            {selectedMeals.map((meal, i) => (
-              <div
+          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+            {selectedMeals.map((meal) => (
+              <button
                 key={meal.id}
-                className="flex items-center gap-3 py-2.5"
-                style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}
+                onClick={() => setSelectedMeal(meal)}
+                className="flex items-center gap-2 rounded-lg p-1.5 text-left"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
               >
                 <img
                   src={meal.imageDataUrl}
                   alt=""
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
+                  className="h-7 w-7 shrink-0 rounded-md object-cover"
                   style={{ border: '1px solid var(--border)' }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {meal.foods.length > 0 ? meal.foods.map((f) => f.name).join(', ') : 'Meal'}
+                  <p className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : 'Meal'}
                   </p>
-                  <p className="truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="truncate text-[10px]" style={{ color: 'var(--text-secondary)' }}>
                     {topNutrientLabel(meal.nutrients) ?? 'No standout nutrients'}
                   </p>
                 </div>
-                <span className="shrink-0 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span className="shrink-0 text-[10px]" style={{ color: 'var(--text-muted)' }}>
                   {formatTime(meal.createdAt)}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
+
+      {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
     </div>
   )
 }

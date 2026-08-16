@@ -13,6 +13,22 @@ const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
 const DETECTION_INTERVAL_MS = 450
 
+const NUTRITION_QUOTES = [
+  'Let food be thy medicine and medicine be thy food. — Hippocrates',
+  "Take care of your body. It's the only place you have to live. — Jim Rohn",
+  'Eat food. Not too much. Mostly plants. — Michael Pollan',
+  'A healthy outside starts from the inside. — Robert Urich',
+  'Your diet is a bank account. Good food choices are good investments.',
+  'Small daily improvements are the key to staggering long-term results.',
+  'The food you eat can be either the safest and most powerful form of medicine, or the slowest form of poison.',
+]
+
+function quoteOfTheDay(): string {
+  const start = new Date(new Date().getFullYear(), 0, 0)
+  const dayOfYear = Math.floor((Date.now() - start.getTime()) / 86400000)
+  return NUTRITION_QUOTES[dayOfYear % NUTRITION_QUOTES.length]
+}
+
 function downscaleToDataUrl(source: CanvasImageSource, width: number, height: number): string {
   const scale = Math.min(1, MAX_DIMENSION / Math.max(width, height))
   const canvas = document.createElement('canvas')
@@ -183,7 +199,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 pb-6 pt-20">
+    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 pb-6 pt-4">
       <div
         className="relative mx-auto flex aspect-square w-[70%] items-center justify-center overflow-hidden rounded-2xl"
         style={{ backgroundColor: 'var(--surface-2)', border: '5px solid #d9a441' }}
@@ -336,6 +352,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           </button>
         </div>
       )}
+
+      <p className="mx-auto max-w-[80%] text-center text-xs italic" style={{ color: 'var(--text-secondary)' }}>
+        "{quoteOfTheDay()}"
+      </p>
     </div>
   )
 }

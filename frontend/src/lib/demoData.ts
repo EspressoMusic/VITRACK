@@ -29,28 +29,42 @@ function randomNutrients(quality: number): NutrientAmounts {
   return amounts
 }
 
-/** Seeds a handful of realistic-looking demo meals across the last 9 days. */
+function dateKeyFor(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+async function seedMealForDay(date: Date, hour: number, minute: number): Promise<void> {
+  const meal = MEALS[Math.floor(Math.random() * MEALS.length)]
+  const createdAt = new Date(date)
+  createdAt.setHours(hour, minute)
+
+  const entry: MealEntry = {
+    id: crypto.randomUUID(),
+    date: dateKeyFor(date),
+    createdAt: createdAt.toISOString(),
+    imageDataUrl: PLACEHOLDER_PHOTO,
+    foods: meal.foods,
+    nutrients: randomNutrients(meal.quality),
+    confidence: 'medium',
+    analysisNote: 'Demo entry',
+  }
+  await addMeal(entry)
+}
+
+/**
+ * Seeds a handful of realistic-looking demo meals across the last 8 days, plus a
+ * stacked 10-photo log for today so the day-detail card's internal scroll is visible.
+ */
 export async function seedDemoMeals(): Promise<void> {
   const now = new Date()
-  for (let daysAgo = 8; daysAgo >= 0; daysAgo--) {
+  for (let daysAgo = 8; daysAgo >= 1; daysAgo--) {
     const date = new Date(now)
     date.setDate(date.getDate() - daysAgo)
-    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    await seedMealForDay(date, 12 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60))
+  }
 
-    const meal = MEALS[Math.floor(Math.random() * MEALS.length)]
-    const createdAt = new Date(date)
-    createdAt.setHours(12 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60))
-
-    const entry: MealEntry = {
-      id: crypto.randomUUID(),
-      date: dateKey,
-      createdAt: createdAt.toISOString(),
-      imageDataUrl: PLACEHOLDER_PHOTO,
-      foods: meal.foods,
-      nutrients: randomNutrients(meal.quality),
-      confidence: 'medium',
-      analysisNote: 'Demo entry',
-    }
-    await addMeal(entry)
+  const todayStartHour = 7
+  for (let i = 0; i < 10; i++) {
+    await seedMealForDay(now, todayStartHour + i * 1.3, Math.floor(Math.random() * 60))
   }
 }

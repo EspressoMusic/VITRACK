@@ -1,25 +1,26 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode, type WheelEvent } from 'react'
 import type { ActivityLevel, DietType, NutrientAmounts, NutrientId, OnboardingProfile, Sex } from '../types'
 import { computeNutrientGoals } from '../lib/goals'
 import { completeOnboarding } from '../lib/profile'
-import { NUTRIENT_MAP } from '../lib/nutrients'
-import { ActivityIcon, CakeIcon, LeafIcon, RulerIcon, ScaleIcon, SparkleIcon, UserIcon } from './icons'
+import { NUTRIENT_MAP, NUTRIENTS } from '../lib/nutrients'
+import { playConfirmSound, playTapSound } from '../lib/sound'
+import { ActivityIcon, CakeIcon, LeafIcon, LockIcon, RulerIcon, ScaleIcon, SparkleIcon, UserIcon } from './icons'
 
-type Step = 'welcome' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'summary'
+type Step = 'welcome' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'calculating' | 'summary'
 
-const STEP_ORDER: Step[] = ['welcome', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'summary']
+const STEP_ORDER: Step[] = ['welcome', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'calculating', 'summary']
 const PROGRESS_STEPS: Step[] = ['age', 'sex', 'weight', 'height', 'activity', 'diet']
 
 const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string }[] = [
-  { id: 'sedentary', label: 'Mostly still', desc: 'Little to no exercise, a desk-based day' },
-  { id: 'moderate', label: 'Somewhat active', desc: 'Exercise or on your feet 1–3 times a week' },
-  { id: 'active', label: 'Very active', desc: 'Exercise 4+ times a week, or a physical job' },
+  { id: 'sedentary', label: 'Mostly still', desc: 'Little exercise, desk job' },
+  { id: 'moderate', label: 'Somewhat active', desc: 'Active 1–3 times a week' },
+  { id: 'active', label: 'Very active', desc: '4+ workouts a week' },
 ]
 
 const DIET_OPTIONS: { id: DietType; label: string; desc: string }[] = [
   { id: 'omnivore', label: 'Omnivore', desc: 'Meat, fish, dairy — everything' },
   { id: 'pescatarian', label: 'Pescatarian', desc: 'Fish and dairy, no other meat' },
-  { id: 'vegetarian', label: 'Vegetarian', desc: 'Dairy and eggs, no meat or fish' },
+  { id: 'vegetarian', label: 'Vegetarian', desc: 'Dairy & eggs, no meat/fish' },
   { id: 'vegan', label: 'Vegan', desc: 'No animal products at all' },
 ]
 
@@ -45,7 +46,7 @@ function isValid(step: Step, d: DraftProfile): boolean {
   switch (step) {
     case 'age': {
       const n = Number(d.age)
-      return Number.isFinite(n) && n >= 13 && n <= 100
+      return Number.isFinite(n) && n >= 18 && n <= 100
     }
     case 'sex':
       return d.sex !== null
@@ -78,10 +79,11 @@ function draftToProfile(d: DraftProfile): OnboardingProfile | null {
 export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState<DraftProfile>(EMPTY_DRAFT)
+  const [continuePulse, setContinuePulse] = useState(0)
   const step = STEP_ORDER[stepIndex]
   const canContinue = isValid(step, draft)
 
-  const previewProfile = step === 'summary' ? draftToProfile(draft) : null
+  const previewProfile = step === 'calculating' || step === 'summary' ? draftToProfile(draft) : null
   const previewGoals = previewProfile ? computeNutrientGoals(previewProfile) : null
 
   function goNext() {
@@ -99,13 +101,27 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
     setStepIndex((i) => Math.max(i - 1, 0))
   }
 
+  // Auto-advance past the "calculating" step — a deliberate short pause so the
+  // personalization feels earned rather than instant, then reveal the reward.
+  useEffect(() => {
+    if (step !== 'calculating') return
+    const t = setTimeout(() => setStepIndex((i) => Math.min(i + 1, STEP_ORDER.length - 1)), 1600)
+    return () => clearTimeout(t)
+  }, [step])
+
   return (
     <div
       className="mx-auto flex h-screen w-full max-w-md flex-col overflow-hidden"
-      style={{ backgroundColor: 'var(--surface-0)' }}
+      style={{
+        backgroundColor: 'var(--surface-0)',
+        backgroundImage: "url('/background-calendar.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundRepeat: 'no-repeat',
+      }}
     >
-      <div className="flex items-center gap-3 px-5 pt-6">
-        {step !== 'welcome' && step !== 'summary' ? (
+      <div className="flex items-center gap-3 px-5 pt-3">
+        {step !== 'welcome' && step !== 'calculating' && step !== 'summary' ? (
           <button
             onClick={goBack}
             aria-label="Back"
@@ -124,9 +140,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
               className="h-1.5 w-6 rounded-full transition-colors"
               style={{
                 backgroundColor:
-                  PROGRESS_STEPS.indexOf(s) <= PROGRESS_STEPS.indexOf(step)
-                    ? 'var(--accent)'
-                    : 'rgba(11,11,11,0.12)',
+                  STEP_ORDER.indexOf(s) <= STEP_ORDER.indexOf(step) ? 'var(--accent)' : 'rgba(11,11,11,0.12)',
               }}
             />
           ))}
@@ -134,57 +148,86 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
         <div className="h-9 w-9" />
       </div>
 
-      <main className="flex flex-1 flex-col overflow-y-auto px-6 py-6">
-        {step === 'welcome' && <WelcomeStep />}
-        {step === 'age' && <AgeStep value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
-        {step === 'sex' && <SexStep value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
-        {step === 'weight' && (
-          <WeightStep value={draft.weightKg} onChange={(weightKg) => setDraft((d) => ({ ...d, weightKg }))} />
-        )}
-        {step === 'height' && (
-          <HeightStep value={draft.heightCm} onChange={(heightCm) => setDraft((d) => ({ ...d, heightCm }))} />
-        )}
-        {step === 'activity' && (
-          <ActivityStep
-            value={draft.activityLevel}
-            onChange={(activityLevel) => setDraft((d) => ({ ...d, activityLevel }))}
-          />
-        )}
-        {step === 'diet' && <DietStep value={draft.diet} onChange={(diet) => setDraft((d) => ({ ...d, diet }))} />}
-        {step === 'summary' && <SummaryStep goals={previewGoals} />}
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-2">
+        <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
+          {step === 'welcome' && <WelcomeStep />}
+          {step === 'age' && <AgeStep value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
+          {step === 'sex' && <SexStep value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
+          {step === 'weight' && (
+            <WeightStep value={draft.weightKg} onChange={(weightKg) => setDraft((d) => ({ ...d, weightKg }))} />
+          )}
+          {step === 'height' && (
+            <HeightStep value={draft.heightCm} onChange={(heightCm) => setDraft((d) => ({ ...d, heightCm }))} />
+          )}
+          {step === 'activity' && (
+            <ActivityStep
+              value={draft.activityLevel}
+              onChange={(activityLevel) => setDraft((d) => ({ ...d, activityLevel }))}
+            />
+          )}
+          {step === 'diet' && <DietStep value={draft.diet} onChange={(diet) => setDraft((d) => ({ ...d, diet }))} />}
+          {step === 'calculating' && <CalculatingStep />}
+          {step === 'summary' && <SummaryStep goals={previewGoals} />}
+        </div>
       </main>
 
-      <div className="px-6 pb-8 pt-2">
-        <button
-          onClick={goNext}
-          disabled={!canContinue}
-          className="w-full rounded-full py-3.5 text-base font-semibold text-white transition"
-          style={{ backgroundColor: canContinue ? 'var(--accent-strong)' : 'var(--border-strong)' }}
-        >
-          {step === 'welcome' ? "Let's go" : step === 'summary' ? 'See my plan' : 'Continue'}
-        </button>
-      </div>
+      {step !== 'calculating' && (
+        <div className="px-6 pb-4 pt-2">
+          <button
+            key={continuePulse}
+            onClick={() => {
+              if (!canContinue) return
+              playConfirmSound()
+              setContinuePulse((p) => p + 1)
+              goNext()
+            }}
+            disabled={!canContinue}
+            className={`w-full rounded-full py-3.5 text-base font-semibold text-white transition ${continuePulse > 0 ? 'tap-effect' : ''}`}
+            style={{ backgroundColor: canContinue ? 'var(--accent-strong)' : '#e8d9a6' }}
+          >
+            {step === 'welcome' ? "Let's go" : step === 'summary' ? 'See my plan' : 'Continue'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
-function StepHeading({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
+function StepCard({
+  icon,
+  title,
+  subtitle,
+  children,
+}: {
+  icon: ReactNode
+  title: string
+  subtitle?: string
+  children: ReactNode
+}) {
   return (
-    <div className="mb-6 flex flex-col items-center gap-3 text-center">
+    <div
+      className="flex w-full max-w-xs flex-col items-center gap-2 rounded-3xl px-5 py-4 text-center"
+      style={{
+        backgroundColor: '#e5c184',
+        border: '3px solid var(--accent-strong)',
+        boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
+      }}
+    >
       <span
         className="flex h-12 w-12 items-center justify-center rounded-full"
         style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}
       >
         {icon}
       </span>
-      <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+      <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
         {title}
       </h2>
       {subtitle && (
-        <p className="max-w-[85%] text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           {subtitle}
         </p>
       )}
+      <div className="mt-2 flex w-full flex-col items-center gap-2.5">{children}</div>
     </div>
   )
 }
@@ -202,16 +245,24 @@ function NumberField({
   min: number
   max: number
 }) {
+  function handleWheel(e: WheelEvent<HTMLInputElement>) {
+    e.preventDefault()
+    const current = Math.round(Number(value) || min)
+    const next = Math.min(max, Math.max(min, current + (e.deltaY < 0 ? 1 : -1)))
+    onChange(String(next))
+  }
+
   return (
     <div
       className="flex items-center justify-center gap-2 rounded-2xl px-5 py-4"
-      style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-strong)' }}
+      style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border-strong)' }}
     >
       <input
         type="number"
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onWheel={handleWheel}
         placeholder="—"
         min={min}
         max={max}
@@ -236,12 +287,18 @@ function ChoiceButton({
   label: string
   description?: string
 }) {
+  const [pulse, setPulse] = useState(0)
   return (
     <button
-      onClick={onClick}
-      className="flex flex-col items-start gap-0.5 rounded-2xl px-4 py-3 text-left transition"
+      key={pulse}
+      onClick={() => {
+        playTapSound()
+        setPulse((p) => p + 1)
+        onClick()
+      }}
+      className={`flex flex-col items-start gap-0.5 rounded-2xl px-4 py-1.5 text-left transition ${pulse > 0 ? 'tap-effect' : ''}`}
       style={{
-        backgroundColor: selected ? 'var(--accent-soft)' : 'var(--surface-1)',
+        backgroundColor: selected ? 'var(--accent-soft)' : 'var(--surface-cream)',
         border: selected ? '2px solid var(--accent-strong)' : '1px solid var(--border-strong)',
       }}
     >
@@ -249,7 +306,7 @@ function ChoiceButton({
         {label}
       </span>
       {description && (
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-xs leading-tight" style={{ color: 'var(--text-secondary)' }}>
           {description}
         </span>
       )}
@@ -259,7 +316,7 @@ function ChoiceButton({
 
 function WelcomeStep() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 text-center">
       <span
         className="flex h-16 w-16 items-center justify-center rounded-full"
         style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}
@@ -270,8 +327,7 @@ function WelcomeStep() {
         Let's set up your targets
       </h1>
       <p className="max-w-[80%] text-sm" style={{ color: 'var(--text-secondary)' }}>
-        A few quick questions about you, so Vitrack can estimate roughly how much of each vitamin and mineral you
-        should aim for each day.
+        A few quick questions — no cardio required.
       </p>
     </div>
   )
@@ -279,150 +335,206 @@ function WelcomeStep() {
 
 function AgeStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading icon={<CakeIcon className="h-6 w-6" />} title="How old are you?" subtitle="Nutrient needs shift with age." />
-      <NumberField value={value} onChange={onChange} unit="years" min={13} max={100} />
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard icon={<CakeIcon className="h-6 w-6" />} title="How old are you?" subtitle="Your vitamin needs age too, just less gracefully.">
+        <NumberField value={value} onChange={onChange} unit="years" min={18} max={100} />
+      </StepCard>
     </div>
   )
 }
 
+const SEX_OPTIONS: { id: Sex; label: string }[] = [
+  { id: 'female', label: 'Female' },
+  { id: 'male', label: 'Male' },
+  { id: 'unspecified', label: 'Prefer not to say' },
+]
+
 function SexStep({ value, onChange }: { value: Sex | null; onChange: (v: Sex) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard
         icon={<UserIcon className="h-6 w-6" />}
-        title="Biological sex"
-        subtitle="Used only to estimate nutrient needs more accurately — several RDAs differ by sex."
-      />
-      <div className="flex w-full max-w-xs flex-col gap-2.5">
-        {(['female', 'male'] as Sex[]).map((s) => (
-          <ChoiceButton key={s} selected={value === s} onClick={() => onChange(s)} label={s === 'female' ? 'Female' : 'Male'} />
-        ))}
-      </div>
+        title="Male or female?"
+        subtitle="Biology plays favorites with a few nutrients."
+      >
+        <div className="flex w-full flex-col gap-1.5">
+          {SEX_OPTIONS.map((opt) => (
+            <ChoiceButton key={opt.id} selected={value === opt.id} onClick={() => onChange(opt.id)} label={opt.label} />
+          ))}
+        </div>
+      </StepCard>
     </div>
   )
 }
 
 function WeightStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard
         icon={<ScaleIcon className="h-6 w-6" />}
         title="What's your weight?"
-        subtitle="Helps scale targets like magnesium to your body size."
-      />
-      <NumberField value={value} onChange={onChange} unit="kg" min={30} max={250} />
+        subtitle="Bigger frame, bigger nutrient budget."
+      >
+        <NumberField value={value} onChange={onChange} unit="kg" min={30} max={250} />
+      </StepCard>
     </div>
   )
 }
 
 function HeightStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard
         icon={<RulerIcon className="h-6 w-6" />}
         title="And your height?"
-        subtitle="Combined with weight and age to estimate your energy needs."
-      />
-      <NumberField value={value} onChange={onChange} unit="cm" min={100} max={230} />
+        subtitle="Tall or short, we still crunch the numbers."
+      >
+        <NumberField value={value} onChange={onChange} unit="cm" min={100} max={230} />
+      </StepCard>
     </div>
   )
 }
 
 function ActivityStep({ value, onChange }: { value: ActivityLevel | null; onChange: (v: ActivityLevel) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard
         icon={<ActivityIcon className="h-6 w-6" />}
         title="How active are you?"
-        subtitle="More activity generally means higher energy and B-vitamin needs."
-      />
-      <div className="flex w-full max-w-xs flex-col gap-2.5">
-        {ACTIVITY_OPTIONS.map((opt) => (
-          <ChoiceButton
-            key={opt.id}
-            selected={value === opt.id}
-            onClick={() => onChange(opt.id)}
-            label={opt.label}
-            description={opt.desc}
-          />
-        ))}
-      </div>
+        subtitle="Couch or gym — we adjust."
+      >
+        <div className="flex w-full flex-col gap-1.5">
+          {ACTIVITY_OPTIONS.map((opt) => (
+            <ChoiceButton
+              key={opt.id}
+              selected={value === opt.id}
+              onClick={() => onChange(opt.id)}
+              label={opt.label}
+              description={opt.desc}
+            />
+          ))}
+        </div>
+      </StepCard>
     </div>
   )
 }
 
 function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: DietType) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <StepHeading
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard
         icon={<LeafIcon className="h-6 w-6" />}
-        title="What's your main diet?"
-        subtitle="Some nutrients, like iron and B12, are harder to get from plant-based diets."
-      />
-      <div className="flex w-full max-w-xs flex-col gap-2.5">
-        {DIET_OPTIONS.map((opt) => (
-          <ChoiceButton
-            key={opt.id}
-            selected={value === opt.id}
-            onClick={() => onChange(opt.id)}
-            label={opt.label}
-            description={opt.desc}
-          />
-        ))}
-      </div>
+        title="What's your diet?"
+        subtitle="Salad fans, mind the B12."
+      >
+        <div className="flex w-full flex-col gap-1.5">
+          {DIET_OPTIONS.map((opt) => (
+            <ChoiceButton
+              key={opt.id}
+              selected={value === opt.id}
+              onClick={() => onChange(opt.id)}
+              label={opt.label}
+              description={opt.desc}
+            />
+          ))}
+        </div>
+      </StepCard>
+    </div>
+  )
+}
+
+const CALCULATING_MESSAGES = ['Analyzing your profile…', 'Calculating vitamin needs…', 'Personalizing your targets…']
+
+function CalculatingStep() {
+  const [msgIndex, setMsgIndex] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => setMsgIndex((i) => (i + 1) % CALCULATING_MESSAGES.length), 550)
+    return () => clearInterval(t)
+  }, [])
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 text-center">
+      <span
+        className="flex h-14 w-14 items-center justify-center rounded-full"
+        style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}
+      >
+        <span className="spin-slow flex h-7 w-7 items-center justify-center">
+          <SparkleIcon className="h-7 w-7" />
+        </span>
+      </span>
+      <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+        {CALCULATING_MESSAGES[msgIndex]}
+      </p>
     </div>
   )
 }
 
 const PREVIEW_NUTRIENTS: NutrientId[] = ['vitaminD', 'iron', 'vitaminB12']
+const LOCKED_COUNT = NUTRIENTS.length - PREVIEW_NUTRIENTS.length
+
+const NUTRIENT_BENEFITS: Partial<Record<NutrientId, string>> = {
+  vitaminD: 'Bones, mood & immunity',
+  iron: 'Energy & focus, less fatigue',
+  vitaminB12: 'Nerve health & steady energy',
+}
 
 function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-      <span
-        className="flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ backgroundColor: 'var(--status-good-soft)', color: 'var(--status-good)' }}
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <div
+        className="flex w-full max-w-xs flex-col items-center gap-2.5 rounded-3xl px-5 py-5 text-center"
+        style={{
+          backgroundColor: '#e5c184',
+          border: '3px solid var(--accent-strong)',
+          boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
+        }}
       >
-        <SparkleIcon className="h-7 w-7" />
-      </span>
-      <div>
-        <h2 className="mb-1 text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Your daily targets are ready
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Estimated for all 16 vitamins & minerals we track, based on your answers.
+        <div>
+          <h2 className="mb-1 text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Your daily targets are ready
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Based on your answers — here's what your body needs each day, and why it matters.
+          </p>
+        </div>
+
+        {goals && (
+          <div className="flex w-full flex-col gap-1.5">
+            {PREVIEW_NUTRIENTS.map((id) => (
+              <div
+                key={id}
+                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
+                style={{ backgroundColor: 'var(--accent-soft)', border: '1px solid var(--border-strong)' }}
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {NUTRIENT_MAP[id].name}
+                  </div>
+                  <div className="truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {NUTRIENT_BENEFITS[id]}
+                  </div>
+                </div>
+                <div className="shrink-0 text-sm font-bold" style={{ color: 'var(--accent-strong)' }}>
+                  {goals[id]}
+                  {NUTRIENT_MAP[id].unit}
+                </div>
+              </div>
+            ))}
+            <div
+              className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2"
+              style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #7a4c14' }}
+            >
+              <LockIcon className="h-4 w-4 shrink-0 text-white" />
+              <span className="text-xs font-bold text-white">+{LOCKED_COUNT} more targets unlock next</span>
+            </div>
+          </div>
+        )}
+
+        <p className="px-2 text-xs" style={{ color: '#000000' }}>
+          A rough estimate, not medical advice — check a doctor for anything specific.
         </p>
       </div>
-
-      {goals && (
-        <div className="grid w-full max-w-xs grid-cols-3 gap-2">
-          {PREVIEW_NUTRIENTS.map((id) => (
-            <div
-              key={id}
-              className="rounded-xl px-2 py-3"
-              style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)' }}
-            >
-              <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                {NUTRIENT_MAP[id].shortLabel}
-              </div>
-              <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {goals[id]}
-                {NUTRIENT_MAP[id].unit}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p
-        className="max-w-[85%] rounded-xl px-3 py-2.5 text-xs"
-        style={{ backgroundColor: 'var(--status-warning-soft)', color: 'var(--text-primary)' }}
-      >
-        These numbers are a rough, automated estimate — not medical advice. They're meant to give you a general
-        sense of direction, not a precise prescription. Always check with a doctor or dietitian for anything
-        specific to your health.
-      </p>
     </div>
   )
 }

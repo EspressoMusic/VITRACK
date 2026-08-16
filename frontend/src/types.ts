@@ -38,7 +38,7 @@ export interface MealEntry {
 
 export type ThemeMode = 'light' | 'dark'
 
-export type Sex = 'male' | 'female'
+export type Sex = 'male' | 'female' | 'unspecified'
 
 export type ActivityLevel = 'sedentary' | 'moderate' | 'active'
 

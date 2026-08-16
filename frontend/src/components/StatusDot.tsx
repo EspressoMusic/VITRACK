@@ -8,6 +8,13 @@ const STATUS_VAR: Record<CoverageStatus, string> = {
   critical: 'var(--status-critical)',
 }
 
+const STATUS_SOFT_VAR: Record<CoverageStatus, string> = {
+  good: 'var(--status-good-soft)',
+  warning: 'var(--status-warning-soft)',
+  serious: 'var(--status-serious-soft)',
+  critical: 'var(--status-critical-soft)',
+}
+
 export function StatusDot({ status, showLabel = false }: { status: CoverageStatus; showLabel?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -25,4 +32,4 @@ export function StatusDot({ status, showLabel = false }: { status: CoverageStatu
   )
 }
 
-export { STATUS_VAR }
+export { STATUS_VAR, STATUS_SOFT_VAR }

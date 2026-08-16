@@ -34,7 +34,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
         <div className="relative flex items-center justify-center py-1.5">
           <button
             onClick={() => onChange('camera')}
-            className="absolute flex h-20 w-20 items-center justify-center rounded-full transition"
+            className="absolute flex h-16 w-16 items-center justify-center rounded-full transition"
             style={{
               top: '-40px',
               left: '50%',
@@ -50,7 +50,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             <img
               src="/icons/camera.png"
               alt=""
-              className="h-14 w-14 transition-transform"
+              className="h-11 w-11 transition-transform"
               style={{ transform: cameraActive ? 'scale(1.15)' : 'scale(1)' }}
             />
           </button>

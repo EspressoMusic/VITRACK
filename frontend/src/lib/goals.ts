@@ -33,6 +33,14 @@ function round0(n: number): number {
  * not a clinical calculation.
  */
 export function computeNutrientGoals(profile: OnboardingProfile): NutrientAmounts {
+  if (profile.sex === 'unspecified') {
+    const male = computeNutrientGoals({ ...profile, sex: 'male' })
+    const female = computeNutrientGoals({ ...profile, sex: 'female' })
+    const blended = {} as NutrientAmounts
+    for (const n of NUTRIENTS) blended[n.id] = round1((male[n.id] + female[n.id]) / 2)
+    return blended
+  }
+
   const goals = {} as NutrientAmounts
   for (const n of NUTRIENTS) goals[n.id] = n.rda
 
