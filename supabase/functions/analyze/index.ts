@@ -3,7 +3,9 @@
 // same OpenAI vision analysis can run as a Supabase Edge Function instead
 // of a separately-hosted Express server. No auth required, matching the
 // app's guest/local-only mode (see README).
-import OpenAI from 'npm:openai@4.104.0'
+// Calls the OpenAI REST API directly via fetch rather than the `openai`
+// npm package, which does not reliably attach the Authorization header
+// under the Deno edge runtime.
 
 const NUTRIENT_IDS = [
   'vitaminA', 'vitaminC', 'vitaminD', 'vitaminE', 'vitaminK',
@@ -85,25 +87,37 @@ async function analyzeFoodImage(imageDataUrl: string) {
     throw Object.assign(new Error('Image must be a base64 data URL (jpeg, png, webp, or gif).'), { status: 400 })
   }
 
-  const client = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') })
-  const response = await client.chat.completions.create({
-    model: MODEL,
-    max_tokens: 1024,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Analyze this meal photo and report the foods and their estimated vitamin/mineral content.' },
-          { type: 'image_url', image_url: { url: imageDataUrl } },
-        ],
-      },
-    ],
-    tools: [REPORT_TOOL],
-    tool_choice: { type: 'function', function: { name: 'report_nutrition' } },
+  const apiKey = Deno.env.get('OPENAI_API_KEY')?.split(/\s/)[0]?.replace(/^['"]|['"]$/g, '')
+  const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1024,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Analyze this meal photo and report the foods and their estimated vitamin/mineral content.' },
+            { type: 'image_url', image_url: { url: imageDataUrl } },
+          ],
+        },
+      ],
+      tools: [REPORT_TOOL],
+      tool_choice: { type: 'function', function: { name: 'report_nutrition' } },
+    }),
   })
 
-  const toolCall = response.choices[0]?.message?.tool_calls?.[0]
+  const response = await openaiRes.json()
+  if (!openaiRes.ok) {
+    throw Object.assign(new Error(response.error?.message || 'OpenAI request failed.'), { status: openaiRes.status })
+  }
+
+  const toolCall = response.choices?.[0]?.message?.tool_calls?.[0]
   if (!toolCall) {
     throw Object.assign(new Error('The model did not return a structured nutrition estimate.'), { status: 502 })
   }
