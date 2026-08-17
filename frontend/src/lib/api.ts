@@ -9,8 +9,11 @@ export interface AnalyzeResult {
 
 export class AnalyzeError extends Error {}
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const ANALYZE_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/analyze` : '/api/analyze'
+
 export async function analyzeFoodImage(imageDataUrl: string): Promise<AnalyzeResult> {
-  const res = await fetch('/api/analyze', {
+  const res = await fetch(ANALYZE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ image: imageDataUrl }),

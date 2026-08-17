@@ -8,6 +8,7 @@ import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
+import { MedalIcon } from './icons'
 
 const WINDOW_DAYS = 7
 
@@ -100,9 +101,10 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
           {deficient.length === 0 ? (
             <p
-              className="rounded-lg px-3 py-2 text-sm"
-              style={{ backgroundColor: 'var(--status-good-soft)', color: 'var(--text-primary)' }}
+              className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
+              style={{ backgroundColor: '#f6e4bb', color: '#8a6414', border: '1px solid #d9a441' }}
             >
+              <MedalIcon className="h-5 w-5" style={{ color: '#c99a2e' }} />
               Nice work — no deficiencies.
             </p>
           ) : (

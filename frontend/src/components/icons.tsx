@@ -98,6 +98,25 @@ export function StarIcon({ className }: IconProps) {
   )
 }
 
+export function ClockIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  )
+}
+
+export function MedalIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="12" cy="15" r="5.5" />
+      <path d="M9.5 15.2l1.6 1.6 3.2-3.4" />
+      <path d="M8.2 10.2 5.5 3.5h3.4l2 5M15.8 10.2l2.7-6.7h-3.4l-2 5" />
+    </svg>
+  )
+}
+
 export function TrashIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
