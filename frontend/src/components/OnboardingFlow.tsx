@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode, type WheelEvent } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { ActivityLevel, DietType, NutrientAmounts, NutrientId, OnboardingProfile, Sex } from '../types'
 import { computeNutrientGoals } from '../lib/goals'
 import { completeOnboarding } from '../lib/profile'
@@ -172,7 +172,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       </main>
 
       {step !== 'calculating' && (
-        <div className="px-6 pb-4 pt-2">
+        <div className="px-6 pb-10 pt-2">
           <button
             key={continuePulse}
             onClick={() => {
@@ -183,7 +183,10 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
             }}
             disabled={!canContinue}
             className={`w-full rounded-full py-3.5 text-base font-semibold text-white transition ${continuePulse > 0 ? 'tap-effect' : ''}`}
-            style={{ backgroundColor: canContinue ? 'var(--accent-strong)' : '#e8d9a6' }}
+            style={{
+              backgroundColor: canContinue ? 'var(--accent-strong)' : '#e8d9a6',
+              border: '3px solid #000000',
+            }}
           >
             {step === 'welcome' ? "Let's go" : step === 'summary' ? 'See my plan' : 'Continue'}
           </button>
@@ -209,7 +212,7 @@ function StepCard({
       className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-5 py-3 text-center"
       style={{
         backgroundColor: '#e5c184',
-        border: '3px solid var(--accent-strong)',
+        border: '3px solid #000000',
         boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
       }}
     >
@@ -232,43 +235,88 @@ function StepCard({
   )
 }
 
-function NumberField({
+const WHEEL_ITEM_H = 42
+const WHEEL_VISIBLE_ROWS = 3
+
+function WheelPicker({
   value,
   onChange,
   unit,
   min,
   max,
+  initial,
 }: {
   value: string
   onChange: (v: string) => void
   unit: string
   min: number
   max: number
+  initial: number
 }) {
-  function handleWheel(e: WheelEvent<HTMLInputElement>) {
-    e.preventDefault()
-    const current = Math.round(Number(value) || min)
-    const next = Math.min(max, Math.max(min, current + (e.deltaY < 0 ? 1 : -1)))
-    onChange(String(next))
+  const numbers = useState(() => Array.from({ length: max - min + 1 }, (_, i) => min + i))[0]
+  const parsed = value === '' ? NaN : Math.round(Number(value))
+  const startValue = Math.min(max, Math.max(min, Number.isFinite(parsed) ? parsed : initial))
+  const startIndex = startValue - min
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [highlightIdx, setHighlightIdx] = useState(startIndex)
+  const settleTimer = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.scrollTop = startIndex * WHEEL_ITEM_H
+    if (value === '') onChange(String(numbers[startIndex]))
+    // Only run once, on mount — later updates come from the user's own scrolling.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function commit(idx: number) {
+    const next = numbers[idx]
+    if (String(next) !== value) onChange(String(next))
+  }
+
+  function handleScroll() {
+    const el = containerRef.current
+    if (!el) return
+    const idx = Math.min(numbers.length - 1, Math.max(0, Math.round(el.scrollTop / WHEEL_ITEM_H)))
+    setHighlightIdx(idx)
+    if (settleTimer.current) window.clearTimeout(settleTimer.current)
+    settleTimer.current = window.setTimeout(() => {
+      el.scrollTo({ top: idx * WHEEL_ITEM_H, behavior: 'smooth' })
+      commit(idx)
+    }, 120)
   }
 
   return (
-    <div
-      className="flex items-center justify-center gap-2 rounded-2xl px-5 py-4"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border-strong)' }}
-    >
-      <input
-        type="number"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onWheel={handleWheel}
-        placeholder="—"
-        min={min}
-        max={max}
-        className="w-24 bg-transparent text-center text-3xl font-semibold outline-none"
-        style={{ color: 'var(--text-primary)' }}
-      />
+    <div className="flex items-center justify-center gap-3">
+      <div className="relative" style={{ height: WHEEL_ITEM_H * WHEEL_VISIBLE_ROWS, width: 108 }}>
+        <div
+          className="pointer-events-none absolute inset-x-0 rounded-xl"
+          style={{
+            top: WHEEL_ITEM_H,
+            height: WHEEL_ITEM_H,
+            backgroundColor: 'var(--accent-soft)',
+            border: '1.5px solid var(--accent-strong)',
+          }}
+        />
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="wheel-scroll relative z-10 h-full snap-y snap-mandatory overflow-y-scroll"
+        >
+          <div style={{ height: WHEEL_ITEM_H }} />
+          {numbers.map((n, i) => (
+            <div
+              key={n}
+              className="flex snap-center items-center justify-center text-2xl font-semibold transition-opacity"
+              style={{ height: WHEEL_ITEM_H, color: 'var(--text-primary)', opacity: i === highlightIdx ? 1 : 0.35 }}
+            >
+              {n}
+            </div>
+          ))}
+          <div style={{ height: WHEEL_ITEM_H }} />
+        </div>
+      </div>
       <span className="text-base font-medium" style={{ color: 'var(--text-muted)' }}>
         {unit}
       </span>
@@ -281,11 +329,13 @@ function ChoiceButton({
   onClick,
   label,
   description,
+  compact,
 }: {
   selected: boolean
   onClick: () => void
   label: string
   description?: string
+  compact?: boolean
 }) {
   const [pulse, setPulse] = useState(0)
   return (
@@ -296,17 +346,20 @@ function ChoiceButton({
         setPulse((p) => p + 1)
         onClick()
       }}
-      className={`flex flex-col items-start gap-0 rounded-2xl px-3.5 py-1 text-left transition ${pulse > 0 ? 'tap-effect' : ''}`}
+      className={`flex flex-col items-start gap-0.5 rounded-2xl text-left transition ${compact ? 'px-3.5 py-2' : 'px-4 py-1.5'} ${pulse > 0 ? 'tap-effect' : ''}`}
       style={{
         backgroundColor: selected ? 'var(--accent-soft)' : 'var(--surface-cream)',
         border: selected ? '2px solid var(--accent-strong)' : '1px solid var(--border-strong)',
       }}
     >
-      <span className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+      <span
+        className={`font-semibold leading-tight ${compact ? 'text-[13px]' : 'text-sm'}`}
+        style={{ color: 'var(--text-primary)' }}
+      >
         {label}
       </span>
       {description && (
-        <span className="text-[11px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
+        <span className={`leading-tight ${compact ? 'text-[11px]' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
           {description}
         </span>
       )}
@@ -337,7 +390,7 @@ function AgeStep({ value, onChange }: { value: string; onChange: (v: string) => 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard icon={<CakeIcon className="h-5 w-5" />} title="How old are you?" subtitle="Your vitamin needs age too, just less gracefully.">
-        <NumberField value={value} onChange={onChange} unit="years" min={18} max={100} />
+        <WheelPicker value={value} onChange={onChange} unit="years" min={18} max={100} initial={25} />
       </StepCard>
     </div>
   )
@@ -375,7 +428,7 @@ function WeightStep({ value, onChange }: { value: string; onChange: (v: string) 
         title="What's your weight?"
         subtitle="Bigger frame, bigger nutrient budget."
       >
-        <NumberField value={value} onChange={onChange} unit="kg" min={30} max={250} />
+        <WheelPicker value={value} onChange={onChange} unit="kg" min={30} max={250} initial={70} />
       </StepCard>
     </div>
   )
@@ -389,7 +442,7 @@ function HeightStep({ value, onChange }: { value: string; onChange: (v: string) 
         title="And your height?"
         subtitle="Tall or short, we still crunch the numbers."
       >
-        <NumberField value={value} onChange={onChange} unit="cm" min={100} max={230} />
+        <WheelPicker value={value} onChange={onChange} unit="cm" min={100} max={230} initial={170} />
       </StepCard>
     </div>
   )
@@ -427,7 +480,7 @@ function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: D
         title="What's your diet?"
         subtitle="Salad fans, mind the B12."
       >
-        <div className="flex w-full flex-col gap-1">
+        <div className="flex w-full flex-col gap-1.5">
           {DIET_OPTIONS.map((opt) => (
             <ChoiceButton
               key={opt.id}
@@ -435,6 +488,7 @@ function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: D
               onClick={() => onChange(opt.id)}
               label={opt.label}
               description={opt.desc}
+              compact
             />
           ))}
         </div>
@@ -483,7 +537,7 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <div
-        className="flex w-full max-w-xs flex-col items-center gap-2.5 rounded-3xl px-5 py-5 text-center"
+        className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-4 py-3 text-center"
         style={{
           backgroundColor: '#e5c184',
           border: '3px solid var(--accent-strong)',
@@ -491,10 +545,10 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
         }}
       >
         <div>
-          <h2 className="mb-1 text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
             Your daily targets are ready
           </h2>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Based on your answers — here's what your body needs each day, and why it matters.
           </p>
         </div>
@@ -504,34 +558,34 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
             {PREVIEW_NUTRIENTS.map((id) => (
               <div
                 key={id}
-                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left"
+                className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-left"
                 style={{ backgroundColor: 'var(--accent-soft)', border: '1px solid var(--border-strong)' }}
               >
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {NUTRIENT_MAP[id].name}
                   </div>
-                  <div className="truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                     {NUTRIENT_BENEFITS[id]}
                   </div>
                 </div>
-                <div className="shrink-0 text-sm font-bold" style={{ color: 'var(--accent-strong)' }}>
+                <div className="shrink-0 text-xs font-bold" style={{ color: 'var(--accent-strong)' }}>
                   {goals[id]}
                   {NUTRIENT_MAP[id].unit}
                 </div>
               </div>
             ))}
             <div
-              className="flex items-center justify-center gap-1.5 rounded-xl px-3 py-2"
+              className="flex items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5"
               style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #7a4c14' }}
             >
-              <LockIcon className="h-4 w-4 shrink-0 text-white" />
-              <span className="text-xs font-bold text-white">+{LOCKED_COUNT} more targets unlock next</span>
+              <LockIcon className="h-3.5 w-3.5 shrink-0 text-white" />
+              <span className="text-[11px] font-bold text-white">+{LOCKED_COUNT} more targets unlock next</span>
             </div>
           </div>
         )}
 
-        <p className="px-2 text-xs" style={{ color: '#000000' }}>
+        <p className="px-2 text-[11px]" style={{ color: '#000000' }}>
           A rough estimate, not medical advice — check a doctor for anything specific.
         </p>
       </div>

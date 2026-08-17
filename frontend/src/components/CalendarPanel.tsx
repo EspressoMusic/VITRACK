@@ -71,34 +71,34 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const selectedLabel = selectedDate === today ? `Today · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
 
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4 pt-2 text-center">
+    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 text-center">
       <div
-        className="mx-auto w-[78%] shrink-0 rounded-3xl p-3"
-        style={{ backgroundColor: '#e5c184', border: '3px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        className="mx-auto w-[92%] shrink-0 rounded-3xl p-2.5"
+        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <div className="mb-2.5 flex items-center justify-between">
+        <div className="mb-1.5 flex items-center justify-between">
           <button
             onClick={() => changeMonth(-1)}
             aria-label="Previous month"
-            className="flex h-7 w-7 items-center justify-center text-base"
+            className="flex h-6 w-6 items-center justify-center text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
             ‹
           </button>
-          <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {monthLabel(cursor.year, cursor.month)}
           </span>
           <button
             onClick={() => changeMonth(1)}
             aria-label="Next month"
-            className="flex h-7 w-7 items-center justify-center text-base"
+            className="flex h-6 w-6 items-center justify-center text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
             ›
           </button>
         </div>
 
-        <div className={`mb-1.5 grid ${GRID_COLS} gap-1 text-center text-xs font-medium`}>
+        <div className={`mb-1 grid ${GRID_COLS} gap-0.5 text-center text-[10px] font-medium`}>
           {WEEKDAY_NAMES.map((w) => (
             <span key={w} style={{ color: '#000000' }}>
               {w}
@@ -106,9 +106,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
           ))}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           {weeks.map((week) => (
-            <div key={toLocalDateKey(week[0])} className={`grid ${GRID_COLS} items-center gap-1`}>
+            <div key={toLocalDateKey(week[0])} className={`grid ${GRID_COLS} items-center gap-0.5`}>
               {week.map((date) => {
                 const key = toLocalDateKey(date)
                 const inMonth = date.getMonth() === cursor.month
@@ -126,11 +126,11 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
                   <button
                     key={key}
                     onClick={() => setSelectedDate(key)}
-                    className="flex aspect-square flex-col items-center justify-center rounded-lg text-sm font-semibold transition"
+                    className="flex aspect-square flex-col items-center justify-center rounded-lg text-xs font-semibold transition"
                     style={{
                       color: status ? '#ffffff' : inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                       background,
-                      border: isSelected ? '5px solid #000000' : '4px solid #000000',
+                      border: isSelected ? '4px solid #000000' : '3px solid #000000',
                       opacity: inMonth ? 1 : 0.4,
                     }}
                   >
@@ -144,41 +144,41 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
       </div>
 
       <div
-        className="mx-auto mt-3 flex w-[78%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl p-4"
-        style={{ backgroundColor: '#e5c184', border: '3px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        className="mx-auto mt-2 flex w-[92%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl p-3"
+        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <h2 className="mb-2 shrink-0 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <h2 className="mb-1 shrink-0 text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
           {selectedLabel}
         </h2>
 
         {selectedMeals.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             No meals logged this day.
           </p>
         ) : (
-          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
             {selectedMeals.map((meal) => (
               <button
                 key={meal.id}
                 onClick={() => setSelectedMeal(meal)}
-                className="flex items-center gap-2 rounded-lg p-1.5 text-left"
+                className="flex items-center gap-1.5 rounded-lg p-1 text-left"
                 style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
               >
                 <img
                   src={meal.imageDataUrl}
                   alt=""
-                  className="h-7 w-7 shrink-0 rounded-md object-cover"
+                  className="h-6 w-6 shrink-0 rounded-md object-cover"
                   style={{ border: '1px solid var(--border)' }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
                     {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : 'Meal'}
                   </p>
-                  <p className="truncate text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
                     {topNutrientLabel(meal.nutrients) ?? 'No standout nutrients'}
                   </p>
                 </div>
-                <span className="shrink-0 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
                   {formatTime(meal.createdAt)}
                 </span>
               </button>

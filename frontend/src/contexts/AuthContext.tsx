@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { setCurrentUserId } from '../lib/db'
 import { syncLocalMealsToCloud } from '../lib/cloudDb'
+import { syncProfileWithCloud } from '../lib/cloudProfile'
 
 interface AuthContextValue {
   user: User | null
@@ -32,6 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUserId(session?.user?.id ?? null)
       if (event === 'SIGNED_IN' && session?.user) {
         syncLocalMealsToCloud().catch((err) => console.error('Sync to cloud failed:', err))
+        syncProfileWithCloud(session.user.id)
+          .then((restored) => {
+            if (restored) window.location.reload()
+          })
+          .catch((err) => console.error('Profile sync failed:', err))
       }
     })
 

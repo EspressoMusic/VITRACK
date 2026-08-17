@@ -8,7 +8,6 @@ import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
-import { MedalIcon } from './icons'
 
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const [meals, setMeals] = useState<MealEntry[]>([])
@@ -16,6 +15,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const [missingOpen, setMissingOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiFired = useRef(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getAllMeals().then(setMeals)
@@ -26,6 +26,45 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
 
+  // Slowly auto-scrolls the nutrient list downward so the user can see everything without
+  // manually scrolling, pausing at the bottom before looping back to the top.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    let frameId: number
+    let pauseTimeout: ReturnType<typeof setTimeout> | undefined
+    const SPEED = 15 // px per second
+
+    let lastTime = performance.now()
+    function step(time: number) {
+      const dt = (time - lastTime) / 1000
+      lastTime = time
+      if (el) {
+        const maxScroll = el.scrollHeight - el.clientHeight
+        if (maxScroll > 0) {
+          if (el.scrollTop >= maxScroll - 0.5) {
+            el.scrollTop = maxScroll
+            pauseTimeout = setTimeout(() => {
+              if (el) el.scrollTop = 0
+              lastTime = performance.now()
+              frameId = requestAnimationFrame(step)
+            }, 1500)
+            return
+          }
+          el.scrollTop = Math.min(maxScroll, el.scrollTop + SPEED * dt)
+        }
+      }
+      frameId = requestAnimationFrame(step)
+    }
+    frameId = requestAnimationFrame(step)
+
+    return () => {
+      cancelAnimationFrame(frameId)
+      if (pauseTimeout) clearTimeout(pauseTimeout)
+    }
+  }, [ranked])
+
   useEffect(() => {
     if (!confettiFired.current && meals.length > 0 && weeklyCompletion === 100) {
       confettiFired.current = true
@@ -35,12 +74,12 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   if (meals.length === 0) {
     return (
-      <div className="mx-auto flex max-w-[75%] flex-col items-center gap-3 pb-16 text-center">
+      <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
         <WeeklyGoalGlass percent={0} />
-        <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
+        <p className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
           Nothing here yet
         </p>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Snap a meal to see how you're doing.
         </p>
       </div>
@@ -50,21 +89,18 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4">
       {showConfetti && <ConfettiBurst />}
-      <div className="mx-auto flex shrink-0 flex-col items-center gap-2 pb-2 text-center">
-        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Weekly completion
-        </span>
+      <div className="mx-auto mb-3 flex shrink-0 flex-col items-center text-center">
         <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
       </div>
 
       <div
         className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl"
-        style={{ backgroundColor: '#e5c184', border: '3px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
+        <div ref={scrollRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
           {loggedDayCount < 3 && (
             <p
-              className="rounded-lg px-3 py-2 text-xs"
+              className="rounded-lg px-2.5 py-1.5 text-[11px]"
               style={{ backgroundColor: 'var(--status-warning-soft)', color: 'var(--text-primary)' }}
             >
               Log a few more meals to get more reliable deficiency estimates.
@@ -73,18 +109,17 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
           {deficient.length === 0 ? (
             <p
-              className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
+              className="flex items-center justify-center whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-semibold"
               style={{ backgroundColor: '#f6e4bb', color: '#8a6414', border: '1px solid #d9a441' }}
             >
-              <MedalIcon className="h-5 w-5" style={{ color: '#c99a2e' }} />
-              Nice work — no deficiencies.
+              Nice work! no deficiencies
             </p>
           ) : (
             <div className="flex flex-col">
-              <h2 className="mb-1 text-center text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="mb-1 text-center text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Needs attention
               </h2>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {deficient.map((d) => (
                   <NutrientRow
                     key={d.id}
@@ -99,10 +134,10 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
           {onTrack.length > 0 && (
             <div>
-              <h2 className="mb-1 text-center text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="mb-1 text-center text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                 On track
               </h2>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {onTrack.map((r) => (
                   <NutrientRow
                     key={r.id}

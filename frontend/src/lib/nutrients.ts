@@ -9,6 +9,8 @@ export interface NutrientDef {
   rda: number
   /** Natural, whole-food sources rich in this nutrient. */
   foodSources: string[]
+  /** Short, plain-language explanation of why this nutrient matters for the body. */
+  benefit: string
 }
 
 export const NUTRIENTS: NutrientDef[] = [
@@ -22,6 +24,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Carrots', 'Sweet potatoes', 'Spinach', 'Kale', 'Eggs', 'Mango',
       'Butternut squash', 'Cantaloupe', 'Apricots', 'Red bell peppers', 'Liver', 'Butter',
     ],
+    benefit: 'Supports healthy vision, immune defense, and skin repair.',
   },
   {
     id: 'vitaminC',
@@ -33,6 +36,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Oranges', 'Bell peppers', 'Strawberries', 'Broccoli', 'Kiwi',
       'Brussels sprouts', 'Grapefruit', 'Papaya', 'Pineapple', 'Tomatoes', 'Cauliflower', 'Guava',
     ],
+    benefit: 'Boosts immune function and helps your body absorb iron and repair tissue.',
   },
   {
     id: 'vitaminD',
@@ -44,6 +48,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Sunlight exposure', 'Salmon', 'Mackerel', 'Egg yolks', 'Mushrooms',
       'Sardines', 'Tuna', 'Fortified milk', 'Fortified orange juice', 'Cod liver oil', 'Fortified cereal',
     ],
+    benefit: 'Helps your body absorb calcium for strong bones and supports immune health.',
   },
   {
     id: 'vitaminE',
@@ -55,6 +60,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Almonds', 'Sunflower seeds', 'Spinach', 'Avocado',
       'Hazelnuts', 'Peanut butter', 'Olive oil', 'Butternut squash', 'Kiwi', 'Broccoli',
     ],
+    benefit: 'An antioxidant that protects your cells from damage and supports immune function.',
   },
   {
     id: 'vitaminK',
@@ -66,6 +72,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Kale', 'Spinach', 'Broccoli', 'Brussels sprouts',
       'Cabbage', 'Asparagus', 'Green beans', 'Lettuce', 'Parsley', 'Olive oil',
     ],
+    benefit: 'Essential for normal blood clotting and helps keep bones strong.',
   },
   {
     id: 'vitaminB1',
@@ -77,6 +84,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Whole grains', 'Pork', 'Legumes', 'Sunflower seeds',
       'Brown rice', 'Oats', 'Trout', 'Green peas', 'Flax seeds', 'Macadamia nuts',
     ],
+    benefit: 'Helps convert food into energy and supports healthy nerve function.',
   },
   {
     id: 'vitaminB2',
@@ -88,6 +96,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Eggs', 'Milk', 'Almonds', 'Leafy greens',
       'Yogurt', 'Mushrooms', 'Beef', 'Quinoa', 'Fortified cereal', 'Spinach',
     ],
+    benefit: 'Helps your body produce energy and supports healthy skin and eyes.',
   },
   {
     id: 'vitaminB3',
@@ -99,6 +108,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Chicken', 'Tuna', 'Peanuts', 'Whole grains',
       'Turkey', 'Salmon', 'Mushrooms', 'Brown rice', 'Avocado', 'Sunflower seeds',
     ],
+    benefit: 'Supports energy metabolism and helps keep skin, nerves, and digestion healthy.',
   },
   {
     id: 'vitaminB6',
@@ -110,6 +120,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Chickpeas', 'Poultry', 'Potatoes', 'Bananas',
       'Salmon', 'Beef liver', 'Fortified cereal', 'Spinach', 'Sunflower seeds', 'Pistachios',
     ],
+    benefit: 'Supports brain development, mood regulation, and a healthy immune system.',
   },
   {
     id: 'vitaminB9',
@@ -121,6 +132,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Leafy greens', 'Beans', 'Lentils', 'Avocado',
       'Asparagus', 'Broccoli', 'Peanuts', 'Oranges', 'Fortified bread', 'Brussels sprouts',
     ],
+    benefit: 'Important for cell growth and DNA production, especially during pregnancy.',
   },
   {
     id: 'vitaminB12',
@@ -132,6 +144,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Fish', 'Meat', 'Eggs', 'Dairy', 'Fortified cereal',
       'Clams', 'Salmon', 'Tuna', 'Beef liver', 'Yogurt', 'Nutritional yeast',
     ],
+    benefit: 'Keeps nerve cells healthy and helps make red blood cells and DNA.',
   },
   {
     id: 'calcium',
@@ -143,6 +156,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Dairy', 'Tofu', 'Leafy greens', 'Almonds',
       'Yogurt', 'Cheese', 'Sardines', 'Fortified plant milk', 'Kale', 'Chia seeds',
     ],
+    benefit: 'Builds and maintains strong bones and teeth, and supports muscle and nerve function.',
   },
   {
     id: 'iron',
@@ -154,6 +168,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Red meat', 'Lentils', 'Spinach', 'Pumpkin seeds',
       'Chickpeas', 'Tofu', 'Quinoa', 'Dark chocolate', 'Cashews', 'Beef liver',
     ],
+    benefit: 'Helps red blood cells carry oxygen through the body and prevents fatigue.',
   },
   {
     id: 'magnesium',
@@ -165,6 +180,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Nuts', 'Seeds', 'Whole grains', 'Dark chocolate',
       'Spinach', 'Black beans', 'Avocado', 'Almonds', 'Cashews', 'Brown rice',
     ],
+    benefit: 'Supports muscle and nerve function, energy production, and healthy bones.',
   },
   {
     id: 'zinc',
@@ -176,6 +192,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Meat', 'Shellfish', 'Legumes', 'Seeds',
       'Oysters', 'Cashews', 'Chickpeas', 'Pumpkin seeds', 'Yogurt', 'Oats',
     ],
+    benefit: 'Supports immune function, wound healing, and helps your body process nutrients.',
   },
   {
     id: 'potassium',
@@ -187,6 +204,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Bananas', 'Potatoes', 'Beans', 'Avocado',
       'Sweet potatoes', 'Spinach', 'Oranges', 'Coconut water', 'Salmon', 'Yogurt',
     ],
+    benefit: 'Helps regulate fluid balance, muscle contractions, and a healthy heartbeat.',
   },
 ]
 

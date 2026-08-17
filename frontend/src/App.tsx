@@ -9,7 +9,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
 import { ThankYouPage } from './components/ThankYouPage'
-import { hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
+import { activateSubscription, hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
 import { getAllMeals } from './lib/db'
 import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
@@ -43,14 +43,14 @@ function AppShell() {
         <button
           onClick={() => setSettingsOpen(true)}
           aria-label="Open settings"
-          className="flex h-9 w-9 items-center justify-center transition"
+          className="flex h-11 w-11 items-center justify-center transition"
           style={{ pointerEvents: 'auto' }}
         >
-          <img src="/icons/settings.png" alt="" className="h-7 w-7" />
+          <img src="/icons/settings.png" alt="" className="h-9 w-9 object-contain" />
         </button>
       </div>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
           {tab === 'camera' && <CameraPanel onLogged={bumpRefresh} />}
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
@@ -67,54 +67,49 @@ function AppShell() {
   )
 }
 
+/** Dev-only paywall bypass for local testing: visit `?unlock=1`. Compiled out of production builds. */
+function shouldDevUnlock(): boolean {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get('unlock') === '1'
+}
+
 export default function App() {
   const [onboarded, setOnboarded] = useState(hasOnboarded)
-  const [subscribed, setSubscribed] = useState(isSubscribed)
+  const [subscribed, setSubscribed] = useState(() => {
+    if (shouldDevUnlock()) {
+      activateSubscription('yearly')
+      return true
+    }
+    return isSubscribed()
+  })
   const [showThankYou, setShowThankYou] = useState(() => window.location.hash === '#thank-you')
 
   useEffect(() => {
     loadPersistedGoals()
   }, [])
 
-  if (showThankYou) {
-    return (
-      <ThemeProvider>
-        <ThankYouPage
-          onContinue={() => {
-            window.location.hash = ''
-            setShowThankYou(false)
-          }}
-        />
-      </ThemeProvider>
-    )
-  }
-
-  if (!onboarded) {
-    return (
-      <ThemeProvider>
-        <OnboardingFlow onComplete={() => setOnboarded(true)} />
-      </ThemeProvider>
-    )
-  }
-
-  if (!subscribed) {
-    return (
-      <ThemeProvider>
-        <PaywallPanel
-          onSubscribed={() => {
-            window.location.hash = 'thank-you'
-            setSubscribed(true)
-            setShowThankYou(true)
-          }}
-        />
-      </ThemeProvider>
-    )
-  }
-
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppShell />
+        {showThankYou ? (
+          <ThankYouPage
+            onContinue={() => {
+              window.location.hash = ''
+              setShowThankYou(false)
+            }}
+          />
+        ) : !onboarded ? (
+          <OnboardingFlow onComplete={() => setOnboarded(true)} />
+        ) : !subscribed ? (
+          <PaywallPanel
+            onSubscribed={() => {
+              window.location.hash = 'thank-you'
+              setSubscribed(true)
+              setShowThankYou(true)
+            }}
+          />
+        ) : (
+          <AppShell />
+        )}
       </AuthProvider>
     </ThemeProvider>
   )

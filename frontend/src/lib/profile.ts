@@ -55,3 +55,22 @@ export function activateSubscription(plan: BillingPlan): void {
   localStorage.setItem(SUBSCRIBED_KEY, 'true')
   localStorage.setItem(PLAN_KEY, plan)
 }
+
+/** Applies a subscription/goals snapshot pulled from the cloud (e.g. after signing in on a new device). */
+export function applyCloudProfile(data: {
+  goals?: NutrientAmounts | null
+  profile?: OnboardingProfile | null
+  subscribed?: boolean | null
+  plan?: BillingPlan | null
+}): void {
+  if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile))
+  if (data.goals) {
+    localStorage.setItem(GOALS_KEY, JSON.stringify(data.goals))
+    setActiveGoals(data.goals)
+  }
+  if (data.subscribed) {
+    localStorage.setItem(ONBOARDED_KEY, 'true')
+    localStorage.setItem(SUBSCRIBED_KEY, 'true')
+  }
+  if (data.plan) localStorage.setItem(PLAN_KEY, data.plan)
+}

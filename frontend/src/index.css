@@ -150,6 +150,21 @@ button:active {
   animation: spin-slow 1.6s linear infinite;
 }
 
+@keyframes status-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+.status-pulse {
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+
 @keyframes tap-pulse {
   0% {
     transform: scale(1);
@@ -296,6 +311,15 @@ button:active {
   width: 8px;
 }
 .thin-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--border-strong);
+  background-color: #e8863a;
   border-radius: 9999px;
+}
+
+/* Number wheel picker (onboarding) — scrollable, but no visible scrollbar */
+.wheel-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.wheel-scroll::-webkit-scrollbar {
+  display: none;
 }

@@ -7,35 +7,42 @@ export function NutrientBar({
   amount,
   showName = true,
   showStatusLabel = false,
+  onClick,
 }: {
   id: NutrientId
   amount: number
   showName?: boolean
   showStatusLabel?: boolean
+  onClick?: () => void
 }) {
   const def = NUTRIENT_MAP[id]
   const percent = percentOfRda(id, amount)
   const status = coverageStatus(percent)
   const fillWidth = Math.min(100, percent)
+  const Container = onClick ? 'button' : 'div'
 
   return (
-    <div>
+    <Container
+      {...(onClick ? { type: 'button' as const, onClick } : {})}
+      className="w-full rounded-xl px-2.5 py-1.5 text-left"
+      style={{ backgroundColor: '#fdf6e8', boxShadow: '0 2px 6px rgba(26,26,25,0.14)' }}
+    >
       <div className="mb-1 flex items-baseline justify-between gap-2">
         {showName ? (
-          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+          <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
             {def.name}
           </span>
         ) : (
           <span />
         )}
-        <span className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <span className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
           <StatusDot status={status} showLabel={showStatusLabel} />
           {amount.toFixed(amount < 10 ? 1 : 0)}
           {def.unit} · {percent}%
         </span>
       </div>
       <div
-        className="h-2 w-full overflow-hidden rounded-full"
+        className="h-1 w-full overflow-hidden rounded-full"
         style={{ backgroundColor: 'var(--surface-2)' }}
         role="progressbar"
         aria-valuenow={percent}
@@ -48,6 +55,6 @@ export function NutrientBar({
           style={{ width: `${fillWidth}%`, backgroundColor: STATUS_VAR[status] }}
         />
       </div>
-    </div>
+    </Container>
   )
 }

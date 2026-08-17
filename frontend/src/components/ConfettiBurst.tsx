@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 const CONFETTI_COLORS = ['#f5b942', '#e8952c', '#ffd166', '#f28c28', '#ffcb69', '#d9a441']
 
-export function ConfettiBurst() {
+export function ConfettiBurst({ count = 28 }: { count?: number } = {}) {
   const [visible, setVisible] = useState(true)
   const pieces = useMemo(
     () =>
-      Array.from({ length: 28 }, (_, i) => ({
+      Array.from({ length: count }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         delay: Math.random() * 0.4,
@@ -15,7 +16,7 @@ export function ConfettiBurst() {
         width: 5 + Math.random() * 5,
         height: 8 + Math.random() * 6,
       })),
-    []
+    [count]
   )
 
   useEffect(() => {
@@ -24,7 +25,11 @@ export function ConfettiBurst() {
   }, [])
 
   if (!visible) return null
-  return (
+  // Portaled straight to <body> so this "fixed" layer is positioned against the real viewport,
+  // not against whichever ancestor panel happens to have an active CSS transform (e.g. the
+  // .panel-enter entrance animation), which would otherwise make it fall from mid-screen instead
+  // of the very top.
+  return createPortal(
     <div className="confetti-layer pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {pieces.map((p) => (
         <span
@@ -40,6 +45,7 @@ export function ConfettiBurst() {
           }}
         />
       ))}
-    </div>
+    </div>,
+    document.body
   )
 }

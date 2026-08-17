@@ -98,45 +98,45 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
         onClick={onClose}
       />
       <div
-        className="modal-card-enter relative z-10 flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-5"
+        className="modal-card-enter relative z-10 flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-3.5"
         style={{ backgroundColor: '#e5c184', border: '2px solid #1a1a19' }}
       >
-        <div className="relative mb-4 flex shrink-0 items-center justify-center">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <div className="relative mb-2 flex shrink-0 items-center justify-center">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
             Settings
           </h2>
           <button
             onClick={onClose}
             aria-label="Close settings"
-            className="absolute right-0 flex h-8 w-8 items-center justify-center rounded-full"
+            className="absolute right-0 flex h-6 w-6 items-center justify-center rounded-full"
             style={{ color: 'var(--text-primary)' }}
           >
-            <CloseIcon className="h-5 w-5" />
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-2 pr-1">
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pr-1">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Account
             </p>
 
             {user ? (
               <div className="flex flex-col gap-2">
                 <div
-                  className="flex items-center gap-2 rounded-xl p-3"
+                  className="flex items-center gap-2 rounded-xl p-2"
                   style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000' }}
                 >
                   <span style={{ color: 'var(--text-primary)' }}>
-                    <UserIcon className="h-5 w-5" />
+                    <UserIcon className="h-4 w-4" />
                   </span>
-                  <span className="truncate text-sm" style={{ color: 'var(--text-primary)' }}>
+                  <span className="truncate text-[13px]" style={{ color: 'var(--text-primary)' }}>
                     {user.email}
                   </span>
                 </div>
                 <button
                   onClick={() => signOut()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                   style={{ border: '3px solid #000000', color: 'var(--text-primary)' }}
                 >
                   <LogOutIcon className="h-4 w-4" /> Sign out
@@ -158,14 +158,14 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                     <div className="flex gap-2">
                       <button
                         onClick={() => setConfirmingDeleteAccount(false)}
-                        className="flex-1 rounded-xl py-2.5 text-sm font-medium"
+                        className="flex-1 rounded-xl py-2 text-[13px] font-medium"
                         style={{ border: '3px solid #000000', color: 'var(--text-primary)' }}
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleDeleteAccount}
-                        className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white"
+                        className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white"
                         style={{ backgroundColor: 'var(--status-critical)', border: '3px solid #000000' }}
                       >
                         Delete
@@ -178,7 +178,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               <div className="flex flex-col gap-2">
                 <button
                   onClick={handleSignIn}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                   style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
                 >
                   <UserIcon className="h-4 w-4" /> Sign in with Google
@@ -198,18 +198,18 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Subscription
             </p>
             <div
-              className="flex items-center justify-between rounded-xl p-3"
+              className="flex items-center justify-between rounded-xl p-2"
               style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000' }}
             >
               <div className="flex items-center gap-2">
                 <span style={{ color: isPro ? 'var(--accent)' : 'var(--text-primary)' }}>
-                  <StarIcon className="h-5 w-5" />
+                  <StarIcon className="h-4 w-4" />
                 </span>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
                   {isPro ? `Pro plan · ${plan === 'yearly' ? 'Yearly' : 'Monthly'}` : 'Free plan'}
                 </span>
               </div>
@@ -217,13 +217,13 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Health profile
             </p>
             {!confirmingRetake ? (
               <button
                 onClick={() => setConfirmingRetake(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                 style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000', color: 'var(--text-primary)' }}
               >
                 Retake questionnaire
@@ -236,14 +236,14 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 <div className="flex gap-2">
                   <button
                     onClick={() => setConfirmingRetake(false)}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-medium"
+                    className="flex-1 rounded-xl py-2 text-[13px] font-medium"
                     style={{ border: '3px solid #000000', color: 'var(--text-primary)' }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleRetakeQuestionnaire}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white"
+                    className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white"
                     style={{ backgroundColor: 'var(--accent-strong)', border: '3px solid #000000' }}
                   >
                     Retake
@@ -254,14 +254,14 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               App
             </p>
             <div className="flex flex-col gap-2">
               {installable && (
                 <button
                   onClick={handleInstall}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                   style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
                 >
                   <DownloadIcon className="h-4 w-4" /> Download app
@@ -269,7 +269,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               )}
               {!installable && isIOS() && !isStandalone() && (
                 <p
-                  className="rounded-xl p-3 text-xs"
+                  className="rounded-xl p-2 text-xs"
                   style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000', color: 'var(--text-primary)' }}
                 >
                   To install: tap the Share button in Safari, then "Add to Home Screen".
@@ -278,15 +278,15 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
 
               {isNotificationSupported() && (
                 <div
-                  className="flex items-center justify-between rounded-xl p-3"
+                  className="flex items-center justify-between rounded-xl p-2"
                   style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000' }}
                 >
                   <div className="flex items-center gap-2">
                     <span style={{ color: 'var(--text-primary)' }}>
-                      <BellIcon className="h-5 w-5" />
+                      <BellIcon className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      <p className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
                         Vitamin reminders
                       </p>
                       {notifPermission === 'denied' && (
@@ -320,14 +320,14 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Data
             </p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleLoadDemoData}
                 disabled={seedingDemo}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                 style={{
                   backgroundColor: 'var(--surface-cream)',
                   color: 'var(--text-primary)',
@@ -341,7 +341,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               {!confirmingClear ? (
                 <button
                   onClick={() => setConfirmingClear(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                   style={{ backgroundColor: 'var(--status-critical-soft)', border: '3px solid #000000', color: 'var(--status-critical)' }}
                 >
                   <TrashIcon className="h-4 w-4" /> Clear all data
@@ -354,14 +354,14 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                   <div className="flex gap-2">
                     <button
                       onClick={() => setConfirmingClear(false)}
-                      className="flex-1 rounded-xl py-2.5 text-sm font-medium"
+                      className="flex-1 rounded-xl py-2 text-[13px] font-medium"
                       style={{ border: '3px solid #000000', color: 'var(--text-primary)' }}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleClear}
-                      className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white"
+                      className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white"
                       style={{ backgroundColor: 'var(--status-critical)', border: '3px solid #000000' }}
                     >
                       Delete
@@ -373,20 +373,20 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Support
             </p>
             <div className="flex flex-col gap-2">
               <a
                 href="mailto:shilohdhd1@gmail.com"
-                className="flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-medium"
+                className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium"
                 style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
               >
                 Contact support
               </a>
               <button
                 onClick={() => setLegalOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                 style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
               >
                 <DocumentIcon className="h-4 w-4" /> Credits

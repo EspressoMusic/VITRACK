@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { analyzeFoodImage } from './analyzeFood.js'
+import { analyzeFoodImage, analyzeFoodText } from './analyzeFood.js'
+import { identifyFood } from './identifyFood.js'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -20,17 +21,42 @@ app.post('/api/analyze', async (req, res) => {
     })
   }
 
+  const { image, foodName, quantity } = req.body || {}
+
+  try {
+    let result
+    if (typeof image === 'string' && image.startsWith('data:image/')) {
+      result = await analyzeFoodImage(image)
+    } else if (typeof foodName === 'string' && foodName.trim()) {
+      result = await analyzeFoodText(foodName, quantity)
+    } else {
+      return res.status(400).json({ error: 'Request body must include an "image" data URL or a "foodName".' })
+    }
+    res.json(result)
+  } catch (err) {
+    console.error('Analysis failed:', err)
+    res.status(err.status || 500).json({ error: err.message || 'Analysis failed.' })
+  }
+})
+
+app.post('/api/identify-food', async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({
+      error: 'Server is missing OPENAI_API_KEY. Add it to backend/.env and restart the server.',
+    })
+  }
+
   const { image } = req.body || {}
   if (typeof image !== 'string' || !image.startsWith('data:image/')) {
     return res.status(400).json({ error: 'Request body must include an "image" data URL.' })
   }
 
   try {
-    const result = await analyzeFoodImage(image)
+    const result = await identifyFood(image)
     res.json(result)
   } catch (err) {
-    console.error('Analysis failed:', err)
-    res.status(err.status || 500).json({ error: err.message || 'Analysis failed.' })
+    console.error('Food identification failed:', err)
+    res.status(err.status || 500).json({ error: err.message || 'Food identification failed.' })
   }
 })
 
