@@ -206,7 +206,7 @@ function StepCard({
 }) {
   return (
     <div
-      className="flex w-full max-w-xs flex-col items-center gap-2 rounded-3xl px-5 py-4 text-center"
+      className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-5 py-3 text-center"
       style={{
         backgroundColor: '#e5c184',
         border: '3px solid var(--accent-strong)',
@@ -214,20 +214,20 @@ function StepCard({
       }}
     >
       <span
-        className="flex h-12 w-12 items-center justify-center rounded-full"
+        className="flex h-10 w-10 items-center justify-center rounded-full"
         style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}
       >
         {icon}
       </span>
-      <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+      <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
         {title}
       </h2>
       {subtitle && (
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
           {subtitle}
         </p>
       )}
-      <div className="mt-2 flex w-full flex-col items-center gap-2.5">{children}</div>
+      <div className="mt-1 flex w-full flex-col items-center gap-2">{children}</div>
     </div>
   )
 }
@@ -296,17 +296,17 @@ function ChoiceButton({
         setPulse((p) => p + 1)
         onClick()
       }}
-      className={`flex flex-col items-start gap-0.5 rounded-2xl px-4 py-1.5 text-left transition ${pulse > 0 ? 'tap-effect' : ''}`}
+      className={`flex flex-col items-start gap-0 rounded-2xl px-3.5 py-1 text-left transition ${pulse > 0 ? 'tap-effect' : ''}`}
       style={{
         backgroundColor: selected ? 'var(--accent-soft)' : 'var(--surface-cream)',
         border: selected ? '2px solid var(--accent-strong)' : '1px solid var(--border-strong)',
       }}
     >
-      <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+      <span className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
         {label}
       </span>
       {description && (
-        <span className="text-xs leading-tight" style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-[11px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
           {description}
         </span>
       )}
@@ -336,7 +336,7 @@ function WelcomeStep() {
 function AgeStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard icon={<CakeIcon className="h-6 w-6" />} title="How old are you?" subtitle="Your vitamin needs age too, just less gracefully.">
+      <StepCard icon={<CakeIcon className="h-5 w-5" />} title="How old are you?" subtitle="Your vitamin needs age too, just less gracefully.">
         <NumberField value={value} onChange={onChange} unit="years" min={18} max={100} />
       </StepCard>
     </div>
@@ -353,11 +353,11 @@ function SexStep({ value, onChange }: { value: Sex | null; onChange: (v: Sex) =>
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard
-        icon={<UserIcon className="h-6 w-6" />}
+        icon={<UserIcon className="h-5 w-5" />}
         title="Male or female?"
         subtitle="Biology plays favorites with a few nutrients."
       >
-        <div className="flex w-full flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1">
           {SEX_OPTIONS.map((opt) => (
             <ChoiceButton key={opt.id} selected={value === opt.id} onClick={() => onChange(opt.id)} label={opt.label} />
           ))}
@@ -371,7 +371,7 @@ function WeightStep({ value, onChange }: { value: string; onChange: (v: string) 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard
-        icon={<ScaleIcon className="h-6 w-6" />}
+        icon={<ScaleIcon className="h-5 w-5" />}
         title="What's your weight?"
         subtitle="Bigger frame, bigger nutrient budget."
       >
@@ -385,7 +385,7 @@ function HeightStep({ value, onChange }: { value: string; onChange: (v: string) 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard
-        icon={<RulerIcon className="h-6 w-6" />}
+        icon={<RulerIcon className="h-5 w-5" />}
         title="And your height?"
         subtitle="Tall or short, we still crunch the numbers."
       >
@@ -399,11 +399,11 @@ function ActivityStep({ value, onChange }: { value: ActivityLevel | null; onChan
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard
-        icon={<ActivityIcon className="h-6 w-6" />}
+        icon={<ActivityIcon className="h-5 w-5" />}
         title="How active are you?"
         subtitle="Couch or gym — we adjust."
       >
-        <div className="flex w-full flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1">
           {ACTIVITY_OPTIONS.map((opt) => (
             <ChoiceButton
               key={opt.id}
@@ -423,11 +423,11 @@ function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: D
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard
-        icon={<LeafIcon className="h-6 w-6" />}
+        icon={<LeafIcon className="h-5 w-5" />}
         title="What's your diet?"
         subtitle="Salad fans, mind the B12."
       >
-        <div className="flex w-full flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1">
           {DIET_OPTIONS.map((opt) => (
             <ChoiceButton
               key={opt.id}
@@ -500,7 +500,7 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
         </div>
 
         {goals && (
-          <div className="flex w-full flex-col gap-1.5">
+          <div className="flex w-full flex-col gap-1">
             {PREVIEW_NUTRIENTS.map((id) => (
               <div
                 key={id}
