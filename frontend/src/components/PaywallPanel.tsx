@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { BillingPlan } from '../types'
-import { activateMockSubscription, getStoredGoals } from '../lib/profile'
+import { activateSubscription, getStoredGoals } from '../lib/profile'
+import { openPaddleCheckout } from '../lib/paddle'
 import { NUTRIENTS } from '../lib/nutrients'
 import { CheckIcon, ClockIcon, LockIcon } from './icons'
 import { LegalPanel } from './LegalPanel'
@@ -39,6 +40,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [agreed, setAgreed] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
   const [showAgreeError, setShowAgreeError] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [offerDeadline] = useState(getOfferDeadline)
   const [now, setNow] = useState(Date.now())
   const goals = getStoredGoals()
@@ -54,18 +56,29 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     return () => clearInterval(t)
   }, [])
 
-  function handleSubscribe() {
+  async function handleSubscribe() {
     if (!agreed) {
       setShowAgreeError(true)
       return
     }
+    setCheckoutError(null)
     setProcessing(true)
-    // Mock checkout — no payment processor is connected yet. Replace with real
-    // Stripe/App Store billing (and gate on webhook confirmation) before launch.
-    setTimeout(() => {
-      activateMockSubscription(plan)
-      onSubscribed()
-    }, 600)
+    try {
+      await openPaddleCheckout(plan, (event) => {
+        if (event.name === 'checkout.completed') {
+          activateSubscription(plan)
+          onSubscribed()
+        } else if (event.name === 'checkout.closed') {
+          setProcessing(false)
+        } else if (event.name === 'checkout.error') {
+          setProcessing(false)
+          setCheckoutError('Checkout failed. Please try again.')
+        }
+      })
+    } catch {
+      setProcessing(false)
+      setCheckoutError('Checkout is unavailable right now. Please try again later.')
+    }
   }
 
   return (
@@ -194,8 +207,13 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           >
             {processing ? 'Processing…' : 'Unlock my plan'}
           </button>
+          {checkoutError && (
+            <p className="mt-1 text-center text-[11px] font-medium" style={{ color: 'var(--status-critical)' }}>
+              {checkoutError}
+            </p>
+          )}
           <p className="mt-1 text-center text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-            No risk — cancel anytime. Demo checkout for now, no card is charged.
+            Secure checkout by Paddle. Cancel anytime.
           </p>
         </div>
       </div>

@@ -197,6 +197,24 @@ export function LockIcon({ className }: IconProps) {
   )
 }
 
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M12 3.5v11.5M8 11l4 4 4-4" />
+      <path d="M4.5 16.5V19a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5" />
+    </svg>
+  )
+}
+
+export function BellIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M6 10.5a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14.5 6 10.5Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  )
+}
+
 export function CakeIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

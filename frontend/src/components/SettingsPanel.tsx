@@ -1,10 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
 import { seedDemoMeals } from '../lib/demoData'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
-import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon } from './icons'
+import { isInstallable, isStandalone, isIOS, onInstallabilityChange, promptInstall } from '../lib/pwa'
+import {
+  isNotificationSupported,
+  getNotificationPermission,
+  getNotificationPref,
+  setNotificationPref,
+  requestNotificationPermission,
+} from '../lib/notifications'
+import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
 import { LegalPanel } from './LegalPanel'
 
 export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void; onDataCleared: () => void }) {
@@ -15,8 +23,33 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
   const [authError, setAuthError] = useState<string | null>(null)
   const [legalOpen, setLegalOpen] = useState(false)
   const [seedingDemo, setSeedingDemo] = useState(false)
+  const [installable, setInstallable] = useState(isInstallable)
+  const [notifPref, setNotifPref] = useState(getNotificationPref)
+  const [notifPermission, setNotifPermission] = useState(getNotificationPermission)
   const isPro = isSubscribed()
   const plan = getBillingPlan()
+
+  useEffect(() => onInstallabilityChange(() => setInstallable(isInstallable())), [])
+
+  async function handleInstall() {
+    if (installable) {
+      await promptInstall()
+      setInstallable(isInstallable())
+    }
+  }
+
+  async function handleToggleNotifications() {
+    if (notifPref) {
+      setNotifPref(false)
+      setNotificationPref(false)
+      return
+    }
+    const permission = await requestNotificationPermission()
+    setNotifPermission(permission)
+    const enabled = permission === 'granted'
+    setNotifPref(enabled)
+    setNotificationPref(enabled)
+  }
 
   function handleRetakeQuestionnaire() {
     resetOnboarding()
@@ -181,9 +214,6 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-xs" style={{ color: 'var(--text-primary)' }}>
-              Demo checkout — no card has been charged.
-            </p>
           </div>
 
           <div>
@@ -221,6 +251,72 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+              App
+            </p>
+            <div className="flex flex-col gap-2">
+              {installable && (
+                <button
+                  onClick={handleInstall}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                  style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
+                >
+                  <DownloadIcon className="h-4 w-4" /> Download app
+                </button>
+              )}
+              {!installable && isIOS() && !isStandalone() && (
+                <p
+                  className="rounded-xl p-3 text-xs"
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000', color: 'var(--text-primary)' }}
+                >
+                  To install: tap the Share button in Safari, then "Add to Home Screen".
+                </p>
+              )}
+
+              {isNotificationSupported() && (
+                <div
+                  className="flex items-center justify-between rounded-xl p-3"
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      <BellIcon className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        Vitamin reminders
+                      </p>
+                      {notifPermission === 'denied' && (
+                        <p className="text-[11px]" style={{ color: 'var(--status-critical)' }}>
+                          Blocked in browser settings
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notifPref}
+                    onClick={handleToggleNotifications}
+                    disabled={notifPermission === 'denied'}
+                    className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                    style={{
+                      backgroundColor: notifPref ? 'var(--accent-strong)' : 'var(--surface-1)',
+                      border: '3px solid #000000',
+                      opacity: notifPermission === 'denied' ? 0.5 : 1,
+                    }}
+                  >
+                    <span
+                      className="h-5 w-5 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: notifPref ? 'translateX(21px)' : 'translateX(1px)' }}
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

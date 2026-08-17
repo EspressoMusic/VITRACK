@@ -50,11 +50,8 @@ export function getBillingPlan(): BillingPlan | null {
   return plan === 'monthly' || plan === 'yearly' ? plan : null
 }
 
-/**
- * Mock checkout — no payment processor is wired up yet, so this just records the
- * choice locally and unlocks the app. Swap this out once real billing is connected.
- */
-export function activateMockSubscription(plan: BillingPlan): void {
+/** Records a Paddle checkout that has completed and unlocks the app. */
+export function activateSubscription(plan: BillingPlan): void {
   localStorage.setItem(SUBSCRIBED_KEY, 'true')
   localStorage.setItem(PLAN_KEY, plan)
 }

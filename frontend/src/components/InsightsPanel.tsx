@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
-import { daysAgoKey } from '../lib/date'
-import { NUTRIENTS, sumNutrients, percentOfRda, coverageStatus } from '../lib/nutrients'
+import { coverageStatus } from '../lib/nutrients'
+import { computeWeeklyInsights } from '../lib/insights'
 import { NutrientRow } from './NutrientRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
 import { MedalIcon } from './icons'
-
-const WINDOW_DAYS = 7
 
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const [meals, setMeals] = useState<MealEntry[]>([])
@@ -23,33 +21,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     getAllMeals().then(setMeals)
   }, [refreshSignal])
 
-  const { loggedDayCount, ranked, weeklyCompletion } = useMemo(() => {
-    const windowDates = new Set<string>()
-    for (let i = 0; i < WINDOW_DAYS; i++) windowDates.add(daysAgoKey(i))
-
-    const inWindow = meals.filter((m) => windowDates.has(m.date))
-    const loggedDays = new Set(inWindow.map((m) => m.date))
-
-    if (loggedDays.size === 0) {
-      return {
-        loggedDayCount: 0,
-        ranked: [] as { id: (typeof NUTRIENTS)[number]['id']; percent: number; avgAmount: number }[],
-        weeklyCompletion: 0,
-      }
-    }
-
-    const total = sumNutrients(inWindow.map((m) => m.nutrients))
-    const ranked = NUTRIENTS.map((n) => {
-      const avgAmount = total[n.id] / loggedDays.size
-      return { id: n.id, avgAmount, percent: percentOfRda(n.id, avgAmount) }
-    }).sort((a, b) => a.percent - b.percent)
-
-    const weeklyCompletion = Math.round(
-      ranked.reduce((sum, r) => sum + Math.min(100, r.percent), 0) / ranked.length
-    )
-
-    return { loggedDayCount: loggedDays.size, ranked, weeklyCompletion }
-  }, [meals])
+  const { loggedDayCount, ranked, weeklyCompletion } = useMemo(() => computeWeeklyInsights(meals), [meals])
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')

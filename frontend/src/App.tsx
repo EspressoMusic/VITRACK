@@ -8,7 +8,12 @@ import { InsightsPanel } from './components/InsightsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
+import { ThankYouPage } from './components/ThankYouPage'
 import { hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
+import { getAllMeals } from './lib/db'
+import { computeWeeklyInsights } from './lib/insights'
+import { coverageStatus } from './lib/nutrients'
+import { maybeNotifyVitaminStatus } from './lib/notifications'
 
 function AppShell() {
   const [tab, setTab] = useState<Tab>('camera')
@@ -18,9 +23,17 @@ function AppShell() {
 
   const panelBg = { camera: 'background-camera', calendar: 'background-calendar', insights: 'background-insights' }[tab]
 
+  useEffect(() => {
+    getAllMeals().then((meals) => {
+      const { loggedDayCount, ranked, weeklyCompletion } = computeWeeklyInsights(meals)
+      const deficientCount = ranked.filter((r) => coverageStatus(r.percent) !== 'good').length
+      maybeNotifyVitaminStatus({ weeklyCompletion, deficientCount, loggedDayCount })
+    })
+  }, [refreshSignal])
+
   return (
     <div
-      className="app-shell relative mx-auto flex h-screen w-full max-w-md flex-col overflow-hidden"
+      className="app-shell relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden"
       style={{ '--panel-bg': `url('/${panelBg}.png')` } as React.CSSProperties}
     >
       <div
@@ -57,10 +70,24 @@ function AppShell() {
 export default function App() {
   const [onboarded, setOnboarded] = useState(hasOnboarded)
   const [subscribed, setSubscribed] = useState(isSubscribed)
+  const [showThankYou, setShowThankYou] = useState(() => window.location.hash === '#thank-you')
 
   useEffect(() => {
     loadPersistedGoals()
   }, [])
+
+  if (showThankYou) {
+    return (
+      <ThemeProvider>
+        <ThankYouPage
+          onContinue={() => {
+            window.location.hash = ''
+            setShowThankYou(false)
+          }}
+        />
+      </ThemeProvider>
+    )
+  }
 
   if (!onboarded) {
     return (
@@ -73,7 +100,13 @@ export default function App() {
   if (!subscribed) {
     return (
       <ThemeProvider>
-        <PaywallPanel onSubscribed={() => setSubscribed(true)} />
+        <PaywallPanel
+          onSubscribed={() => {
+            window.location.hash = 'thank-you'
+            setSubscribed(true)
+            setShowThankYou(true)
+          }}
+        />
       </ThemeProvider>
     )
   }
