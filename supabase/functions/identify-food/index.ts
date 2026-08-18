@@ -8,6 +8,7 @@
 // check (see ../_shared/subscription.ts) plus a per-IP rate limit as defense in depth.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { requireActiveSubscription } from '../_shared/subscription.ts'
+import { getClientIp } from '../_shared/clientIp.ts'
 
 const MODEL = Deno.env.get('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
 
@@ -74,7 +75,7 @@ const RATE_LIMIT_MAX_REQUESTS = 60
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
 
 async function isRateLimited(req: Request): Promise<boolean> {
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const clientIp = getClientIp(req)
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: allowed, error } = await admin.rpc('check_rate_limit', {
     p_client_key: `identify-food:${clientIp}`,

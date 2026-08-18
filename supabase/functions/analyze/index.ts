@@ -11,6 +11,7 @@
 // under the Deno edge runtime.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { requireActiveSubscription } from '../_shared/subscription.ts'
+import { getClientIp } from '../_shared/clientIp.ts'
 
 // Keep in sync with frontend/src/lib/nutrients.ts and backend/src/nutrients.js.
 const NUTRIENT_IDS = [
@@ -187,7 +188,7 @@ const RATE_LIMIT_MAX_REQUESTS = 30
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
 
 async function isRateLimited(req: Request): Promise<boolean> {
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const clientIp = getClientIp(req)
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: allowed, error } = await admin.rpc('check_rate_limit', {
     p_client_key: `analyze:${clientIp}`,
