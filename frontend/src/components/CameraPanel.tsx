@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import type { MealEntry, NutrientId } from '../types'
+import type { MealEntry, NutrientAmounts, NutrientId } from '../types'
 import { analyzeFoodText, identifyFood, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
 import { addMeal } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
-import { NUTRIENTS, percentOfRda } from '../lib/nutrients'
+import { CustomNutritionForm } from './CustomNutritionForm'
+import { NUTRIENTS, EMPTY_NUTRIENTS, percentOfRda } from '../lib/nutrients'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import {
   detectFood,
@@ -18,7 +19,7 @@ import {
   type FoodDetection,
 } from '../lib/foodDetector'
 
-type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'analyzing' | 'result' | 'saved'
+type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result' | 'saved'
 
 const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
@@ -297,6 +298,9 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [manualConfirmed, setManualConfirmed] = useState(false)
   const [manualQuantity, setManualQuantity] = useState('')
   const [manualLoading, setManualLoading] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customPortion, setCustomPortion] = useState('')
+  const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
 
   const [, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
@@ -442,6 +446,16 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setManualQuantity('')
   }
 
+  function resetCustomFields() {
+    setCustomName('')
+    setCustomPortion('')
+    setCustomValues(EMPTY_NUTRIENTS)
+  }
+
+  function handleCustomValueChange(id: NutrientId, v: number) {
+    setCustomValues((prev) => ({ ...prev, [id]: v }))
+  }
+
   function handleManualNameChange(v: string) {
     setManualName(v)
     setManualConfirmed(false)
@@ -458,6 +472,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setIdentification(null)
     setConfirmQuantity('')
     resetManualFields()
+    resetCustomFields()
     setAnalyzeErrorMsg(null)
     setScanErrorMsg(null)
     setStage('camera')
@@ -586,6 +601,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     }
   }
 
+  function submitCustomEntry() {
+    if (!customName.trim()) return
+    setPhoto((prev) => prev ?? MANUAL_ENTRY_PHOTO)
+    setResult({
+      foods: [{ name: customName.trim(), portion: customPortion.trim() || 'as entered' }],
+      nutrients: customValues,
+      confidence: 'high',
+      note: 'Nutrition facts entered manually from the product label.',
+    })
+    setStage('result')
+  }
+
   async function runManualFixup() {
     if (!manualConfirmed || !manualQuantity.trim()) return
     setManualLoading(true)
@@ -628,6 +655,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setScanErrorMsg(null)
     setAnalyzeErrorMsg(null)
     resetManualFields()
+    resetCustomFields()
     setStage('camera')
   }
 
@@ -641,7 +669,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           {scanErrorMsg}
         </p>
       )}
-      {stage !== 'manual' && stage !== 'result' && (
+      {stage !== 'manual' && stage !== 'custom' && stage !== 'result' && (
         <div
           className={`relative mx-auto flex aspect-square shrink-0 items-center justify-center overflow-hidden rounded-2xl ${stage === 'quantity' ? 'w-[38%]' : 'w-[70%]'}`}
           style={{ backgroundColor: 'var(--surface-2)', border: '5px solid #000000' }}
@@ -836,6 +864,46 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               Cancel
             </button>
           </div>
+          <button
+            onClick={() => setStage('custom')}
+            className="text-center text-xs font-medium underline"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Can't find it? Add a food or supplement with your own nutrition facts →
+          </button>
+        </div>
+      )}
+
+      {stage === 'custom' && (
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="mx-auto flex w-[85%] items-center gap-2">
+            <button
+              onClick={submitCustomEntry}
+              disabled={!customName.trim()}
+              className="flex-[1.3] rounded-2xl py-2.5 text-base font-semibold text-white disabled:opacity-40"
+              style={{ backgroundColor: 'var(--accent)', border: '5px solid #222' }}
+            >
+              Use these values
+            </button>
+            <button
+              onClick={() => {
+                resetCustomFields()
+                setStage('manual')
+              }}
+              className="flex-[0.7] rounded-2xl py-2 text-base font-medium"
+              style={{ backgroundColor: '#f6e4bb', border: '5px solid #222', color: 'var(--text-primary)' }}
+            >
+              Back
+            </button>
+          </div>
+          <CustomNutritionForm
+            name={customName}
+            onNameChange={setCustomName}
+            portion={customPortion}
+            onPortionChange={setCustomPortion}
+            values={customValues}
+            onValueChange={handleCustomValueChange}
+          />
         </div>
       )}
 
