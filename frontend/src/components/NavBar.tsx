@@ -70,7 +70,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             }}
           >
             <img
-              src="/icons/avocado.png"
+              src="/icons/lemon.png"
               alt=""
               className="h-9 w-9 object-contain transition-transform"
               style={{ transform: active === 'insights' ? 'scale(1.15)' : 'scale(1)' }}
