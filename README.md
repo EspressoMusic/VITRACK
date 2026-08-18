@@ -107,10 +107,36 @@ personalized to your age, sex, or health conditions.
 
 ## Building for production
 
+The `backend/` Express server is for local development only — it has no
+authentication and is never called by a production build. In production the
+frontend talks to Supabase Edge Functions instead (see `supabase/functions/`),
+which do enforce a subscription check (see "Accounts & billing" below).
+
 ```bash
 cd frontend && npm run build   # outputs frontend/dist
-cd backend && npm start        # run the API server (set OPENAI_API_KEY in the environment)
+supabase functions deploy analyze
+supabase functions deploy identify-food
+supabase functions deploy link-paddle-subscription
+supabase functions deploy paddle-webhook --no-verify-jwt
+supabase functions deploy delete-account
 ```
 
-Serve `frontend/dist` with any static host, and point it at your deployed
-backend's `/api` routes (update the proxy/base URL for production as needed).
+Serve `frontend/dist` with any static host, with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` set at build time (see "Optional: accounts &
+cross-device sync" above) — without them the app falls back to calling
+`/api/*`, which only exists in local dev.
+
+### Accounts & billing (Paddle)
+
+`analyze` and `identify-food` are paid features: they require a signed-in
+Supabase session belonging to an account with an active row in
+`paddle_subscriptions` (checked server-side in
+`supabase/functions/_shared/subscription.ts` — the client's local "subscribed"
+flag is never trusted). That table is written only by the `paddle-webhook`
+and `link-paddle-subscription` functions, verified against Paddle directly, so
+before charging real money make sure:
+- `PADDLE_WEBHOOK_SECRET`, `PADDLE_API_KEY`, `PADDLE_PRICE_MONTHLY`,
+  `PADDLE_PRICE_YEARLY` are set as Supabase function secrets.
+- The Paddle webhook is pointed at your deployed `paddle-webhook` function URL.
+- `VITE_PADDLE_CLIENT_TOKEN`, `VITE_PADDLE_PRICE_MONTHLY`,
+  `VITE_PADDLE_PRICE_YEARLY` are set in the frontend build.

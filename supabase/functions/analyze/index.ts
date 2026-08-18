@@ -1,25 +1,29 @@
 // Deploy with: supabase functions deploy analyze
 // Ported from backend/src/analyzeFood.js + backend/src/server.js so the
 // same OpenAI vision analysis can run as a Supabase Edge Function instead
-// of a separately-hosted Express server. No auth required, matching the
-// app's guest/local-only mode (see README) — protected instead by a
-// per-IP rate limit (see checkRateLimit) since anyone who finds the URL
-// can otherwise call it and spend the project's OpenAI quota.
+// of a separately-hosted Express server. This is a paid feature (see
+// PaywallPanel), so every call must carry a signed-in Supabase session
+// belonging to an account with an active Paddle subscription — see
+// requireActiveSubscription in ../_shared/subscription.ts. Also kept
+// behind a per-IP rate limit (see checkRateLimit) as defense in depth.
 // Calls the OpenAI REST API directly via fetch rather than the `openai`
 // npm package, which does not reliably attach the Authorization header
 // under the Deno edge runtime.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { requireActiveSubscription } from '../_shared/subscription.ts'
 
+// Keep in sync with frontend/src/lib/nutrients.ts and backend/src/nutrients.js.
 const NUTRIENT_IDS = [
   'vitaminA', 'vitaminC', 'vitaminD', 'vitaminE', 'vitaminK',
-  'vitaminB1', 'vitaminB2', 'vitaminB3', 'vitaminB6', 'vitaminB9', 'vitaminB12',
-  'calcium', 'iron', 'magnesium', 'zinc', 'potassium',
+  'vitaminB1', 'vitaminB2', 'vitaminB3', 'vitaminB5', 'vitaminB6', 'vitaminB7', 'vitaminB9', 'vitaminB12',
+  'calcium', 'iron', 'magnesium', 'zinc', 'potassium', 'phosphorus', 'copper', 'manganese', 'selenium', 'iodine',
 ]
 
 const NUTRIENT_UNITS: Record<string, string> = {
   vitaminA: 'mcg', vitaminC: 'mg', vitaminD: 'mcg', vitaminE: 'mg', vitaminK: 'mcg',
-  vitaminB1: 'mg', vitaminB2: 'mg', vitaminB3: 'mg', vitaminB6: 'mg', vitaminB9: 'mcg', vitaminB12: 'mcg',
+  vitaminB1: 'mg', vitaminB2: 'mg', vitaminB3: 'mg', vitaminB5: 'mg', vitaminB6: 'mg', vitaminB7: 'mcg', vitaminB9: 'mcg', vitaminB12: 'mcg',
   calcium: 'mg', iron: 'mg', magnesium: 'mg', zinc: 'mg', potassium: 'mg',
+  phosphorus: 'mg', copper: 'mg', manganese: 'mg', selenium: 'mcg', iodine: 'mcg',
 }
 
 const MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-4o'
@@ -177,8 +181,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// This endpoint has no auth (guest mode), so it's rate-limited per caller IP instead —
-// each meal photo/text lookup is a real OpenAI cost, and the URL is public.
+// Extra defense in depth on top of the subscription check above — also rate-limited per
+// caller IP, since a compromised/shared token shouldn't be able to run up unbounded spend.
 const RATE_LIMIT_MAX_REQUESTS = 30
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
 
@@ -201,6 +205,14 @@ async function isRateLimited(req: Request): Promise<boolean> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  const subCheck = await requireActiveSubscription(req)
+  if (!subCheck.ok) {
+    return new Response(JSON.stringify({ error: subCheck.error, code: 'subscription_required' }), {
+      status: subCheck.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   if (!Deno.env.get('OPENAI_API_KEY')) {

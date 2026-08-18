@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { BillingPlan } from '../types'
 import { activateSubscription, getStoredGoals } from '../lib/profile'
 import { openPaddleCheckout } from '../lib/paddle'
+import { waitForServerSubscription } from '../lib/cloudProfile'
 import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -45,6 +46,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [showAgreeError, setShowAgreeError] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [restoring, setRestoring] = useState(false)
+  const [needsSignIn, setNeedsSignIn] = useState(false)
   const [offerDeadline] = useState(getOfferDeadline)
   const [now, setNow] = useState(Date.now())
   const goals = getStoredGoals()
@@ -69,6 +71,38 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     return () => clearInterval(t)
   }, [])
 
+  // The paid AI features check the server's own subscription record, not this local flag
+  // (see supabase/functions/_shared/subscription.ts) — a purchase only actually works once
+  // it's linked to a signed-in account. Paddle's own "checkout.completed" event fires
+  // client-side and can't prove that on its own, so this reconciles with the server before
+  // letting the user into the app.
+  async function handleCheckoutCompleted() {
+    // No accounts system configured at all (self-hosted, fully local build) — there's no
+    // server record to check against, so the local unlock is all there is.
+    if (!isSupabaseConfigured) {
+      activateSubscription(plan)
+      onSubscribed()
+      return
+    }
+
+    if (!user) {
+      // Don't mark this device "subscribed" yet — if the user closes the tab before signing
+      // in, a stale local flag would drop them straight into the app on next launch instead
+      // of back to this screen, where the paid AI calls would then just fail server-side.
+      setProcessing(false)
+      setNeedsSignIn(true)
+      return
+    }
+
+    // Signed in already (checkout carried supabase_user_id): the webhook that links the
+    // purchase can lag a couple of seconds, so poll briefly rather than dropping the user
+    // into a "subscription required" error immediately after paying.
+    const confirmed = await waitForServerSubscription()
+    setProcessing(false)
+    if (confirmed) activateSubscription(plan)
+    onSubscribed()
+  }
+
   async function handleSubscribe() {
     if (!agreed) {
       setShowAgreeError(true)
@@ -81,8 +115,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         plan,
         (event) => {
           if (event.name === 'checkout.completed') {
-            activateSubscription(plan)
-            onSubscribed()
+            void handleCheckoutCompleted()
           } else if (event.name === 'checkout.closed') {
             setProcessing(false)
           } else if (event.name === 'checkout.error') {
@@ -96,6 +129,54 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       setProcessing(false)
       setCheckoutError('Checkout is unavailable right now. Please try again later.')
     }
+  }
+
+  if (needsSignIn) {
+    return (
+      <div
+        className="relative mx-auto flex h-dvh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
+        style={{
+          backgroundColor: 'var(--surface-0)',
+          backgroundImage: "url('/background-calendar.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <ConfettiBurst />
+        <div
+          className="relative z-10 flex w-full flex-col items-center gap-3 overflow-hidden rounded-3xl px-6 py-6 text-center"
+          style={{
+            backgroundColor: '#e5c184',
+            border: '3px solid var(--accent-strong)',
+            boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
+          }}
+        >
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.75)', color: 'var(--accent-strong)' }}
+          >
+            <CheckIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+              Payment received — one last step
+            </h1>
+            <p className="mx-auto mt-1 max-w-[90%] text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
+              Sign in with Google to activate your subscription on this account.
+            </p>
+          </div>
+          <button
+            onClick={handleRestore}
+            disabled={restoring}
+            className="w-full rounded-full py-2 text-sm font-semibold text-white transition"
+            style={{ backgroundColor: 'var(--accent-strong)', border: '3px solid #222', opacity: restoring ? 0.7 : undefined }}
+          >
+            {restoring ? 'Opening Google…' : 'Sign in with Google'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -4,8 +4,10 @@
 // identified food, the frontend calls the existing analyzeFoodText path (the `analyze` function)
 // to get the actual vitamin/mineral estimate, so OpenAI Vision here is purely an ID step.
 // Calls the OpenAI REST API directly via fetch, matching supabase/functions/analyze/index.ts.
-// No auth (guest mode) — rate-limited per caller IP instead, same pattern as `analyze`.
+// Part of the same paid AI feature as `analyze`, so it's gated by the same subscription
+// check (see ../_shared/subscription.ts) plus a per-IP rate limit as defense in depth.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { requireActiveSubscription } from '../_shared/subscription.ts'
 
 const MODEL = Deno.env.get('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
 
@@ -151,6 +153,14 @@ async function identifyFood(imageDataUrl: string): Promise<IdentifyResult> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  const subCheck = await requireActiveSubscription(req)
+  if (!subCheck.ok) {
+    return new Response(JSON.stringify({ error: subCheck.error, code: 'subscription_required' }), {
+      status: subCheck.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   if (!Deno.env.get('OPENAI_API_KEY')) {

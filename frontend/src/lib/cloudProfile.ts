@@ -52,11 +52,28 @@ async function pullProfilePrefsFromCloud(userId: string): Promise<boolean> {
  * Asks the server for this account's real subscription status — never trusts localStorage
  * or anything the client itself claims. See supabase/functions/link-paddle-subscription.
  */
-async function fetchServerSubscriptionStatus(): Promise<SubscriptionStatus> {
+export async function fetchServerSubscriptionStatus(): Promise<SubscriptionStatus> {
   if (!supabase) return { subscribed: false, plan: null, authoritative: false }
   const { data, error } = await supabase.functions.invoke<SubscriptionStatus>('link-paddle-subscription')
   if (error || !data) return { subscribed: false, plan: null, authoritative: false }
   return data
+}
+
+/**
+ * Polls the server right after a Paddle checkout completes, since the webhook that links
+ * the purchase to this account can lag the client-side "checkout.completed" event by a
+ * couple of seconds. link-paddle-subscription also falls back to looking the purchase up
+ * directly by the account's email, so this resolves even before the webhook lands. Used so
+ * the paid AI endpoints (which check the server record, not localStorage) work immediately
+ * after paying instead of erroring until the next app reload.
+ */
+export async function waitForServerSubscription(maxAttempts = 6, delayMs = 1500): Promise<boolean> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const status = await fetchServerSubscriptionStatus()
+    if (status.subscribed) return true
+    if (attempt < maxAttempts - 1) await new Promise((resolve) => setTimeout(resolve, delayMs))
+  }
+  return false
 }
 
 /**
