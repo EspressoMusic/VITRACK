@@ -37,7 +37,7 @@ function formatCountdown(ms: number): string {
 }
 
 export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, user } = useAuth()
   const [plan, setPlan] = useState<BillingPlan>('yearly')
   const [processing, setProcessing] = useState(false)
   const [agreed, setAgreed] = useState(false)
@@ -77,17 +77,21 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     setCheckoutError(null)
     setProcessing(true)
     try {
-      await openPaddleCheckout(plan, (event) => {
-        if (event.name === 'checkout.completed') {
-          activateSubscription(plan)
-          onSubscribed()
-        } else if (event.name === 'checkout.closed') {
-          setProcessing(false)
-        } else if (event.name === 'checkout.error') {
-          setProcessing(false)
-          setCheckoutError('Checkout failed. Please try again.')
-        }
-      })
+      await openPaddleCheckout(
+        plan,
+        (event) => {
+          if (event.name === 'checkout.completed') {
+            activateSubscription(plan)
+            onSubscribed()
+          } else if (event.name === 'checkout.closed') {
+            setProcessing(false)
+          } else if (event.name === 'checkout.error') {
+            setProcessing(false)
+            setCheckoutError('Checkout failed. Please try again.')
+          }
+        },
+        user ? { supabase_user_id: user.id } : undefined
+      )
     } catch {
       setProcessing(false)
       setCheckoutError('Checkout is unavailable right now. Please try again later.')
@@ -225,8 +229,8 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               {checkoutError}
             </p>
           )}
-          <p className="mt-1 whitespace-nowrap text-center text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-            Secure checkout by Paddle.
+          <p className="mt-1 text-center text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
+            Auto-renews, cancel anytime. Secure checkout by Paddle.
             {isSupabaseConfigured && (
               <>
                 {' '}

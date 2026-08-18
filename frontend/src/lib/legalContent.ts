@@ -9,7 +9,7 @@ export interface LegalPart {
   blocks: LegalBlock[]
 }
 
-export const LEGAL_LAST_UPDATED = '16.08.2026'
+export const LEGAL_LAST_UPDATED = '18.08.2026'
 export const SUPPORT_EMAIL = 'shilohdhd1@gmail.com'
 export const OPERATOR_NAME = 'Shilo'
 export const AI_PROVIDER_NAME = 'OpenAI (ChatGPT / GPT models)'
@@ -68,11 +68,10 @@ export const LEGAL_PARTS: LegalPart[] = [
       {
         heading: '5. Subscription, payments, and cancellation',
         paragraphs: [
-          'At this early stage, the App is currently offered in "Demo" mode: the purchase screen is shown and allows you to "purchase" a subscription, but no real charge is currently made and no credit card details are collected. This may change at any time without requiring an app update, and once real billing is introduced, these terms will be updated accordingly and notice will be given within the App.',
-          'Once real billing is introduced (whether through an app store, an external payment processor, or another means): the subscription will renew automatically at the end of each period (monthly or yearly, depending on the plan chosen), unless cancelled before the renewal date. You will be able to cancel the subscription at any time through the account settings of the relevant app store or another method shown in the App; cancellation will prevent future charges but will not automatically entitle you to a refund for a period already paid for, unless otherwise required by law.',
-          'To the extent Israeli Consumer Protection Law, 1981, and its regulations (including the right to cancel a distance sale transaction) apply to any transaction, the mandatory provisions of law granting non-waivable rights will be honored, notwithstanding the above.',
+          'Paid subscriptions are processed through Paddle.com Market Ltd and its group companies ("Paddle"), acting as our authorized reseller and Merchant of Record for all purchases made in the App. This means your purchase is transacted with, invoiced by, and (where applicable) taxed by Paddle, and not directly by the Operator. Paddle\'s own Buyer Terms and Checkout Buyer Terms of Sale (available at paddle.com/legal) apply to the purchase transaction itself, in addition to these Terms, which govern your use of the App and Service. Card and other payment-method details are entered directly into Paddle\'s checkout and are never collected, stored, or seen by the Operator.',
+          'A subscription renews automatically at the end of each billing period (monthly or yearly, depending on the plan chosen) at the then-current price for that plan, unless cancelled before the renewal date. You can cancel at any time using the cancellation link in your Paddle receipt or confirmation email, through Paddle\'s customer portal, or by emailing us at the contact address below and we will assist. Cancelling stops future renewals but does not itself entitle you to a refund of a period already paid for.',
+          'Refunds beyond what mandatory law requires are granted at the Operator\'s sole discretion, on a case-by-case basis; Paddle may also independently review and grant refund requests under its own buyer terms. To the extent Israeli Consumer Protection Law, 1981, and its regulations (including any right to cancel a distance sale transaction), or another mandatory consumer-protection law applicable to a given user, grant non-waivable cancellation or refund rights, those rights will be honored notwithstanding the above.',
           'The Operator may change prices and subscription plans from time to time; a price change will not apply to a subscription period already paid for in advance, and reasonable notice will be given before a price change applies to the next renewal.',
-          'To the extent payment is made in the future through a third party (for example, the App Store, Google Play, or a payment processor such as Stripe) — payment method details (such as a full credit card number) will not be stored by or pass through the Operator\'s servers, and will be subject to that third party\'s own privacy policy and terms of use.',
         ],
       },
       {
@@ -105,7 +104,7 @@ export const LEGAL_PARTS: LegalPart[] = [
           'The Service is provided "AS IS" and "AS AVAILABLE", without any warranty of any kind, express or implied, including (without limitation) warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, reliability, continuous availability, or absence of faults.',
           'The Operator does not warrant that the App will be free of errors or viruses, available without interruption, or that the analysis results will be accurate or complete.',
           'To the extent permitted by law, the Operator will not be liable for any indirect, consequential, incidental, special, or punitive damages, or for loss of profit, loss of data, personal injury, health damage, or intangible harm, arising from use of the App, inability to use it, or reliance on content it provides — even if the Operator was advised of the possibility of such damage.',
-          'If, despite the above, liability is nevertheless imposed on the Operator, its total cumulative liability for all claims arising from use of the App, on any legal basis, will not exceed the greater of: (a) the amount actually paid by the user to the Operator for the Service in the 12 months preceding the event giving rise to the claim; or (b) NIS 100.',
+          'If, despite the above, liability is nevertheless imposed on the Operator, its total cumulative liability for all claims arising from use of the App, on any legal basis, will not exceed the greater of: (a) the amount actually paid by the user for the Service in the 12 months preceding the event giving rise to the claim; or (b) USD 100 (or the equivalent in the currency actually charged).',
           'Nothing in this document seeks to limit liability in a manner not permitted by mandatory law (for example, in cases of damage caused by malice or gross negligence, to the extent these cannot be limited under applicable law).',
         ],
       },
@@ -157,7 +156,7 @@ export const LEGAL_PARTS: LegalPart[] = [
           '• Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin and mineral targets.',
           '• Meal photos and analysis results: when you photograph a meal, the photo is sent for automatic analysis (see section 3), and the analysis result (list of identified foods, estimated quantities, nutrient estimates, and confidence level) is stored together with the photo: locally on the device (IndexedDB) if you are not signed in, or in a cloud database if you signed in with a Google account.',
           '• Account details: if you sign in with Google, we receive from it (via our authentication provider) your name, email address, and profile picture as provided by Google.',
-          '• Subscription status: the plan type selected (monthly/yearly) and active/inactive status. This is currently a "demo purchase" only, with no real charge and no collection of payment method details.',
+          '• Subscription and billing status: the plan type selected (monthly/yearly) and active/inactive status, recorded by the App once a purchase is completed through Paddle. We do not collect or store your payment method details (such as card numbers) — these are entered directly into Paddle\'s checkout and handled solely by Paddle, as described in section 5 below.',
           '• Basic technical information: like any online service, the hosting, authentication, and AI infrastructure we use may naturally process basic connection data (such as IP address, browser type, timestamps) necessary to operate and secure the Service.',
         ],
       },
@@ -174,7 +173,7 @@ export const LEGAL_PARTS: LegalPart[] = [
         paragraphs: [
           '• Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, and tracking daily/weekly vitamin and mineral intake.',
           '• Managing accounts, sign-in, and syncing across devices for those who choose to sign in.',
-          '• Managing subscriptions and payments (currently demo stage only).',
+          '• Managing subscriptions and payments, processed through Paddle.',
           '• Responding to support requests sent to our email address.',
           '• Maintaining the security of the Service and preventing misuse.',
           '• Complying with legal requirements where applicable.',
@@ -185,9 +184,10 @@ export const LEGAL_PARTS: LegalPart[] = [
         heading: '5. Who information is shared with',
         paragraphs: [
           '• Supabase — the database, authentication, and cloud storage infrastructure provider we use for signed-in users.',
+          '• Vercel — the hosting provider used to serve the App.',
           '• Google — for the sign-in process (Google Sign-In).',
           `• ${AI_PROVIDER_NAME} — the AI-based image analysis provider, used for food recognition and nutrient estimation in the photos you take, as described in section 3 above.`,
-          '• If real payment processing is introduced in the future: a payment processor/app store (for example, the Apple App Store, Google Play, or Stripe) solely for processing payment.',
+          '• Paddle.com Market Ltd and its group companies ("Paddle") — our payment processor and Merchant of Record for paid subscriptions. When you subscribe, Paddle collects and processes your payment details, billing address, and email directly, subject to Paddle\'s own privacy policy (paddle.com/legal). The Operator receives only your subscription plan and active/inactive status — never your full payment details.',
           '• Law enforcement authorities or competent bodies — only to the extent required by law, court order, or to protect rights, property, or safety.',
           '• In the event of a sale, merger, acquisition, or transfer of business assets — information may be transferred to the acquiring/merging party, with reasonable notice given where possible.',
         ],
@@ -196,7 +196,7 @@ export const LEGAL_PARTS: LegalPart[] = [
         heading: '6. Storage, data security, and international transfer',
         paragraphs: [
           'We take reasonable, standard measures to protect information, but no method of storage or transmission over the internet is guaranteed to be 100% secure, and we cannot promise absolute security of information.',
-          `The infrastructure providers we use (Supabase, Google, and ${AI_PROVIDER_NAME}) may store or process information on servers located outside Israel, including in the US and Europe. By using the App, you consent to such transfer of information.`,
+          `The infrastructure providers we use (Supabase, Vercel, Google, Paddle, and ${AI_PROVIDER_NAME}) may store or process information on servers located outside Israel, including in the US and Europe. By using the App, you consent to such transfer of information.`,
         ],
       },
       {

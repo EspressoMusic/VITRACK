@@ -4,6 +4,8 @@
 // identified food, the frontend calls the existing analyzeFoodText path (the `analyze` function)
 // to get the actual vitamin/mineral estimate, so OpenAI Vision here is purely an ID step.
 // Calls the OpenAI REST API directly via fetch, matching supabase/functions/analyze/index.ts.
+// No auth (guest mode) — rate-limited per caller IP instead, same pattern as `analyze`.
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const MODEL = Deno.env.get('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
 
@@ -62,6 +64,26 @@ than refusing to answer.`
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Called once per "Scan Food" tap (often a few tries per meal), so this allows more
+// headroom than `analyze` — still bounded so a single caller can't run up the bill.
+const RATE_LIMIT_MAX_REQUESTS = 60
+const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
+
+async function isRateLimited(req: Request): Promise<boolean> {
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { data: allowed, error } = await admin.rpc('check_rate_limit', {
+    p_client_key: `identify-food:${clientIp}`,
+    p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+    p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+  })
+  if (error) {
+    console.error('Rate limit check failed:', error)
+    return false
+  }
+  return !allowed
 }
 
 interface IdentifyResult {
@@ -136,6 +158,13 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Server is missing OPENAI_API_KEY. Set it with: supabase secrets set OPENAI_API_KEY=sk-...' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+  }
+
+  if (await isRateLimited(req)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again in a bit.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   let body: { image?: string }

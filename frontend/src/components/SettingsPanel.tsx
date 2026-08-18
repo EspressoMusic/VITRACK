@@ -389,7 +389,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium"
                 style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '3px solid #000000' }}
               >
-                <DocumentIcon className="h-4 w-4" /> Credits
+                <DocumentIcon className="h-4 w-4" /> Terms & Privacy
               </button>
             </div>
           </div>

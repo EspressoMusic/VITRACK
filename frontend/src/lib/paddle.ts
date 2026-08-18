@@ -28,12 +28,20 @@ function getPaddle(): Promise<Paddle | undefined> {
   return paddlePromise
 }
 
-/** Opens the Paddle Checkout overlay for a plan and streams checkout events to `onEvent`. */
-export async function openPaddleCheckout(plan: BillingPlan, onEvent: CheckoutListener): Promise<void> {
+/**
+ * Opens the Paddle Checkout overlay for a plan and streams checkout events to `onEvent`.
+ * When the buyer is already signed in, pass their Supabase user id as `customData` so the
+ * Paddle webhook can link the resulting subscription to their account server-side.
+ */
+export async function openPaddleCheckout(
+  plan: BillingPlan,
+  onEvent: CheckoutListener,
+  customData?: Record<string, string>
+): Promise<void> {
   const priceId = PADDLE_PRICE_IDS[plan]
   if (!priceId) throw new Error(`Missing Paddle price id for plan "${plan}"`)
   checkoutListener = onEvent
   const paddle = await getPaddle()
   if (!paddle) throw new Error('Paddle failed to initialize')
-  paddle.Checkout.open({ items: [{ priceId, quantity: 1 }] })
+  paddle.Checkout.open({ items: [{ priceId, quantity: 1 }], customData })
 }

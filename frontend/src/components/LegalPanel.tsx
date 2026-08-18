@@ -22,7 +22,7 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
           style={{ borderBottom: '1px solid rgba(26,26,25,0.15)' }}
         >
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Credits
+            Terms & Privacy Policy
           </h2>
           <button
             onClick={onClose}

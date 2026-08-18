@@ -23,9 +23,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return
 
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
-      setCurrentUserId(data.session?.user?.id ?? null)
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      setCurrentUserId(sessionUser?.id ?? null)
       setLoading(false)
+      // Re-verify subscription status on every app load (not just fresh sign-in), so a
+      // cancellation or chargeback on Paddle's side eventually revokes local access too.
+      if (sessionUser) {
+        syncProfileWithCloud(sessionUser.id)
+          .then((changed) => {
+            if (changed) window.location.reload()
+          })
+          .catch((err) => console.error('Profile sync failed:', err))
+      }
     })
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {

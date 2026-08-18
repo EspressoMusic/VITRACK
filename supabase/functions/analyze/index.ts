@@ -2,10 +2,13 @@
 // Ported from backend/src/analyzeFood.js + backend/src/server.js so the
 // same OpenAI vision analysis can run as a Supabase Edge Function instead
 // of a separately-hosted Express server. No auth required, matching the
-// app's guest/local-only mode (see README).
+// app's guest/local-only mode (see README) — protected instead by a
+// per-IP rate limit (see checkRateLimit) since anyone who finds the URL
+// can otherwise call it and spend the project's OpenAI quota.
 // Calls the OpenAI REST API directly via fetch rather than the `openai`
 // npm package, which does not reliably attach the Authorization header
 // under the Deno edge runtime.
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const NUTRIENT_IDS = [
   'vitaminA', 'vitaminC', 'vitaminD', 'vitaminE', 'vitaminK',
@@ -174,6 +177,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// This endpoint has no auth (guest mode), so it's rate-limited per caller IP instead —
+// each meal photo/text lookup is a real OpenAI cost, and the URL is public.
+const RATE_LIMIT_MAX_REQUESTS = 30
+const RATE_LIMIT_WINDOW_SECONDS = 60 * 60
+
+async function isRateLimited(req: Request): Promise<boolean> {
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { data: allowed, error } = await admin.rpc('check_rate_limit', {
+    p_client_key: `analyze:${clientIp}`,
+    p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+    p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+  })
+  if (error) {
+    // Fail open: a broken rate-limit check must never take down meal logging for everyone.
+    console.error('Rate limit check failed:', error)
+    return false
+  }
+  return !allowed
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -184,6 +208,13 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Server is missing OPENAI_API_KEY. Set it with: supabase secrets set OPENAI_API_KEY=sk-...' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+  }
+
+  if (await isRateLimited(req)) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again in a bit.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   let body: { image?: string; foodName?: string; quantity?: string }

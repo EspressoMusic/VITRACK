@@ -56,6 +56,12 @@ export function activateSubscription(plan: BillingPlan): void {
   localStorage.setItem(PLAN_KEY, plan)
 }
 
+/** Revokes local Pro access — used when the server's own subscription record says it lapsed. */
+export function deactivateSubscription(): void {
+  localStorage.removeItem(SUBSCRIBED_KEY)
+  localStorage.removeItem(PLAN_KEY)
+}
+
 /** Applies a subscription/goals snapshot pulled from the cloud (e.g. after signing in on a new device). */
 export function applyCloudProfile(data: {
   goals?: NutrientAmounts | null
