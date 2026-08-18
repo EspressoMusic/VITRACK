@@ -39,5 +39,5 @@ export function maybeNotifyVitaminStatus(params: { weeklyCompletion: number; def
       ? `Weekly completion at ${params.weeklyCompletion}%. Keep it up.`
       : `Weekly completion at ${params.weeklyCompletion}%. Open Vitrack to see what's missing.`
 
-  new Notification(title, { body, icon: '/icons/lemon.png' })
+  new Notification(title, { body, icon: '/icons/lemon-appicon.png' })
 }

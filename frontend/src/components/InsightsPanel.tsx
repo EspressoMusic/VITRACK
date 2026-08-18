@@ -75,6 +75,9 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   if (meals.length === 0) {
     return (
       <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
+        <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+          Weekly summary
+        </h2>
         <WeeklyGoalGlass percent={0} />
         <p className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
           Nothing here yet
@@ -90,6 +93,9 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-3 flex shrink-0 flex-col items-center text-center">
+        <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+          Weekly summary
+        </h2>
         <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
       </div>
 

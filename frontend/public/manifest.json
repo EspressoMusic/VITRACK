@@ -7,7 +7,7 @@
   "background_color": "#0d0d0d",
   "theme_color": "#0d0d0d",
   "icons": [
-    { "src": "/icons/lemon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/lemon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/lemon-appicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/lemon-appicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

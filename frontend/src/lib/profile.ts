@@ -41,6 +41,11 @@ export function resetOnboarding(): void {
   localStorage.removeItem(ONBOARDED_KEY)
 }
 
+/** Dev-only: marks onboarding as done with no real profile, so goals fall back to generic RDA defaults. */
+export function devSkipOnboarding(): void {
+  localStorage.setItem(ONBOARDED_KEY, 'true')
+}
+
 export function isSubscribed(): boolean {
   return localStorage.getItem(SUBSCRIBED_KEY) === 'true'
 }

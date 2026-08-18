@@ -7,7 +7,9 @@ export type NutrientId =
   | 'vitaminB1'
   | 'vitaminB2'
   | 'vitaminB3'
+  | 'vitaminB5'
   | 'vitaminB6'
+  | 'vitaminB7'
   | 'vitaminB9'
   | 'vitaminB12'
   | 'calcium'
@@ -15,6 +17,11 @@ export type NutrientId =
   | 'magnesium'
   | 'zinc'
   | 'potassium'
+  | 'phosphorus'
+  | 'copper'
+  | 'manganese'
+  | 'selenium'
+  | 'iodine'
 
 export type NutrientAmounts = Record<NutrientId, number>
 

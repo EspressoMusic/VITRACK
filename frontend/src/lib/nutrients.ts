@@ -111,6 +111,18 @@ export const NUTRIENTS: NutrientDef[] = [
     benefit: 'Supports energy metabolism and helps keep skin, nerves, and digestion healthy.',
   },
   {
+    id: 'vitaminB5',
+    name: 'Vitamin B5 (Pantothenic Acid)',
+    shortLabel: 'B5',
+    unit: 'mg',
+    rda: 5,
+    foodSources: [
+      'Chicken', 'Beef', 'Mushrooms', 'Avocado', 'Sweet potatoes',
+      'Broccoli', 'Eggs', 'Whole grains', 'Sunflower seeds', 'Lentils',
+    ],
+    benefit: 'Helps convert food into usable energy and supports hormone and cholesterol production.',
+  },
+  {
     id: 'vitaminB6',
     name: 'Vitamin B6',
     shortLabel: 'B6',
@@ -121,6 +133,18 @@ export const NUTRIENTS: NutrientDef[] = [
       'Salmon', 'Beef liver', 'Fortified cereal', 'Spinach', 'Sunflower seeds', 'Pistachios',
     ],
     benefit: 'Supports brain development, mood regulation, and a healthy immune system.',
+  },
+  {
+    id: 'vitaminB7',
+    name: 'Vitamin B7 (Biotin)',
+    shortLabel: 'B7',
+    unit: 'mcg',
+    rda: 30,
+    foodSources: [
+      'Eggs', 'Almonds', 'Salmon', 'Sweet potatoes', 'Spinach',
+      'Liver', 'Avocado', 'Peanuts', 'Mushrooms', 'Broccoli',
+    ],
+    benefit: 'Supports healthy hair, skin, and nails, and helps your body metabolize fats and carbs.',
   },
   {
     id: 'vitaminB9',
@@ -205,6 +229,66 @@ export const NUTRIENTS: NutrientDef[] = [
       'Sweet potatoes', 'Spinach', 'Oranges', 'Coconut water', 'Salmon', 'Yogurt',
     ],
     benefit: 'Helps regulate fluid balance, muscle contractions, and a healthy heartbeat.',
+  },
+  {
+    id: 'phosphorus',
+    name: 'Phosphorus',
+    shortLabel: 'P',
+    unit: 'mg',
+    rda: 700,
+    foodSources: [
+      'Dairy', 'Meat', 'Fish', 'Eggs', 'Lentils',
+      'Nuts', 'Whole grains', 'Pumpkin seeds', 'Beans', 'Poultry',
+    ],
+    benefit: 'Works with calcium to build strong bones and teeth and helps cells produce energy.',
+  },
+  {
+    id: 'copper',
+    name: 'Copper',
+    shortLabel: 'Cu',
+    unit: 'mg',
+    rda: 0.9,
+    foodSources: [
+      'Shellfish', 'Nuts', 'Seeds', 'Whole grains', 'Dark chocolate',
+      'Organ meats', 'Mushrooms', 'Lentils', 'Potatoes', 'Leafy greens',
+    ],
+    benefit: 'Helps form red blood cells and connective tissue and supports iron absorption.',
+  },
+  {
+    id: 'manganese',
+    name: 'Manganese',
+    shortLabel: 'Mn',
+    unit: 'mg',
+    rda: 2.3,
+    foodSources: [
+      'Whole grains', 'Nuts', 'Leafy greens', 'Tea', 'Pineapple',
+      'Legumes', 'Brown rice', 'Oats', 'Chickpeas', 'Sweet potatoes',
+    ],
+    benefit: 'Supports bone formation and helps the body process cholesterol, carbs, and protein.',
+  },
+  {
+    id: 'selenium',
+    name: 'Selenium',
+    shortLabel: 'Se',
+    unit: 'mcg',
+    rda: 55,
+    foodSources: [
+      'Brazil nuts', 'Tuna', 'Sardines', 'Eggs', 'Turkey',
+      'Sunflower seeds', 'Mushrooms', 'Brown rice', 'Chicken', 'Spinach',
+    ],
+    benefit: 'An antioxidant that protects cells from damage and supports thyroid and immune function.',
+  },
+  {
+    id: 'iodine',
+    name: 'Iodine',
+    shortLabel: 'I',
+    unit: 'mcg',
+    rda: 150,
+    foodSources: [
+      'Iodized salt', 'Seaweed', 'Cod', 'Dairy', 'Eggs',
+      'Shrimp', 'Tuna', 'Prunes', 'Potatoes', 'Turkey',
+    ],
+    benefit: 'Essential for producing thyroid hormones that regulate metabolism and growth.',
   },
 ]
 

@@ -9,6 +9,14 @@ import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
 import { NUTRIENTS, EMPTY_NUTRIENTS, percentOfRda } from '../lib/nutrients'
 import { searchFoodNames } from '../lib/foodSuggestions'
+import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
+import {
+  findCustomFood,
+  searchCustomFoods,
+  saveCustomFood,
+  scaleCustomFood,
+  onCustomFoodsChange,
+} from '../lib/customFoods'
 import {
   detectFood,
   foodEmoji,
@@ -24,10 +32,6 @@ type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'cus
 const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
 const DETECTION_INTERVAL_MS = 150
-
-const MANUAL_ENTRY_PHOTO =
-  'data:image/svg+xml;base64,' +
-  btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#e5c184"/></svg>')
 
 function devLog(tag: string, message: string) {
   if (import.meta.env.DEV) console.log(`[${tag}] ${message}`)
@@ -46,13 +50,23 @@ const FRACTION_PRESETS: { label: string; value: string }[] = [
 ]
 
 /** Stepper for whole-unit counts (1, 2, 3…) plus fraction chips and an on-demand exact-grams field. */
-function QuantityPicker({ quantity, onQuantityChange }: { quantity: string; onQuantityChange: (v: string) => void }) {
+function QuantityPicker({
+  quantity,
+  onQuantityChange,
+  unitLabel,
+}: {
+  quantity: string
+  onQuantityChange: (v: string) => void
+  /** Overrides the "whole" label with a saved custom food's own unit, e.g. "bowl". */
+  unitLabel?: string
+}) {
   const wholeMatch = /^(\d+) whole$/.exec(quantity)
   const wholeActive = !!wholeMatch
   const wholeCount = wholeMatch ? parseInt(wholeMatch[1], 10) : 1
   const isFraction = FRACTION_PRESETS.some((p) => p.value === quantity)
   const [gramsMode, setGramsMode] = useState(!wholeActive && !isFraction && quantity.trim() !== '')
   const gramsInputRef = useRef<HTMLInputElement>(null)
+  const displayUnit = unitLabel ? (wholeCount === 1 ? unitLabel : unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`) : 'whole'
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -76,7 +90,7 @@ function QuantityPicker({ quantity, onQuantityChange }: { quantity: string; onQu
             className="min-w-[2.75rem] text-center text-xs font-medium"
             style={{ color: wholeActive ? '#ffffff' : 'var(--text-primary)' }}
           >
-            {wholeCount} whole
+            {wholeCount} {displayUnit}
           </span>
           <button
             type="button"
@@ -153,7 +167,17 @@ function FoodAutocomplete({
   onQuantityChange: (v: string) => void
   onConfirm: (name: string) => void
 }) {
-  const suggestions = !confirmed ? searchFoodNames(name) : []
+  // Custom foods finish loading from IndexedDB asynchronously; re-render once they land so
+  // a food someone just saved shows up in search without needing to retype.
+  const [, forceUpdate] = useState(0)
+  useEffect(() => onCustomFoodsChange(() => forceUpdate((n) => n + 1)), [])
+
+  const customMatches = !confirmed ? searchCustomFoods(name).map((f) => f.name) : []
+  const builtInMatches = !confirmed ? searchFoodNames(name) : []
+  const suggestions = !confirmed
+    ? [...customMatches, ...builtInMatches.filter((n) => !customMatches.some((c) => c.toLowerCase() === n.toLowerCase()))].slice(0, 6)
+    : []
+  const matchedCustomFood = confirmed ? findCustomFood(name) : undefined
 
   return (
     <div className="flex flex-col gap-2">
@@ -203,7 +227,7 @@ function FoodAutocomplete({
       </div>
       {confirmed && (
         <div className="mx-auto w-2/3">
-          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} />
+          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} unitLabel={matchedCustomFood?.unitLabel} />
         </div>
       )}
     </div>
@@ -586,8 +610,22 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     // Keep a real captured/uploaded photo if one exists (e.g. scan fell back to manual entry);
     // only use the placeholder when the user opened manual entry with no photo at all.
     setPhoto((prev) => prev ?? MANUAL_ENTRY_PHOTO)
-    setStage('analyzing')
     setAnalyzeErrorMsg(null)
+
+    // A previously-saved custom food already has known nutrients for its own portion, so scale
+    // those directly instead of re-asking the AI estimator every time it's logged again.
+    const customFood = findCustomFood(manualName)
+    if (customFood) {
+      const scaled = scaleCustomFood(customFood, manualQuantity)
+      if (scaled) {
+        devLog('nutrition', `Scaled from saved custom entry: ${customFood.name}`)
+        setResult(scaled)
+        setStage('result')
+        return
+      }
+    }
+
+    setStage('analyzing')
     devLog('nutrition', `Looking up: ${manualName.trim().toLowerCase()}`)
     try {
       const res = await analyzeFoodText(manualName, manualQuantity)
@@ -601,9 +639,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     }
   }
 
-  function submitCustomEntry() {
+  async function submitCustomEntry() {
     if (!customName.trim()) return
     setPhoto((prev) => prev ?? MANUAL_ENTRY_PHOTO)
+    await saveCustomFood(customName, customPortion, customValues)
     setResult({
       foods: [{ name: customName.trim(), portion: customPortion.trim() || 'as entered' }],
       nutrients: customValues,
@@ -695,7 +734,19 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             stage === 'quantity' ||
             stage === 'analyzing' ||
             stage === 'saved') &&
-            photo && <img src={photo} alt="Captured meal" className="h-full w-full object-cover" />}
+            photo &&
+            (isManualEntryPhoto(photo) ? (
+              <div className="flex h-full w-full items-center justify-center px-4 text-center" style={{ backgroundColor: '#e5c184' }}>
+                <span
+                  className="text-xl font-bold capitalize"
+                  style={{ color: '#fffaf0', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
+                >
+                  {result?.foods[0]?.name || 'Meal'}
+                </span>
+              </div>
+            ) : (
+              <img src={photo} alt="Captured meal" className="h-full w-full object-cover" />
+            ))}
           {(stage === 'identifying' || stage === 'analyzing') && (
             <div
               className="absolute inset-0 flex flex-col items-center justify-center gap-2"
@@ -833,54 +884,70 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               {analyzeErrorMsg}
             </p>
           )}
-          <div className="mt-2">
-            <FoodAutocomplete
-              name={manualName}
-              quantity={manualQuantity}
-              confirmed={manualConfirmed}
-              onNameChange={handleManualNameChange}
-              onQuantityChange={setManualQuantity}
-              onConfirm={handleManualConfirm}
-            />
+          {manualConfirmed && (
+            <div className="mt-2">
+              <FoodAutocomplete
+                name={manualName}
+                quantity={manualQuantity}
+                confirmed={manualConfirmed}
+                onNameChange={handleManualNameChange}
+                onQuantityChange={setManualQuantity}
+                onConfirm={handleManualConfirm}
+              />
+            </div>
+          )}
+          <div className="flex flex-1 flex-col items-center justify-center gap-3">
+            {!manualConfirmed && (
+              <FoodAutocomplete
+                name={manualName}
+                quantity={manualQuantity}
+                confirmed={manualConfirmed}
+                onNameChange={handleManualNameChange}
+                onQuantityChange={setManualQuantity}
+                onConfirm={handleManualConfirm}
+              />
+            )}
+            <div className="mx-auto flex w-2/3 flex-col gap-2">
+              <button
+                onClick={runManualAnalysis}
+                disabled={!manualConfirmed || !manualQuantity.trim()}
+                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+                style={{ backgroundColor: 'var(--accent)', border: '4px solid #222' }}
+              >
+                Calculate nutrients
+              </button>
+              <button
+                onClick={() => {
+                  resetManualFields()
+                  setAnalyzeErrorMsg(null)
+                  setStage('camera')
+                }}
+                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-medium"
+                style={{ backgroundColor: '#f6e4bb', border: '4px solid #222', color: 'var(--text-primary)' }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <div className="mx-auto mt-3 flex w-[85%] items-center gap-2">
+          <div className="flex justify-center pb-1">
             <button
-              onClick={runManualAnalysis}
-              disabled={!manualConfirmed || !manualQuantity.trim()}
-              className="flex-[1.3] rounded-2xl py-2.5 text-base font-semibold text-white disabled:opacity-40"
-              style={{ backgroundColor: 'var(--accent)', border: '5px solid #222' }}
+              onClick={() => setStage('custom')}
+              className="rounded-full px-4 py-2 text-xs font-semibold"
+              style={{ backgroundColor: '#fbedc3', border: '3px solid #1a1a19', color: 'var(--text-primary)' }}
             >
-              Calculate nutrients
-            </button>
-            <button
-              onClick={() => {
-                resetManualFields()
-                setAnalyzeErrorMsg(null)
-                setStage('camera')
-              }}
-              className="flex-[0.7] rounded-2xl py-2 text-base font-medium"
-              style={{ backgroundColor: '#f6e4bb', border: '5px solid #222', color: 'var(--text-primary)' }}
-            >
-              Cancel
+              Add custom food or supplement →
             </button>
           </div>
-          <button
-            onClick={() => setStage('custom')}
-            className="text-center text-xs font-medium underline"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            Can't find it? Add a food or supplement with your own nutrition facts →
-          </button>
         </div>
       )}
 
       {stage === 'custom' && (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
-          <div className="mx-auto flex w-[85%] items-center gap-2">
+          <div className="mx-auto flex w-[85%] items-stretch gap-2">
             <button
               onClick={submitCustomEntry}
               disabled={!customName.trim()}
-              className="flex-[1.3] rounded-2xl py-2.5 text-base font-semibold text-white disabled:opacity-40"
+              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-center text-base font-semibold text-white disabled:opacity-40"
               style={{ backgroundColor: 'var(--accent)', border: '5px solid #222' }}
             >
               Use these values
@@ -890,7 +957,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 resetCustomFields()
                 setStage('manual')
               }}
-              className="flex-[0.7] rounded-2xl py-2 text-base font-medium"
+              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-base font-medium"
               style={{ backgroundColor: '#f6e4bb', border: '5px solid #222', color: 'var(--text-primary)' }}
             >
               Back

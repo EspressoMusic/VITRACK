@@ -72,6 +72,7 @@ export function computeNutrientGoals(profile: OnboardingProfile): NutrientAmount
 
   goals.zinc = female ? 8 : 11
   goals.potassium = female ? 2600 : 3400
+  goals.manganese = female ? 1.8 : 2.3
 
   return goals
 }

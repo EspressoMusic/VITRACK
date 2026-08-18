@@ -8,7 +8,9 @@ export const NUTRIENT_IDS = [
   'vitaminB1',
   'vitaminB2',
   'vitaminB3',
+  'vitaminB5',
   'vitaminB6',
+  'vitaminB7',
   'vitaminB9',
   'vitaminB12',
   'calcium',
@@ -16,6 +18,11 @@ export const NUTRIENT_IDS = [
   'magnesium',
   'zinc',
   'potassium',
+  'phosphorus',
+  'copper',
+  'manganese',
+  'selenium',
+  'iodine',
 ]
 
 export const NUTRIENT_UNITS = {
@@ -27,7 +34,9 @@ export const NUTRIENT_UNITS = {
   vitaminB1: 'mg',
   vitaminB2: 'mg',
   vitaminB3: 'mg',
+  vitaminB5: 'mg',
   vitaminB6: 'mg',
+  vitaminB7: 'mcg',
   vitaminB9: 'mcg',
   vitaminB12: 'mcg',
   calcium: 'mg',
@@ -35,4 +44,9 @@ export const NUTRIENT_UNITS = {
   magnesium: 'mg',
   zinc: 'mg',
   potassium: 'mg',
+  phosphorus: 'mg',
+  copper: 'mg',
+  manganese: 'mg',
+  selenium: 'mcg',
+  iodine: 'mcg',
 }

@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
 import { NUTRIENTS, NUTRIENT_MAP, percentOfRda, coverageStatus } from '../lib/nutrients'
+import { isManualEntryPhoto } from '../lib/mealPhoto'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
 
@@ -48,7 +49,18 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
 
         <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
           <div className="relative shrink-0 overflow-hidden rounded-2xl" style={{ border: '3px solid #000000', boxShadow: '0 6px 16px rgba(26,26,25,0.18)' }}>
-            <img src={meal.imageDataUrl} alt="" className="h-28 w-full object-cover" />
+            {isManualEntryPhoto(meal.imageDataUrl) ? (
+              <div className="flex h-28 w-full items-center justify-center px-4 text-center" style={{ backgroundColor: '#f6e4bb' }}>
+                <span
+                  className="text-xl font-bold capitalize"
+                  style={{ color: 'var(--text-primary)', textShadow: '0 1px 4px rgba(255,255,255,0.5)' }}
+                >
+                  {meal.foods[0]?.name || 'Meal'}
+                </span>
+              </div>
+            ) : (
+              <img src={meal.imageDataUrl} alt="" className="h-28 w-full object-cover" />
+            )}
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 h-14"
               style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 100%)' }}

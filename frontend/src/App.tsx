@@ -9,7 +9,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
 import { ThankYouPage } from './components/ThankYouPage'
-import { activateSubscription, hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
+import { activateSubscription, devSkipOnboarding, hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
 import { getAllMeals } from './lib/db'
 import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
@@ -73,7 +73,13 @@ function shouldDevUnlock(): boolean {
 }
 
 export default function App() {
-  const [onboarded, setOnboarded] = useState(hasOnboarded)
+  const [onboarded, setOnboarded] = useState(() => {
+    if (shouldDevUnlock()) {
+      devSkipOnboarding()
+      return true
+    }
+    return hasOnboarded()
+  })
   const [subscribed, setSubscribed] = useState(() => {
     if (shouldDevUnlock()) {
       activateSubscription('yearly')
