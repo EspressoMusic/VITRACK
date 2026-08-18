@@ -299,7 +299,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [manualLoading, setManualLoading] = useState(false)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
 
-  const [detectorStatus, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
+  const [, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
   const [detections, setDetections] = useState<FoodDetection[]>([])
   // Whether the live camera stream is attached and producing frames. Scan Food is gated on
   // this alone — NOT on COCO-SSD finding anything, since COCO only knows ~10 food classes and
@@ -666,7 +666,6 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             stage === 'confirm' ||
             stage === 'quantity' ||
             stage === 'analyzing' ||
-            stage === 'result' ||
             stage === 'saved') &&
             photo && <img src={photo} alt="Captured meal" className="h-full w-full object-cover" />}
           {(stage === 'identifying' || stage === 'analyzing') && (
