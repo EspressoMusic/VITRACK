@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Vitrack</title>
+<meta name="description" content="Vitrack's Privacy Policy, including cookies and local storage." />
+<style>
+:root {
+  --ground: #fde3a3;
+  --ground-deep: #f7e4ad;
+  --paper: #fffaf0;
+  --ink: #17140c;
+  --ink-soft: #5a4d31;
+  --ink-faint: #8a7a54;
+  --accent: #d9a441;
+  --accent-deep: #b8842a;
+  --line: #17140c;
+  --max-w: 820px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'Merriweather Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+.wrap { max-width: var(--max-w); margin: 0 auto; padding: 0 28px; }
+.nav {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--ground) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--line);
+}
+.nav .wrap { max-width: 1100px; display: flex; align-items: center; justify-content: space-between; height: 76px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; text-decoration: none; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); border: 2.5px solid var(--line); display: grid; place-items: center; }
+.brand-mark svg { width: 18px; height: 18px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 2.5px solid var(--line); border-radius: 999px; padding: 9px 18px;
+  font-family: inherit; font-weight: 700; font-size: 0.85rem; text-decoration: none;
+  cursor: pointer; box-shadow: 2px 2px 0 var(--line);
+}
+.btn-ghost { background: var(--paper); color: var(--ink); }
+main { padding: 56px 0 80px; }
+.doc-card { background: var(--paper); border: 2.5px solid var(--line); border-radius: 20px; padding: 44px 40px; box-shadow: 6px 6px 0 var(--line); }
+h1 { font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em; }
+.updated { font-size: 0.85rem; color: var(--ink-faint); margin-bottom: 32px; }
+h2 { font-size: 1.15rem; font-weight: 800; margin: 32px 0 10px; }
+h2:first-of-type { margin-top: 0; }
+p { line-height: 1.65; color: var(--ink-soft); margin: 10px 0; font-size: 0.98rem; }
+ul { margin: 10px 0; padding-left: 22px; color: var(--ink-soft); }
+li { line-height: 1.6; margin: 4px 0; font-size: 0.98rem; }
+.legal-nav { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 28px; font-size: 0.88rem; font-weight: 700; }
+.legal-nav a { text-decoration: none; padding: 7px 14px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
+.legal-nav a.active { background: var(--accent); }
+footer { border-top: 2px solid var(--line); padding: 36px 0; }
+footer .wrap { max-width: 1100px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; }
+.foot-links { display: flex; gap: 22px; font-size: 0.88rem; font-weight: 600; }
+.foot-links a { text-decoration: none; opacity: 0.8; }
+.foot-links a:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#17140c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a1 1 0 0 1 1-1h2.2l1-1.6A1 1 0 0 1 9.05 5h5.9a1 1 0 0 1 .85.4L16.8 7H19a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><circle cx="12" cy="13" r="3.3"/></svg>
+      </span>
+      Vitrack
+    </a>
+    <a class="btn btn-ghost" href="/">Back to home</a>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div class="doc-card">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: 18.08.2026</p>
+
+      <div class="legal-nav">
+        <a href="/terms.html">Terms &amp; Conditions</a>
+        <a class="active" href="/privacy.html">Privacy Policy</a>
+        <a href="/refund.html">Refund Policy</a>
+      </div>
+
+      <h2>1. General</h2>
+      <p>This policy explains what information Vitrack collects, how it is stored and used, with whom it may be shared, and what rights you have regarding it. "Personal information" is any information relating to an identified or identifiable person.</p>
+      <p>The data controller is currently Shilo, an independent private developer, with no registered business entity, who can be contacted at: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a>.</p>
+
+      <h2>2. What information is collected</h2>
+      <ul>
+        <li>Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin and mineral targets.</li>
+        <li>Meal photos and analysis results: when you photograph a meal, the photo is sent for automatic analysis (see section 3), and the analysis result (list of identified foods, estimated quantities, nutrient estimates, and confidence level) is stored together with the photo: locally on the device (IndexedDB) if you are not signed in, or in a cloud database if you signed in with a Google account.</li>
+        <li>Account details: if you sign in with Google, we receive from it (via our authentication provider) your name, email address, and profile picture as provided by Google.</li>
+        <li>Subscription and billing status: the plan type selected (monthly/yearly) and active/inactive status, recorded by the App once a purchase is completed through Paddle. We do not collect or store your payment method details (such as card numbers) — these are entered directly into Paddle's checkout and handled solely by Paddle, as described in section 5 below.</li>
+        <li>Basic technical information: like any online service, the hosting, authentication, and AI infrastructure we use may naturally process basic connection data (such as IP address, browser type, timestamps) necessary to operate and secure the Service.</li>
+      </ul>
+
+      <h2>3. AI-based image analysis</h2>
+      <p>Food recognition from a photo happens in two stages: (a) live, on-device recognition only (using a machine-learning model that runs in the browser) that helps frame the shot in real time — this stage does not send any data to a server; (b) final analysis of the photo you captured, performed by sending the photo to the App's server, which forwards it for processing by OpenAI (ChatGPT / GPT models) for food recognition and nutrient estimation.</p>
+      <p>This means the meal photo you choose to analyze is transferred to OpenAI as an external third party, even if you are not signed in and even if the analysis result is ultimately stored only locally on your device. This processing is also subject to OpenAI's own privacy policy and terms of use (openai.com). If we change or add AI providers in the future, we will update this section accordingly.</p>
+      <p>Do not upload especially sensitive photos (such as ones that clearly show a third party's face, personal documents, or information unrelated to a meal) for analysis.</p>
+
+      <h2>4. How we use information</h2>
+      <ul>
+        <li>Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, and tracking daily/weekly vitamin and mineral intake.</li>
+        <li>Managing accounts, sign-in, and syncing across devices for those who choose to sign in.</li>
+        <li>Managing subscriptions and payments, processed through Paddle.</li>
+        <li>Responding to support requests sent to our email address.</li>
+        <li>Maintaining the security of the Service and preventing misuse.</li>
+        <li>Complying with legal requirements where applicable.</li>
+      </ul>
+      <p>We do not sell personal information to third parties, and we do not use your data for targeted advertising.</p>
+
+      <h2>5. Who information is shared with</h2>
+      <ul>
+        <li>Supabase — the database, authentication, and cloud storage infrastructure provider we use for signed-in users.</li>
+        <li>Vercel — the hosting provider used to serve the App.</li>
+        <li>Google — for the sign-in process (Google Sign-In).</li>
+        <li>OpenAI (ChatGPT / GPT models) — the AI-based image analysis provider, used for food recognition and nutrient estimation in the photos you take, as described in section 3 above.</li>
+        <li>Paddle.com Market Ltd and its group companies ("Paddle") — our payment processor and Merchant of Record for paid subscriptions. When you subscribe, Paddle collects and processes your payment details, billing address, and email directly, subject to Paddle's own privacy policy (paddle.com/legal). The Operator receives only your subscription plan and active/inactive status — never your full payment details.</li>
+        <li>Law enforcement authorities or competent bodies — only to the extent required by law, court order, or to protect rights, property, or safety.</li>
+        <li>In the event of a sale, merger, acquisition, or transfer of business assets — information may be transferred to the acquiring/merging party, with reasonable notice given where possible.</li>
+      </ul>
+
+      <h2>6. Storage, data security, and international transfer</h2>
+      <p>We take reasonable, standard measures to protect information, but no method of storage or transmission over the internet is guaranteed to be 100% secure, and we cannot promise absolute security of information.</p>
+      <p>The infrastructure providers we use (Supabase, Vercel, Google, Paddle, and OpenAI) may store or process information on servers located outside Israel, including in the US and Europe. By using the App, you consent to such transfer of information.</p>
+
+      <h2>7. Data retention and deletion</h2>
+      <p>Information stored only locally (without an account) stays on your device only and can be deleted immediately and irreversibly via "Clear all data" in Settings, and is also deleted if you clear your browser storage or remove the App.</p>
+      <p>Account information (for signed-in users) is retained as long as the account is active. Deleting an account via "Delete account" in Settings deletes the information associated with it from the services under our control; copies may be retained briefly in technical backups before final deletion, and third-party providers (such as the image-analysis provider) may retain their own independent retention policies.</p>
+      <p>You can also request deletion, review, or correction of information manually by contacting shilohdhd1@gmail.com.</p>
+
+      <h2>8. Your rights</h2>
+      <p>Subject to applicable law, you may have the right to: review the information stored about you; correct inaccurate information; request its deletion; object to certain processing; and receive a copy of your information in an accessible format (data portability). Some of these rights can be exercised directly through the Settings screen (deleting data/account), and others by contacting shilohdhd1@gmail.com. We will endeavor to respond to requests within a reasonable time.</p>
+      <p>Residents of the European Union may enjoy additional rights under the GDPR; residents of Israel may enjoy rights under the Israeli Privacy Protection Law, 1981, and its regulations.</p>
+
+      <h2>9. Children's privacy</h2>
+      <p>The Service is intended for those aged 18 and over only, and we do not knowingly collect information from minors. See the "Minimum age" section in our <a href="/terms.html" style="text-decoration: underline;">Terms &amp; Conditions</a>.</p>
+
+      <h2>10. Cookies and local storage</h2>
+      <p>The App does not currently use advertising cookies or third-party ad tracking. We do use browser storage technologies essential to operating the App:</p>
+      <ul>
+        <li>Local Storage — to save the state of your personal questionnaire, your calculated nutritional targets, and your subscription status on your device.</li>
+        <li>IndexedDB — to save your meal log on your device when you are not signed in.</li>
+        <li>Sign-in related storage — if you sign in with Google, our authentication provider (Supabase, via Google) may store session tokens in local storage or cookies, to keep you signed in between visits.</li>
+      </ul>
+      <p>These technologies are essential to the basic functioning of the App and are not used by us for cross-site advertising tracking. You can delete all local data at any time via "Clear all data" and/or "Delete account" in the Settings screen, or by clearing site/browser data in your browser settings. If we add usage-analytics or advertising tools in the future, we will update this policy accordingly and request your consent where required by law.</p>
+
+      <h2>11. Changes to this Privacy Policy</h2>
+      <p>We may update this policy from time to time. Material changes will be reflected by updating the "Last updated" date at the top of the document, and where necessary, a notice will be shown within the App.</p>
+
+      <h2>12. Contact</h2>
+      <p>For any question, request, or complaint regarding this Privacy Policy or your personal information, contact us at: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a></p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-links">
+      <a href="/">Home</a>
+      <a href="/terms.html">Terms &amp; Conditions</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/refund.html">Refund Policy</a>
+      <a href="mailto:shilohdhd1@gmail.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
