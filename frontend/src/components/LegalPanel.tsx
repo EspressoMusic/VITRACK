@@ -34,7 +34,7 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden px-5 py-4" style={{ color: 'var(--text-primary)' }}>
+        <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4" style={{ color: 'var(--text-primary)' }}>
           <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
             Last updated: {LEGAL_LAST_UPDATED}
           </p>

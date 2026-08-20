@@ -199,8 +199,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
         }}
       >
-        <AvocadoNutrientCallout />
-
         <div className="shrink-0 text-center">
           <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight">
             One step from a whole new you
@@ -343,21 +341,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-/** Decorative avocado badge in the corner. Absolutely positioned so it never pushes the rows below it out of place. */
-function AvocadoNutrientCallout() {
-  return (
-    <div className="pointer-events-none absolute z-20" style={{ width: 110, height: 110, top: 72, right: 48 }}>
-      <img
-        src="/icons/fruits/avocado.png"
-        alt=""
-        className="absolute z-10"
-        style={{ width: 62, height: 62, objectFit: 'contain', left: 88, top: 24, transform: 'translate(-50%, -50%)' }}
-        aria-hidden
-      />
     </div>
   )
 }

@@ -41,9 +41,24 @@ export function resetOnboarding(): void {
   localStorage.removeItem(ONBOARDED_KEY)
 }
 
-/** Dev-only: marks onboarding as done with no real profile, so goals fall back to generic RDA defaults. */
+/** Dev-only: marks onboarding as done with a sample profile, so screens that expect goals (e.g. the
+ * paywall's nutrient preview) render the same as they would for a real onboarded user. */
 export function devSkipOnboarding(): void {
   localStorage.setItem(ONBOARDED_KEY, 'true')
+  if (!getStoredGoals()) {
+    const sampleProfile: OnboardingProfile = {
+      age: 30,
+      sex: 'unspecified',
+      weightKg: 70,
+      heightCm: 170,
+      activityLevel: 'moderate',
+      diet: 'omnivore',
+    }
+    const goals = computeNutrientGoals(sampleProfile)
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(sampleProfile))
+    localStorage.setItem(GOALS_KEY, JSON.stringify(goals))
+    setActiveGoals(goals)
+  }
 }
 
 export function isSubscribed(): boolean {

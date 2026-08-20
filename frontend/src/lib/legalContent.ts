@@ -9,7 +9,7 @@ export interface LegalPart {
   blocks: LegalBlock[]
 }
 
-export const LEGAL_LAST_UPDATED = '18.08.2026'
+export const LEGAL_LAST_UPDATED = '20.08.2026'
 export const SUPPORT_EMAIL = 'shilohdhd1@gmail.com'
 export const OPERATOR_NAME = 'Shilo'
 export const AI_PROVIDER_NAME = 'OpenAI (ChatGPT / GPT models)'
@@ -94,6 +94,7 @@ export const LEGAL_PARTS: LegalPart[] = [
           'Vitrack does not provide medical advice, professional nutritional advice, diagnosis, treatment, prevention, or cure of any disease or medical condition, and is not a substitute for a physician, a licensed clinical dietitian, or any other medical professional.',
           'Food recognition from photos and vitamin/mineral estimates are performed by an automated AI system, and may be incorrect, partial, inaccurate, or misleading — including misidentifying the type of food, the portion size, or failing to identify ingredients at all.',
           'The App is not designed and is not able to identify allergens, hazardous ingredients, contamination, spoiled food, food-drug interactions, or any other health risk in a photographed meal. Do not rely on the App to make decisions relating to allergies, sensitivities, diabetes (including carbohydrate counting), pregnancy, breastfeeding, chronic illness, eating disorders, or any other medical condition — without independent verification and approval from a qualified medical professional.',
+          'Food and nutrient-source suggestions shown in the App (for example, foods suggested to help close a vitamin or mineral gap) are general and are not filtered for allergens, intolerances, or any personal dietary restriction. If you have a food allergy, intolerance, or sensitivity of any kind, you are solely responsible for checking any food named or suggested by the App against your own medical history before consuming it. The Operator bears no responsibility or liability for any allergic reaction, adverse reaction, or other harm resulting from a food identified, logged, or suggested by the App.',
           'The daily targets calculated in the personal questionnaire are based on general, publicly available formulas and are not clinically personalized; do not adjust the dosage of dietary supplements, vitamins, or minerals based solely on data from the App, and in particular not in amounts higher than recommended, without consulting a physician.',
           'In a medical emergency, contact emergency services immediately (for example, Magen David Adom in Israel, phone 101) and do not rely on the App.',
         ],
