@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { BillingPlan } from '../types'
-import { activateSubscription, getStoredGoals } from '../lib/profile'
+import { activateSubscription, getStoredGoals, hasUsedSecretUnlock, markSecretUnlockUsed } from '../lib/profile'
 import { openPaddleCheckout } from '../lib/paddle'
 import { waitForServerSubscription } from '../lib/cloudProfile'
 import { NUTRIENTS } from '../lib/nutrients'
@@ -19,6 +19,9 @@ const FEATURES = [
 
 const OFFER_DEADLINE_KEY = 'vitrack:offerDeadline'
 const OFFER_WINDOW_MS = 24 * 60 * 60 * 1000
+
+const SECRET_UNLOCK_TAPS = 10
+const SECRET_UNLOCK_TAP_WINDOW_MS = 600
 
 /** Persists a 24h deadline on first view so the countdown survives reloads instead of resetting. */
 function getOfferDeadline(): number {
@@ -50,6 +53,24 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [offerDeadline] = useState(getOfferDeadline)
   const [now, setNow] = useState(Date.now())
   const goals = getStoredGoals()
+  const secretTapCount = useRef(0)
+  const secretLastTapAt = useRef(0)
+
+  // Hidden, one-time-per-device shortcut: tapping the headline 10 times in a row unlocks the
+  // app without paying. Spent flag lives in localStorage so it can never fire a second time.
+  function handleHeadlineTap() {
+    if (hasUsedSecretUnlock()) return
+    const tapAt = Date.now()
+    secretTapCount.current = tapAt - secretLastTapAt.current <= SECRET_UNLOCK_TAP_WINDOW_MS ? secretTapCount.current + 1 : 1
+    secretLastTapAt.current = tapAt
+    if (secretTapCount.current >= SECRET_UNLOCK_TAPS) {
+      markSecretUnlockUsed()
+      activateSubscription(plan)
+      // Reload (rather than onSubscribed()) so this skips straight into the app instead of the
+      // post-purchase #thank-you screen, which assumes a real Paddle checkout just happened.
+      window.location.reload()
+    }
+  }
 
   async function handleRestore() {
     setRestoring(true)
@@ -200,7 +221,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         }}
       >
         <div className="shrink-0 text-center">
-          <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight">
+          <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight" onClick={handleHeadlineTap}>
             One step from a whole new you
           </h1>
         </div>
