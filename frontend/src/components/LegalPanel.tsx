@@ -15,7 +15,7 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
       />
       <div
         className="modal-card-enter relative z-10 flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl"
-        style={{ backgroundColor: '#f7e4ad', border: '2px solid #1a1a19' }}
+        style={{ backgroundColor: '#f7e4ad', border: '1px solid #1a1a19' }}
       >
         <div
           className="relative flex shrink-0 items-center justify-center p-5"
@@ -44,8 +44,8 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
               <button
                 key={part.id}
                 onClick={() => scrollToPart(part.id)}
-                className="rounded-full px-3 py-1.5 text-[11px] font-medium"
-                style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}
+                className="rounded-full px-3 py-1.5 text-[11px] font-medium transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-strong)', boxShadow: '0 1px 0 var(--border-strong)', color: 'var(--text-primary)' }}
               >
                 {part.title}
               </button>

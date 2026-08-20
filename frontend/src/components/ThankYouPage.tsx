@@ -34,7 +34,7 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
         className="relative z-10 flex w-full flex-col items-center gap-3 rounded-3xl px-7 py-9 text-center"
         style={{
           backgroundColor: '#e5c184',
-          border: '3px solid var(--accent-strong)',
+          border: '2px solid var(--accent-strong)',
           boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
         }}
       >

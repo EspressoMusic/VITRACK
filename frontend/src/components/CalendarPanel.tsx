@@ -74,7 +74,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 text-center">
       <div
         className="mx-auto w-[92%] shrink-0 rounded-3xl p-2.5"
-        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
         <div className="mb-1.5 flex items-center justify-between">
           <button
@@ -145,7 +145,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
 
       <div
         className="mx-auto mt-2 flex w-[92%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl p-3"
-        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
         <h2 className="mb-1 shrink-0 text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
           {selectedLabel}
@@ -161,8 +161,8 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
               <button
                 key={meal.id}
                 onClick={() => setSelectedMeal(meal)}
-                className="flex items-center gap-1.5 rounded-lg p-1 text-left"
-                style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                className="flex items-center gap-1.5 rounded-lg p-1 text-left transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
               >
                 <img
                   src={meal.imageDataUrl}

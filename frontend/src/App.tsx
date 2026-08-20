@@ -9,7 +9,14 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
 import { ThankYouPage } from './components/ThankYouPage'
-import { activateSubscription, devSkipOnboarding, hasOnboarded, isSubscribed, loadPersistedGoals } from './lib/profile'
+import {
+  activateSubscription,
+  deactivateSubscription,
+  devSkipOnboarding,
+  hasOnboarded,
+  isSubscribed,
+  loadPersistedGoals,
+} from './lib/profile'
 import { getAllMeals } from './lib/db'
 import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
@@ -72,15 +79,24 @@ function shouldDevUnlock(): boolean {
   return import.meta.env.DEV && new URLSearchParams(window.location.search).get('unlock') === '1'
 }
 
+/** Dev-only: jump straight to the paywall screen for local testing. Visit `?paywall=1`. */
+function shouldDevShowPaywall(): boolean {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get('paywall') === '1'
+}
+
 export default function App() {
   const [onboarded, setOnboarded] = useState(() => {
-    if (shouldDevUnlock()) {
+    if (shouldDevUnlock() || shouldDevShowPaywall()) {
       devSkipOnboarding()
       return true
     }
     return hasOnboarded()
   })
   const [subscribed, setSubscribed] = useState(() => {
+    if (shouldDevShowPaywall()) {
+      deactivateSubscription()
+      return false
+    }
     if (shouldDevUnlock()) {
       activateSubscription('yearly')
       return true

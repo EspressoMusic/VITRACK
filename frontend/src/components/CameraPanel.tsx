@@ -4,10 +4,11 @@ import { analyzeFoodText, identifyFood, AnalyzeError, type AnalyzeResult, type F
 import { addMeal } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
+import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
-import { NUTRIENTS, EMPTY_NUTRIENTS, percentOfRda } from '../lib/nutrients'
+import { NUTRIENTS, EMPTY_NUTRIENTS, percentOfRda, percentOfMealTarget } from '../lib/nutrients'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
 import {
@@ -27,7 +28,7 @@ import {
   type FoodDetection,
 } from '../lib/foodDetector'
 
-type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result' | 'saved'
+type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result'
 
 const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
@@ -112,11 +113,11 @@ function QuantityPicker({
               setGramsMode(false)
               onQuantityChange(p.value)
             }}
-            className="rounded-full px-2.5 py-1 text-xs font-medium"
+            className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{
               backgroundColor: !gramsMode && quantity === p.value ? 'var(--accent)' : 'var(--surface-2)',
               color: !gramsMode && quantity === p.value ? '#ffffff' : 'var(--text-primary)',
-              border: '2px solid #000000',
+              border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
             }}
           >
             {p.label}
@@ -141,8 +142,8 @@ function QuantityPicker({
               onQuantityChange('')
               requestAnimationFrame(() => gramsInputRef.current?.focus())
             }}
-            className="rounded-full px-2.5 py-1 text-xs font-medium"
-            style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '2px solid #000000' }}
+            className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+            style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
           >
             Exact grams
           </button>
@@ -190,7 +191,7 @@ function FoodAutocomplete({
           className="w-full rounded-xl py-2.5 pl-3 text-base"
           style={{
             backgroundColor: 'var(--surface-2)',
-            border: '4px solid #000000',
+            border: '3px solid #000000',
             color: 'var(--text-primary)',
             paddingRight: confirmed ? '2.25rem' : '0.75rem',
           }}
@@ -323,9 +324,19 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [manualQuantity, setManualQuantity] = useState('')
   const [manualLoading, setManualLoading] = useState(false)
   const [customName, setCustomName] = useState('')
-  const [customPortion, setCustomPortion] = useState('')
   const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
+
+  const visibleNutrients = result ? NUTRIENTS.filter((n) => percentOfRda(n.id, result.nutrients[n.id]) > 0) : []
+  const overallNutrientPercent = visibleNutrients.length
+    ? Math.round(
+        visibleNutrients.reduce((sum, n) => sum + percentOfMealTarget(n.id, result!.nutrients[n.id]), 0) /
+          visibleNutrients.length
+      )
+    : 0
+  // Matches the last row's rise-particle timing (riseDelayMs + second-particle offset + rise duration)
+  // so the fill bar only starts filling once every rising particle has reached it.
+  const nutrientRiseTotalMs = visibleNutrients.length ? (visibleNutrients.length - 1) * 90 + 140 + 1100 : 0
 
   const [, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
   const [detections, setDetections] = useState<FoodDetection[]>([])
@@ -472,7 +483,6 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
 
   function resetCustomFields() {
     setCustomName('')
-    setCustomPortion('')
     setCustomValues(EMPTY_NUTRIENTS)
   }
 
@@ -642,9 +652,9 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   async function submitCustomEntry() {
     if (!customName.trim()) return
     setPhoto((prev) => prev ?? MANUAL_ENTRY_PHOTO)
-    await saveCustomFood(customName, customPortion, customValues)
+    await saveCustomFood(customName, '1', customValues)
     setResult({
-      foods: [{ name: customName.trim(), portion: customPortion.trim() || 'as entered' }],
+      foods: [{ name: customName.trim(), portion: '1' }],
       nutrients: customValues,
       confidence: 'high',
       note: 'Nutrition facts entered manually from the product label.',
@@ -681,8 +691,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       analysisNote: result.note,
     }
     await addMeal(entry)
-    setStage('saved')
     onLogged()
+    logAnother()
   }
 
   function logAnother() {
@@ -711,7 +721,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       {stage !== 'manual' && stage !== 'custom' && stage !== 'result' && (
         <div
           className={`relative mx-auto flex aspect-square shrink-0 items-center justify-center overflow-hidden rounded-2xl ${stage === 'quantity' ? 'w-[38%]' : 'w-[70%]'}`}
-          style={{ backgroundColor: 'var(--surface-2)', border: '5px solid #000000' }}
+          style={{ backgroundColor: 'var(--surface-2)', border: '4px solid #000000' }}
         >
           {stage === 'camera' && !cameraError && (
             <>
@@ -732,8 +742,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           {(stage === 'identifying' ||
             stage === 'confirm' ||
             stage === 'quantity' ||
-            stage === 'analyzing' ||
-            stage === 'saved') &&
+            stage === 'analyzing') &&
             photo &&
             (isManualEntryPhoto(photo) ? (
               <div className="flex h-full w-full items-center justify-center px-4 text-center" style={{ backgroundColor: '#e5c184' }}>
@@ -762,7 +771,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       )}
 
       {stage === 'camera' && (
-        <div className="mx-auto flex w-[80%] flex-col items-center gap-2">
+        <div className="mx-auto flex w-[80%] flex-col items-center gap-3">
           {stableDetection && !cameraError && (
             <p className="text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               {foodEmoji(stableDetection.normalizedName)} {stableDetection.normalizedName} detected
@@ -771,22 +780,22 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <button
             onClick={scanFood}
             disabled={!!cameraError || !cameraReady}
-            className="w-3/4 rounded-full py-2 text-sm font-semibold text-white transition disabled:opacity-40"
-            style={{ backgroundColor: 'var(--accent)', border: '5px solid #000000' }}
+            className="w-3/4 rounded-full py-2 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
+            style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
           >
             Scan Food
           </button>
           <button
             onClick={handleUploadClick}
-            className="w-3/4 rounded-full py-2 text-center text-sm font-medium"
-            style={{ border: '5px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a' }}
+            className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+            style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
           >
             Upload photo
           </button>
           <button
             onClick={() => setStage('manual')}
-            className="w-3/4 rounded-full py-2 text-center text-sm font-medium"
-            style={{ border: '5px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3' }}
+            className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+            style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3', boxShadow: '0 4px 0 #1a1a19' }}
           >
             Log food manually
           </button>
@@ -818,15 +827,15 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 setConfirmedFoodName(identification.displayName || identification.food)
                 setStage('quantity')
               }}
-              className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white"
-              style={{ backgroundColor: '#e8863a', border: '3px solid #1a1a19' }}
+              className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#e8863a', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
             >
               Confirm
             </button>
             <button
               onClick={retake}
-              className="flex-1 rounded-full py-2.5 text-sm font-medium"
-              style={{ backgroundColor: '#f6e4bb', border: '3px solid #222', color: 'var(--text-primary)' }}
+              className="flex-1 rounded-full py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
               Retake photo
             </button>
@@ -858,15 +867,15 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             <button
               onClick={() => confirmFood(confirmedFoodName, confirmQuantity)}
               disabled={!confirmQuantity.trim()}
-              className="flex-[2] rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-              style={{ backgroundColor: 'var(--accent)', border: '3px solid #1a1a19' }}
+              className="flex-[2] rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
             >
               Calculate nutrients
             </button>
             <button
               onClick={() => setStage('confirm')}
-              className="flex-1 rounded-full py-2.5 text-sm font-medium"
-              style={{ backgroundColor: '#f6e4bb', border: '3px solid #222', color: 'var(--text-primary)' }}
+              className="flex-1 rounded-full py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
               Back
             </button>
@@ -911,8 +920,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               <button
                 onClick={runManualAnalysis}
                 disabled={!manualConfirmed || !manualQuantity.trim()}
-                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-                style={{ backgroundColor: 'var(--accent)', border: '4px solid #222' }}
+                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--accent)', border: '3px solid #222', boxShadow: '0 3px 0 #222' }}
               >
                 Calculate nutrients
               </button>
@@ -922,8 +931,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   setAnalyzeErrorMsg(null)
                   setStage('camera')
                 }}
-                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-medium"
-                style={{ backgroundColor: '#f6e4bb', border: '4px solid #222', color: 'var(--text-primary)' }}
+                className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: '#f6e4bb', border: '3px solid #222', boxShadow: '0 3px 0 #222', color: 'var(--text-primary)' }}
               >
                 Cancel
               </button>
@@ -932,8 +941,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <div className="flex justify-center pb-1">
             <button
               onClick={() => setStage('custom')}
-              className="rounded-full px-4 py-2 text-xs font-semibold"
-              style={{ backgroundColor: '#fbedc3', border: '3px solid #1a1a19', color: 'var(--text-primary)' }}
+              className="rounded-full px-4 py-2 text-xs font-semibold transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#fbedc3', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19', color: 'var(--text-primary)' }}
             >
               Add custom food or supplement →
             </button>
@@ -943,12 +952,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
 
       {stage === 'custom' && (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <CustomNutritionForm
+            name={customName}
+            onNameChange={setCustomName}
+            values={customValues}
+            onValueChange={handleCustomValueChange}
+          />
           <div className="mx-auto flex w-[85%] items-stretch gap-2">
             <button
               onClick={submitCustomEntry}
               disabled={!customName.trim()}
-              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-center text-base font-semibold text-white disabled:opacity-40"
-              style={{ backgroundColor: 'var(--accent)', border: '5px solid #222' }}
+              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-center text-base font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent)', border: '4px solid #222', boxShadow: '0 4px 0 #222' }}
             >
               Use these values
             </button>
@@ -957,26 +972,23 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 resetCustomFields()
                 setStage('manual')
               }}
-              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-base font-medium"
-              style={{ backgroundColor: '#f6e4bb', border: '5px solid #222', color: 'var(--text-primary)' }}
+              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-base font-medium transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#f6e4bb', border: '4px solid #222', boxShadow: '0 4px 0 #222', color: 'var(--text-primary)' }}
             >
               Back
             </button>
           </div>
-          <CustomNutritionForm
-            name={customName}
-            onNameChange={setCustomName}
-            portion={customPortion}
-            onPortionChange={setCustomPortion}
-            values={customValues}
-            onValueChange={handleCustomValueChange}
-          />
         </div>
       )}
 
       {stage === 'result' && result && (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           <ConfettiBurst count={70} />
+
+          {visibleNutrients.length > 0 && (
+            <NutrientFillBar percent={overallNutrientPercent} startDelayMs={nutrientRiseTotalMs} />
+          )}
+
           <div className="flex flex-col items-center justify-center gap-1 px-2 text-center">
             {result.foods.length === 0 ? (
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -999,7 +1011,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <div
             ref={resultScrollRef}
             className="thin-scroll mx-auto flex max-h-[48vh] min-h-0 w-[88%] flex-1 flex-col gap-1.5 overflow-y-auto rounded-3xl p-2"
-            style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+            style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
           >
             {result.foods.length === 0 ? (
               <div className="flex flex-col gap-2">
@@ -1014,40 +1026,34 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 <button
                   onClick={runManualFixup}
                   disabled={!manualConfirmed || !manualQuantity.trim() || manualLoading}
-                  className="rounded-full py-2 text-xs font-semibold text-white disabled:opacity-40"
-                  style={{ backgroundColor: 'var(--accent)', border: '2px solid #1a1a19' }}
+                  className="rounded-full py-2 text-xs font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--accent)', border: '1px solid #1a1a19', boxShadow: '0 1px 0 #1a1a19' }}
                 >
                   {manualLoading ? 'Calculating…' : 'Get nutrients'}
                 </button>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {NUTRIENTS.filter((n) => percentOfRda(n.id, result.nutrients[n.id]) > 0).map((n) => (
+                {visibleNutrients.map((n, i) => (
                   <NutrientBar
                     key={n.id}
                     id={n.id}
                     amount={result.nutrients[n.id]}
                     onClick={() => setSelectedNutrient(n.id)}
+                    riseDelayMs={i * 90}
                   />
                 ))}
               </div>
             )}
           </div>
 
-          <div className="mx-auto mb-2 mt-3 flex w-[88%] shrink-0 gap-2">
+          <div className="mx-auto mb-2 mt-3 flex w-[88%] shrink-0 justify-center">
             <button
               onClick={saveEntry}
-              className="flex-1 rounded-full py-3 text-xs font-semibold text-white"
-              style={{ backgroundColor: 'var(--accent)', border: '5px solid #1a1a19' }}
+              className="rounded-full px-12 py-3 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent)', border: '4px solid #1a1a19', boxShadow: '0 4px 0 #1a1a19' }}
             >
               Save
-            </button>
-            <button
-              onClick={retake}
-              className="flex-1 rounded-full py-3 text-xs font-medium"
-              style={{ backgroundColor: '#f6e4bb', border: '5px solid #1a1a19', color: 'var(--text-primary)' }}
-            >
-              Discard
             </button>
           </div>
         </div>
@@ -1057,29 +1063,9 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         <NutrientDetailModal
           id={selectedNutrient}
           amount={result.nutrients[selectedNutrient]}
+          perMeal
           onClose={() => setSelectedNutrient(null)}
         />
-      )}
-
-      {stage === 'saved' && (
-        <div className="flex flex-col items-center gap-3 py-4 text-center">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-full text-xl text-white"
-            style={{ backgroundColor: 'var(--status-good)' }}
-          >
-            ✓
-          </div>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-            Meal logged for today.
-          </p>
-          <button
-            onClick={logAnother}
-            className="rounded-full px-5 py-2.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000' }}
-          >
-            Back to Home
-          </button>
-        </div>
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
-import { NUTRIENTS, NUTRIENT_MAP, percentOfRda, coverageStatus } from '../lib/nutrients'
+import { NUTRIENTS, NUTRIENT_MAP, percentOfMealTarget, coverageStatus } from '../lib/nutrients'
 import { isManualEntryPhoto } from '../lib/mealPhoto'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
@@ -20,7 +20,7 @@ function formatTime(iso: string): string {
 }
 
 export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: () => void }) {
-  const presentNutrients = NUTRIENTS.filter((n) => percentOfRda(n.id, meal.nutrients[n.id]) > 0)
+  const presentNutrients = NUTRIENTS.filter((n) => percentOfMealTarget(n.id, meal.nutrients[n.id]) > 0)
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
@@ -31,7 +31,7 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
       />
       <div
         className="modal-card-enter relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-4"
-        style={{ backgroundColor: '#e5c184', border: '4px solid #000000' }}
+        style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
       >
         <div className="relative mb-2.5 flex shrink-0 items-center justify-center">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -48,7 +48,7 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
         </div>
 
         <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
-          <div className="relative shrink-0 overflow-hidden rounded-2xl" style={{ border: '3px solid #000000', boxShadow: '0 6px 16px rgba(26,26,25,0.18)' }}>
+          <div className="relative shrink-0 overflow-hidden rounded-2xl" style={{ border: '2px solid #000000', boxShadow: '0 6px 16px rgba(26,26,25,0.18)' }}>
             {isManualEntryPhoto(meal.imageDataUrl) ? (
               <div className="flex h-28 w-full items-center justify-center px-4 text-center" style={{ backgroundColor: '#f6e4bb' }}>
                 <span
@@ -119,7 +119,7 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
                   <div className="flex flex-col gap-1">
                     {presentNutrients.map((n) => {
                       const amount = meal.nutrients[n.id]
-                      const percent = percentOfRda(n.id, amount)
+                      const percent = percentOfMealTarget(n.id, amount)
                       const status = coverageStatus(percent)
                       return (
                         <div

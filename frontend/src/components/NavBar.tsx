@@ -41,7 +41,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
               transform: 'translateX(-50%)',
               backgroundColor: cameraActive ? 'var(--accent)' : '#eec978',
               color: cameraActive ? 'white' : 'var(--text-primary)',
-              border: '4px solid #d9a441',
+              border: '3px solid #d9a441',
               boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
             }}
             aria-current={cameraActive ? 'page' : undefined}

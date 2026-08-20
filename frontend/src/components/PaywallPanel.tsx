@@ -148,7 +148,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           className="relative z-10 flex w-full flex-col items-center gap-3 overflow-hidden rounded-3xl px-6 py-6 text-center"
           style={{
             backgroundColor: '#e5c184',
-            border: '3px solid var(--accent-strong)',
+            border: '2px solid var(--accent-strong)',
             boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
           }}
         >
@@ -169,8 +169,8 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           <button
             onClick={handleRestore}
             disabled={restoring}
-            className="w-full rounded-full py-2 text-sm font-semibold text-white transition"
-            style={{ backgroundColor: 'var(--accent-strong)', border: '3px solid #222', opacity: restoring ? 0.7 : undefined }}
+            className="w-full rounded-full py-2 text-sm font-semibold text-white transition transition-transform active:translate-y-1 active:shadow-none"
+            style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #222', boxShadow: '0 2px 0 #222', opacity: restoring ? 0.7 : undefined }}
           >
             {restoring ? 'Opening Google…' : 'Sign in with Google'}
           </button>
@@ -195,17 +195,16 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         className="relative z-10 flex w-full min-h-0 max-h-full flex-col items-center gap-1.5 overflow-hidden rounded-3xl px-5 py-3 text-center"
         style={{
           backgroundColor: '#e5c184',
-          border: '3px solid var(--accent-strong)',
+          border: '2px solid var(--accent-strong)',
           boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
         }}
       >
+        <AvocadoNutrientCallout />
+
         <div className="shrink-0 text-center">
-          <h1 className="whitespace-nowrap text-xs font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight">
             One step from a whole new you
           </h1>
-          <p className="mx-auto max-w-[85%] text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
-            More energy, clearer skin, sharper focus — {NUTRIENTS.length} targets ready to unlock.
-          </p>
         </div>
 
         {goals && (
@@ -275,11 +274,11 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               aria-checked={agreed}
               onClick={() => setAgreed((a) => !a)}
               className="relative flex h-5 w-9 shrink-0 items-center rounded-full transition-colors"
-              style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '3px solid #222' }}
+              style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '2px solid #222' }}
             >
               <span
                 className="h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
-                style={{ transform: agreed ? 'translateX(20px)' : 'translateX(1px)', border: '2px solid #222' }}
+                style={{ transform: agreed ? 'translateX(20px)' : 'translateX(1px)', border: '1px solid #222' }}
               />
             </button>
             <span className="whitespace-nowrap text-[11px]" style={{ color: 'var(--text-secondary)' }}>
@@ -299,7 +298,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             className={`w-full rounded-full py-1.5 text-sm font-semibold text-white transition ${!agreed ? 'opacity-40' : ''}`}
             style={{
               backgroundColor: 'var(--accent-strong)',
-              border: '3px solid #222',
+              border: '2px solid #222', boxShadow: '0 2px 0 #222',
               opacity: processing ? 0.7 : undefined,
             }}
           >
@@ -330,17 +329,13 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         </div>
       </div>
 
-      <p className="relative z-10 mt-1.5 shrink-0 text-center text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-        Just for fun & motivation — not medical advice.
-      </p>
-
       {legalOpen && <LegalPanel onClose={() => setLegalOpen(false)} />}
 
       {showAgreeError && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-8">
           <div
             className="modal-card-enter rounded-2xl px-5 py-4 text-center"
-            style={{ backgroundColor: 'var(--surface-1)', border: '2px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.25)' }}
+            style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.25)' }}
           >
             <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               Please agree to the Terms of Use first
@@ -348,6 +343,21 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Decorative avocado badge in the corner. Absolutely positioned so it never pushes the rows below it out of place. */
+function AvocadoNutrientCallout() {
+  return (
+    <div className="pointer-events-none absolute z-20" style={{ width: 110, height: 110, top: 72, right: 48 }}>
+      <img
+        src="/icons/fruits/avocado.png"
+        alt=""
+        className="absolute z-10"
+        style={{ width: 62, height: 62, objectFit: 'contain', left: 88, top: 24, transform: 'translate(-50%, -50%)' }}
+        aria-hidden
+      />
     </div>
   )
 }

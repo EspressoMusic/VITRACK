@@ -9,7 +9,7 @@ export function WeeklyGoalGlass({ percent, onClick }: { percent: number; onClick
       onClick={onClick}
       className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full"
       style={{
-        border: '5px solid #000000',
+        border: '4px solid #000000',
         backgroundColor: 'rgba(255,255,255,0.18)',
         boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.12)',
       }}

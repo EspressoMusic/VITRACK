@@ -101,7 +101,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
       <div
         className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl"
-        style={{ backgroundColor: '#e5c184', border: '5px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
       >
         <div ref={scrollRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
           {loggedDayCount < 3 && (

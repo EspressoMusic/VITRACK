@@ -21,7 +21,7 @@ export function MissingToGoalModal({
       />
       <div
         className="modal-card-enter relative z-10 flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-5"
-        style={{ backgroundColor: '#e5c184', border: '2px solid #1a1a19' }}
+        style={{ backgroundColor: '#e5c184', border: '1px solid #1a1a19' }}
       >
         <div className="relative mb-4 flex shrink-0 items-center justify-center">
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -54,8 +54,8 @@ export function MissingToGoalModal({
                 <button
                   key={item.id}
                   onClick={() => onSelect(item.id)}
-                  className="flex items-center justify-between rounded-xl p-3 text-left"
-                  style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                  className="flex items-center justify-between rounded-xl p-3 text-left transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)', boxShadow: '0 1px 0 var(--border)' }}
                 >
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     {def.name}

@@ -76,7 +76,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB1',
-    name: 'Vitamin B1 (Thiamin)',
+    name: 'Vitamin B1',
     shortLabel: 'B1',
     unit: 'mg',
     rda: 1.2,
@@ -88,7 +88,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB2',
-    name: 'Vitamin B2 (Riboflavin)',
+    name: 'Vitamin B2',
     shortLabel: 'B2',
     unit: 'mg',
     rda: 1.3,
@@ -100,7 +100,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB3',
-    name: 'Vitamin B3 (Niacin)',
+    name: 'Vitamin B3',
     shortLabel: 'B3',
     unit: 'mg',
     rda: 16,
@@ -112,7 +112,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB5',
-    name: 'Vitamin B5 (Pantothenic Acid)',
+    name: 'Vitamin B5',
     shortLabel: 'B5',
     unit: 'mg',
     rda: 5,
@@ -136,7 +136,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB7',
-    name: 'Vitamin B7 (Biotin)',
+    name: 'Vitamin B7',
     shortLabel: 'B7',
     unit: 'mcg',
     rda: 30,
@@ -148,7 +148,7 @@ export const NUTRIENTS: NutrientDef[] = [
   },
   {
     id: 'vitaminB9',
-    name: 'Vitamin B9 (Folate)',
+    name: 'Vitamin B9',
     shortLabel: 'B9',
     unit: 'mcg',
     rda: 400,
@@ -339,11 +339,34 @@ export function setActiveGoals(goals: NutrientAmounts | null): void {
 }
 
 export function targetFor(id: NutrientId): number {
-  return (activeGoals ?? DEFAULT_GOALS)[id]
+  return activeGoals?.[id] ?? DEFAULT_GOALS[id]
 }
 
 export function percentOfRda(id: NutrientId, amount: number): number {
   const target = targetFor(id)
   if (target <= 0) return 0
   return Math.min(200, Math.round((amount / target) * 100))
+}
+
+/** A single meal is only a fraction of the day, so its nutrients are judged against a per-meal
+ *  share of the daily target rather than the full day — otherwise every meal looks deficient. */
+export const MEAL_TARGET_DIVISOR = 3
+
+export function mealTargetFor(id: NutrientId): number {
+  return targetFor(id) / MEAL_TARGET_DIVISOR
+}
+
+export function percentOfMealTarget(id: NutrientId, amount: number): number {
+  const target = mealTargetFor(id)
+  if (target <= 0) return 0
+  return Math.min(200, Math.round((amount / target) * 100))
+}
+
+/** A single food is only one part of a meal, so it was never going to cover a meal's whole
+ *  share on its own — judging it with the same critical/serious/red thresholds as a full meal
+ *  or day total reads as alarming for what's actually a normal, healthy contribution. This
+ *  scale stays in the green/amber range: any amount present is a positive contribution, never
+ *  a "deficiency" to flag red. */
+export function contributionStatus(percent: number): CoverageStatus {
+  return percent >= 20 ? 'good' : 'warning'
 }

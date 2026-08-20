@@ -185,7 +185,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
             className={`w-full rounded-full py-3.5 text-base font-semibold text-white transition ${continuePulse > 0 ? 'tap-effect' : ''}`}
             style={{
               backgroundColor: canContinue ? 'var(--accent-strong)' : '#e8d9a6',
-              border: '3px solid #000000',
+              border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
             }}
           >
             {step === 'welcome' ? "Let's go" : step === 'summary' ? 'See my plan' : 'Continue'}
@@ -212,7 +212,7 @@ function StepCard({
       className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-5 py-3 text-center"
       style={{
         backgroundColor: '#e5c184',
-        border: '3px solid #000000',
+        border: '2px solid #000000',
         boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
       }}
     >
@@ -291,11 +291,17 @@ function WheelPicker({
     <div className="flex items-center justify-center gap-3">
       <div className="relative" style={{ height: WHEEL_ITEM_H * WHEEL_VISIBLE_ROWS, width: 108 }}>
         <div
-          className="pointer-events-none absolute inset-x-0 rounded-xl"
+          className="pointer-events-none absolute inset-0 rounded-xl"
+          style={{
+            backgroundColor: 'var(--accent-soft)',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 rounded-lg"
           style={{
             top: WHEEL_ITEM_H,
             height: WHEEL_ITEM_H,
-            backgroundColor: 'var(--accent-soft)',
+            backgroundColor: 'var(--surface-cream)',
             border: '1.5px solid var(--accent-strong)',
           }}
         />
@@ -540,7 +546,7 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
         className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-4 py-3 text-center"
         style={{
           backgroundColor: '#e5c184',
-          border: '3px solid var(--accent-strong)',
+          border: '2px solid var(--accent-strong)',
           boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
         }}
       >
@@ -577,7 +583,7 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
             ))}
             <div
               className="flex items-center justify-center gap-1.5 rounded-xl px-2.5 py-1.5"
-              style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #7a4c14' }}
+              style={{ backgroundColor: 'var(--accent-strong)', border: '1px solid #7a4c14' }}
             >
               <LockIcon className="h-3.5 w-3.5 shrink-0 text-white" />
               <span className="text-[11px] font-bold text-white">+{LOCKED_COUNT} more targets unlock next</span>
