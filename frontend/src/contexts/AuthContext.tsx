@@ -1,5 +1,5 @@
 import type { User } from '@supabase/supabase-js'
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { setCurrentUserId } from '../lib/db'
 import { syncLocalMealsToCloud } from '../lib/cloudDb'
@@ -16,11 +16,9 @@ declare global {
             use_fedcm_for_prompt?: boolean
             callback: (response: { credential: string }) => void
           }) => void
-          prompt: (
-            momentListener?: (notification: {
-              isNotDisplayed: () => boolean
-              isSkippedMoment: () => boolean
-            }) => void,
+          renderButton: (
+            parent: HTMLElement,
+            options: { type?: string; theme?: string; size?: string; width?: number },
           ) => void
         }
       }
@@ -64,7 +62,11 @@ async function createNonce(): Promise<{ nonce: string; hashedNonce: string }> {
 interface AuthContextValue {
   user: User | null
   loading: boolean
-  signInWithGoogle: () => Promise<void>
+  /** Renders a real (invisible) Google sign-in button into `container` — meant to sit on top
+   *  of a custom-styled button so the actual click lands on Google's own element. This is what
+   *  lets the account picker show our own domain instead of the Supabase project's supabase.co
+   *  URL; the classic redirect flow (which shows supabase.co) is used only as a fallback. */
+  renderGoogleButton: (container: HTMLElement) => void
   signOut: () => Promise<void>
   deleteAccount: () => Promise<void>
 }
@@ -110,45 +112,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  async function signInWithGoogle() {
-    if (!supabase) throw new Error('Supabase is not configured.')
+  const renderGoogleButton = useCallback((container: HTMLElement) => {
+    if (!supabase) return
 
-    // Fall back to the classic redirect flow (shows the supabase.co domain in Google's
-    // account picker) if the branded client isn't configured or the script fails to load.
+    // No branded client configured (e.g. local dev without the env var) — fall back to the
+    // classic redirect flow so sign-in still works, just showing the supabase.co domain.
     if (!GOOGLE_CLIENT_ID) {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin },
-      })
+      container.style.pointerEvents = 'auto'
+      container.onclick = () => {
+        supabase!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+      }
       return
     }
 
-    await loadGoogleIdentityScript()
-    const { nonce, hashedNonce } = await createNonce()
-
-    await new Promise<void>((resolve, reject) => {
-      window.google!.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        nonce: hashedNonce,
-        use_fedcm_for_prompt: true,
-        callback: (response) => {
-          supabase!.auth
-            .signInWithIdToken({ provider: 'google', token: response.credential, nonce })
-            .then(({ error }) => (error ? reject(error) : resolve()))
-        },
+    loadGoogleIdentityScript()
+      .then(() => createNonce())
+      .then(({ nonce, hashedNonce }) => {
+        window.google!.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          nonce: hashedNonce,
+          use_fedcm_for_prompt: true,
+          callback: (response) => {
+            supabase!.auth
+              .signInWithIdToken({ provider: 'google', token: response.credential, nonce })
+              .catch((err) => console.error('Google sign-in failed:', err))
+          },
+        })
+        const width = Math.round(container.getBoundingClientRect().width) || 320
+        window.google!.accounts.id.renderButton(container, { type: 'standard', width })
       })
-
-      // One Tap can be silently skipped (e.g. the user dismissed it recently) — when that
-      // happens, fall back to the redirect flow so sign-in still works.
-      window.google!.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          supabase!.auth
-            .signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
-            .then(({ error }) => (error ? reject(error) : resolve()))
-        }
-      })
-    })
-  }
+      .catch((err) => console.error('Google sign-in button failed to render:', err))
+  }, [])
 
   async function signOut() {
     if (!supabase) return
@@ -163,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, renderGoogleButton, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )

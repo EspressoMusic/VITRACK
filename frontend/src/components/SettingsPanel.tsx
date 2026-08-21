@@ -12,11 +12,12 @@ import {
   requestNotificationPermission,
 } from '../lib/notifications'
 import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
+import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
 
 export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void; onDataCleared: () => void }) {
-  const { user, signInWithGoogle, signOut, deleteAccount } = useAuth()
+  const { user, signOut, deleteAccount } = useAuth()
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
   const [confirmingRetake, setConfirmingRetake] = useState(false)
@@ -61,15 +62,6 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
     setConfirmingClear(false)
     onDataCleared()
     onClose()
-  }
-
-  async function handleSignIn() {
-    setAuthError(null)
-    try {
-      await signInWithGoogle()
-    } catch {
-      setAuthError('Sign-in not set up yet.')
-    }
   }
 
   async function handleDeleteAccount() {
@@ -168,13 +160,18 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={handleSignIn}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
-                  style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
-                >
-                  <UserIcon className="h-4 w-4" /> Sign in with Google
-                </button>
+                <div className="relative w-full">
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
+                    style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+                  >
+                    <UserIcon className="h-4 w-4" /> Sign in with Google
+                  </button>
+                  <GoogleSignInOverlay />
+                </div>
                 {!isSupabaseConfigured && (
                   <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
                     Not connected yet.

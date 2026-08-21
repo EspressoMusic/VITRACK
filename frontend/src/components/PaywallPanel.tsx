@@ -7,6 +7,7 @@ import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { CheckIcon, ClockIcon, LockIcon } from './icons'
+import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
 
@@ -41,14 +42,13 @@ function formatCountdown(ms: number): string {
 }
 
 export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
-  const { signInWithGoogle, user } = useAuth()
+  const { user } = useAuth()
   const [plan, setPlan] = useState<BillingPlan>('yearly')
   const [processing, setProcessing] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
   const [showAgreeError, setShowAgreeError] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [restoring, setRestoring] = useState(false)
   const [needsSignIn, setNeedsSignIn] = useState(false)
   const [offerDeadline] = useState(getOfferDeadline)
   const [now, setNow] = useState(Date.now())
@@ -69,15 +69,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       // Reload (rather than onSubscribed()) so this skips straight into the app instead of the
       // post-purchase #thank-you screen, which assumes a real Paddle checkout just happened.
       window.location.reload()
-    }
-  }
-
-  async function handleRestore() {
-    setRestoring(true)
-    try {
-      await signInWithGoogle()
-    } catch {
-      setRestoring(false)
     }
   }
 
@@ -187,14 +178,18 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               Sign in with Google to activate your subscription on this account.
             </p>
           </div>
-          <button
-            onClick={handleRestore}
-            disabled={restoring}
-            className="w-full rounded-full py-2 text-sm font-semibold text-white transition transition-transform active:translate-y-1 active:shadow-none"
-            style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #222', boxShadow: '0 2px 0 #222', opacity: restoring ? 0.7 : undefined }}
-          >
-            {restoring ? 'Opening Google…' : 'Sign in with Google'}
-          </button>
+          <div className="relative w-full">
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="w-full rounded-full py-2 text-sm font-semibold text-white transition transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #222', boxShadow: '0 2px 0 #222' }}
+            >
+              Sign in with Google
+            </button>
+            <GoogleSignInOverlay />
+          </div>
         </div>
       </div>
     )
@@ -333,15 +328,12 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             {isSupabaseConfigured && (
               <>
                 {' '}
-                <button
-                  type="button"
-                  onClick={handleRestore}
-                  disabled={restoring}
-                  className="underline"
-                  style={{ opacity: restoring ? 0.6 : undefined }}
-                >
-                  {restoring ? 'Opening Google…' : 'Already purchased?'}
-                </button>
+                <span className="relative inline-block">
+                  <button type="button" tabIndex={-1} aria-hidden="true" className="underline">
+                    Already purchased?
+                  </button>
+                  <GoogleSignInOverlay />
+                </span>
               </>
             )}
           </p>

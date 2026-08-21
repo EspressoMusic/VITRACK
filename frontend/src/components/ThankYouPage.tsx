@@ -1,22 +1,12 @@
-import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { ConfettiBurst } from './ConfettiBurst'
+import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { SparkleIcon, UserIcon } from './icons'
 
 /** Static post-purchase landing screen at #thank-you — used as the TikTok ad conversion URL. */
 export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
-  const { user, signInWithGoogle } = useAuth()
-  const [signingIn, setSigningIn] = useState(false)
-
-  async function handleSave() {
-    setSigningIn(true)
-    try {
-      await signInWithGoogle()
-    } catch {
-      setSigningIn(false)
-    }
-  }
+  const { user } = useAuth()
 
   return (
     <div
@@ -66,14 +56,18 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
               Saved to {user.email}
             </p>
           ) : (
-            <button
-              onClick={handleSave}
-              disabled={signingIn}
-              className="flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full py-2 text-[11px] font-medium transition"
-              style={{ color: 'var(--text-secondary)', opacity: signingIn ? 0.6 : undefined }}
-            >
-              <UserIcon className="h-3.5 w-3.5 shrink-0" /> {signingIn ? 'Opening Google…' : 'Save my plan with Google'}
-            </button>
+            <div className="relative w-full">
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                className="flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full py-2 text-[11px] font-medium transition"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <UserIcon className="h-3.5 w-3.5 shrink-0" /> Save my plan with Google
+              </button>
+              <GoogleSignInOverlay />
+            </div>
           ))}
       </div>
     </div>
