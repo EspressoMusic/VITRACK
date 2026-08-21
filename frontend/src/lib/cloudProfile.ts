@@ -104,13 +104,25 @@ async function reconcileSubscription(): Promise<boolean> {
  * server, restores a paid account onto a fresh device if the cloud already has one, otherwise
  * saves this device's goals/profile up to the account. Returns true if local state changed
  * (caller should reload so the app re-reads it).
+ *
+ * Only pulls from the cloud when this device has no local profile/goals at all — i.e. a
+ * genuinely fresh device. Otherwise this device's data wins and gets pushed up instead. This
+ * matters because "retake questionnaire" clears only the onboarded flag (not the saved
+ * profile/goals); if a pull-and-restore ran unconditionally here, it would fetch the old cloud
+ * profile right back down, report "changed", and reload — undoing the retake and, since the
+ * onboarded flag is still cleared afterward, doing so again on every subsequent load.
  */
 export async function syncProfileWithCloud(userId: string): Promise<boolean> {
   let changed = await reconcileSubscription()
 
-  const restoredPrefs = await pullProfilePrefsFromCloud(userId)
-  if (restoredPrefs) changed = true
-  else await pushProfilePrefsToCloud(userId)
+  const hasLocalProfile = getStoredProfile() !== null || getStoredGoals() !== null
+  if (!hasLocalProfile) {
+    const restoredPrefs = await pullProfilePrefsFromCloud(userId)
+    if (restoredPrefs) changed = true
+    else await pushProfilePrefsToCloud(userId)
+  } else {
+    await pushProfilePrefsToCloud(userId)
+  }
 
   return changed
 }

@@ -54,8 +54,8 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
         </div>
         <button
           onClick={onContinue}
-          className="mt-2 w-full rounded-full py-2.5 text-base font-semibold text-white transition"
-          style={{ backgroundColor: 'var(--accent-strong)' }}
+          className="mt-2 w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+          style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
         >
           Get started
         </button>

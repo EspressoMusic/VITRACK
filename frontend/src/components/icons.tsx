@@ -215,6 +215,15 @@ export function BellIcon({ className }: IconProps) {
   )
 }
 
+export function SwapIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M4 8h13M13 4.5 17 8l-4 3.5" />
+      <path d="M20 16H7M11 12.5 7 16l4 3.5" />
+    </svg>
+  )
+}
+
 export function CakeIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

@@ -13,6 +13,7 @@ import {
 } from '../lib/notifications'
 import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
 import { LegalPanel } from './LegalPanel'
+import { SubscriptionManagePanel } from './SubscriptionManagePanel'
 
 export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void; onDataCleared: () => void }) {
   const { user, signInWithGoogle, signOut, deleteAccount } = useAuth()
@@ -21,6 +22,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
   const [confirmingRetake, setConfirmingRetake] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [legalOpen, setLegalOpen] = useState(false)
+  const [manageSubOpen, setManageSubOpen] = useState(false)
   const [installable, setInstallable] = useState(isInstallable)
   const [notifPref, setNotifPref] = useState(getNotificationPref)
   const [notifPermission, setNotifPermission] = useState(getNotificationPermission)
@@ -191,19 +193,39 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               Subscription
             </p>
-            <div
-              className="flex items-center justify-between rounded-xl p-2"
-              style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
-            >
-              <div className="flex items-center gap-2">
-                <span style={{ color: isPro ? 'var(--accent)' : 'var(--text-primary)' }}>
-                  <StarIcon className="h-4 w-4" />
+            {isPro ? (
+              <button
+                onClick={() => setManageSubOpen(true)}
+                className="flex w-full items-center justify-between rounded-xl p-2 transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span style={{ color: 'var(--accent)' }}>
+                    <StarIcon className="h-4 w-4" />
+                  </span>
+                  <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                    Pro plan · {plan === 'yearly' ? 'Yearly' : 'Monthly'}
+                  </span>
+                </div>
+                <span className="text-[11px] underline" style={{ color: 'var(--text-primary)' }}>
+                  Manage
                 </span>
-                <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {isPro ? `Pro plan · ${plan === 'yearly' ? 'Yearly' : 'Monthly'}` : 'Free plan'}
-                </span>
+              </button>
+            ) : (
+              <div
+                className="flex items-center justify-between rounded-xl p-2"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+              >
+                <div className="flex items-center gap-2">
+                  <span style={{ color: 'var(--text-primary)' }}>
+                    <StarIcon className="h-4 w-4" />
+                  </span>
+                  <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                    Free plan
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div>
@@ -355,8 +377,8 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
             <div className="flex flex-col gap-2">
               <a
                 href="mailto:shilohdhd1@gmail.com"
-                className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium"
-                style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000' }}
+                className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
               >
                 Contact support
               </a>
@@ -373,6 +395,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
       </div>
 
       {legalOpen && <LegalPanel onClose={() => setLegalOpen(false)} />}
+      {manageSubOpen && <SubscriptionManagePanel onClose={() => setManageSubOpen(false)} onChanged={() => {}} />}
     </div>
   )
 }

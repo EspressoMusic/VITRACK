@@ -117,6 +117,7 @@ cd frontend && npm run build   # outputs frontend/dist
 supabase functions deploy analyze
 supabase functions deploy identify-food
 supabase functions deploy link-paddle-subscription
+supabase functions deploy manage-subscription
 supabase functions deploy paddle-webhook --no-verify-jwt
 supabase functions deploy delete-account
 ```
@@ -133,8 +134,11 @@ Supabase session belonging to an account with an active row in
 `paddle_subscriptions` (checked server-side in
 `supabase/functions/_shared/subscription.ts` — the client's local "subscribed"
 flag is never trusted). That table is written only by the `paddle-webhook`
-and `link-paddle-subscription` functions, verified against Paddle directly, so
-before charging real money make sure:
+and `link-paddle-subscription` functions, verified against Paddle directly.
+`manage-subscription` lets a signed-in user switch between the monthly/yearly
+plan or cancel (access continues until the paid period ends, then billing
+stops — no further charges), calling the Paddle API directly with
+`PADDLE_API_KEY`; before charging real money make sure:
 - `PADDLE_WEBHOOK_SECRET`, `PADDLE_API_KEY`, `PADDLE_PRICE_MONTHLY`,
   `PADDLE_PRICE_YEARLY` are set as Supabase function secrets.
 - The Paddle webhook is pointed at your deployed `paddle-webhook` function URL.
