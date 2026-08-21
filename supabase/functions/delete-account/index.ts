@@ -4,10 +4,17 @@
 // client with anything other than the caller's own access token.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401 })
+    return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401, headers: corsHeaders })
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -18,15 +25,15 @@ Deno.serve(async (req) => {
   })
   const { data: userData, error: userError } = await userClient.auth.getUser()
   if (userError || !userData.user) {
-    return new Response(JSON.stringify({ error: 'Invalid session' }), { status: 401 })
+    return new Response(JSON.stringify({ error: 'Invalid session' }), { status: 401, headers: corsHeaders })
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey)
   await adminClient.from('meals').delete().eq('user_id', userData.user.id)
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(userData.user.id)
   if (deleteError) {
-    return new Response(JSON.stringify({ error: deleteError.message }), { status: 500 })
+    return new Response(JSON.stringify({ error: deleteError.message }), { status: 500, headers: corsHeaders })
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 })
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders })
 })
