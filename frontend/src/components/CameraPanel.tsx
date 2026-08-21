@@ -32,7 +32,7 @@ type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'cus
 
 const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
-const DETECTION_INTERVAL_MS = 150
+const DETECTION_INTERVAL_MS = 400
 
 function devLog(tag: string, message: string) {
   if (import.meta.env.DEV) console.log(`[${tag}] ${message}`)

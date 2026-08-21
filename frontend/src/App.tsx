@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { NavBar, type Tab } from './components/NavBar'
-import { CameraPanel } from './components/CameraPanel'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -21,6 +20,10 @@ import { getAllMeals } from './lib/db'
 import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
 import { maybeNotifyVitaminStatus } from './lib/notifications'
+
+// Lazy-loaded so the food-detection model (TensorFlow.js + COCO-SSD, several MB) ships in its
+// own chunk instead of blocking the initial app bundle for users who haven't reached this tab yet.
+const CameraPanel = lazy(() => import('./components/CameraPanel').then((m) => ({ default: m.CameraPanel })))
 
 function AppShell() {
   const [tab, setTab] = useState<Tab>('camera')
@@ -59,7 +62,11 @@ function AppShell() {
 
       <main className="min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
-          {tab === 'camera' && <CameraPanel onLogged={bumpRefresh} />}
+          {tab === 'camera' && (
+            <Suspense fallback={null}>
+              <CameraPanel onLogged={bumpRefresh} />
+            </Suspense>
+          )}
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
         </div>

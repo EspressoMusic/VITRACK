@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { NUTRIENT_IDS, NUTRIENT_UNITS } from './nutrients.js'
 
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o'
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
 const nutrientProperties = Object.fromEntries(
   NUTRIENT_IDS.map((id) => [
