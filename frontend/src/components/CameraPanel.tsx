@@ -958,12 +958,12 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             values={customValues}
             onValueChange={handleCustomValueChange}
           />
-          <div className="mx-auto flex w-[85%] items-stretch gap-2">
+          <div className="mx-auto flex w-[70%] items-stretch gap-2">
             <button
               onClick={submitCustomEntry}
               disabled={!customName.trim()}
-              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-center text-base font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
-              style={{ backgroundColor: 'var(--accent)', border: '4px solid #222', boxShadow: '0 4px 0 #222' }}
+              className="flex flex-1 items-center justify-center whitespace-nowrap rounded-xl px-3 py-1.5 text-center text-xs font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent)', border: '2px solid #222', boxShadow: '0 2px 0 #222' }}
             >
               Use these values
             </button>
@@ -972,8 +972,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 resetCustomFields()
                 setStage('manual')
               }}
-              className="flex flex-1 items-center justify-center rounded-2xl py-2.5 text-base font-medium transition-transform active:translate-y-1 active:shadow-none"
-              style={{ backgroundColor: '#f6e4bb', border: '4px solid #222', boxShadow: '0 4px 0 #222', color: 'var(--text-primary)' }}
+              className="shrink-0 whitespace-nowrap rounded-xl px-4 py-1.5 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
               Back
             </button>

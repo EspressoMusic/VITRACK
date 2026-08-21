@@ -82,18 +82,6 @@ export function deactivateSubscription(): void {
   localStorage.removeItem(PLAN_KEY)
 }
 
-const SECRET_UNLOCK_KEY = 'vitrack:secretUnlockUsed'
-
-/** Whether the hidden headline-tap unlock on the paywall has already been spent (one-time per device). */
-export function hasUsedSecretUnlock(): boolean {
-  return localStorage.getItem(SECRET_UNLOCK_KEY) === 'true'
-}
-
-/** Marks the hidden headline-tap unlock as spent so it can never be triggered again on this device. */
-export function markSecretUnlockUsed(): void {
-  localStorage.setItem(SECRET_UNLOCK_KEY, 'true')
-}
-
 /** Applies a subscription/goals snapshot pulled from the cloud (e.g. after signing in on a new device). */
 export function applyCloudProfile(data: {
   goals?: NutrientAmounts | null

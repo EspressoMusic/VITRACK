@@ -28,16 +28,16 @@ export function CustomNutritionForm({
         style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
       />
       <div
-        className="thin-scroll mx-auto grid w-[70%] min-h-0 flex-1 grid-cols-1 gap-1.5 overflow-y-auto rounded-2xl p-2"
+        className="thin-scroll mx-auto grid w-[70%] min-h-0 flex-1 grid-cols-1 gap-1.5 overflow-y-auto rounded-2xl py-2 pl-2 pr-3"
         style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
       >
         {NUTRIENTS.map((n) => (
           <label
             key={n.id}
-            className="flex items-center gap-2 rounded-xl px-2 py-1.5"
+            className="flex min-w-0 items-center justify-between gap-2 rounded-xl px-2 py-1"
             style={{ backgroundColor: '#fdf6e8' }}
           >
-            <span className="w-[92px] shrink-0 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
               {n.shortLabel} <span style={{ color: 'var(--text-secondary)' }}>({n.unit})</span>
             </span>
             <input
@@ -48,8 +48,8 @@ export function CustomNutritionForm({
               value={values[n.id] === 0 ? '' : values[n.id]}
               onChange={(e) => onValueChange(n.id, e.target.value === '' ? 0 : Number(e.target.value))}
               placeholder="0"
-              className="w-full min-w-0 flex-1 rounded-lg px-1.5 py-1 text-base"
-              style={{ backgroundColor: 'var(--surface-2)', border: '3px solid #000000', color: 'var(--text-primary)' }}
+              className="w-16 shrink-0 rounded-lg px-1.5 py-1 text-sm"
+              style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
             />
           </label>
         ))}

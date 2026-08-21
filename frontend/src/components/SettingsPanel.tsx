@@ -121,7 +121,12 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 <button
                   onClick={() => signOut()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
-                  style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
+                  style={{
+                    backgroundColor: 'var(--surface-cream)',
+                    border: '2px solid #000000',
+                    boxShadow: '0 2px 0 #000000',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   <LogOutIcon className="h-4 w-4" /> Sign out
                 </button>
@@ -288,7 +293,7 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
               {isNotificationSupported() && (
                 <div
                   className="flex items-center justify-between rounded-xl p-2"
-                  style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                 >
                   <div className="flex items-center gap-2">
                     <span style={{ color: 'var(--text-primary)' }}>
@@ -320,7 +325,10 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                   >
                     <span
                       className="h-5 w-5 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: notifPref ? 'translateX(21px)' : 'translateX(1px)' }}
+                      style={{
+                        border: '2px solid #000000',
+                        transform: notifPref ? 'translateX(calc(1.75rem - 4px))' : 'translateX(0px)',
+                      }}
                     />
                   </button>
                 </div>

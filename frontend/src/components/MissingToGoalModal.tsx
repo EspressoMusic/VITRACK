@@ -24,7 +24,10 @@ export function MissingToGoalModal({
         style={{ backgroundColor: '#e5c184', border: '1px solid #1a1a19' }}
       >
         <div className="relative mb-4 flex shrink-0 items-center justify-center">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <h2
+            className="whitespace-nowrap rounded-full px-4 py-1.5 text-base font-semibold"
+            style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface-cream)' }}
+          >
             What's missing to 100%
           </h2>
           <button
@@ -57,10 +60,13 @@ export function MissingToGoalModal({
                   className="flex items-center justify-between rounded-xl p-3 text-left transition-transform active:translate-y-1 active:shadow-none"
                   style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)', boxShadow: '0 1px 0 var(--border)' }}
                 >
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
                     {def.name}
                   </span>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--accent-strong)' }}>
+                  <span
+                    className="shrink-0 whitespace-nowrap pl-2 text-[11px] font-semibold"
+                    style={{ color: 'var(--accent-strong)' }}
+                  >
                     {remaining.toFixed(remaining < 10 ? 1 : 0)}
                     {def.unit} to go · {item.percent}%
                   </span>
