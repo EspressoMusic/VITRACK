@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { PaddleEventData } from '@paddle/paddle-js'
 import type { BillingPlan } from '../types'
 import { activateSubscription, getStoredGoals } from '../lib/profile'
 import { openPaddleCheckout } from '../lib/paddle'
@@ -10,6 +11,23 @@ import { CheckIcon, ClockIcon, LockIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
+import {
+  trackInitiateCheckout,
+  trackAddPaymentInfo,
+  trackPurchase,
+  storePendingPurchase,
+  type PlanPurchaseDetails,
+} from '../lib/tiktokPixel'
+
+type CheckoutData = NonNullable<PaddleEventData['data']>
+
+/** Pulls the real charged amount/currency/price-id out of a Paddle checkout event — never
+ *  the marketing display price — for accurate TikTok Pixel reporting. */
+function purchaseDetailsFromCheckout(data: CheckoutData | undefined, plan: BillingPlan): PlanPurchaseDetails | null {
+  const item = data?.items[0]
+  if (!data || !item) return null
+  return { plan, priceId: item.price_id, value: data.totals.total, currency: data.currency_code }
+}
 
 const FEATURES = [
   'Vitamin & mineral targets',
@@ -67,9 +85,13 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   // it's linked to a signed-in account. Paddle's own "checkout.completed" event fires
   // client-side and can't prove that on its own, so this reconciles with the server before
   // letting the user into the app.
-  async function handleCheckoutCompleted() {
+  async function handleCheckoutCompleted(checkoutData: CheckoutData | undefined) {
+    const purchaseDetails = purchaseDetailsFromCheckout(checkoutData, plan)
+
     // No accounts system configured at all (self-hosted, fully local build) — there's no
-    // server record to check against, so the local unlock is all there is.
+    // server record to check against, so we can't independently confirm the charge settled.
+    // The local unlock is all there is; TikTok's Purchase event is skipped here since it must
+    // never fire on an unverified client-side signal alone.
     if (!isSupabaseConfigured) {
       activateSubscription(plan)
       onSubscribed()
@@ -80,6 +102,9 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       // Don't mark this device "subscribed" yet — if the user closes the tab before signing
       // in, a stale local flag would drop them straight into the app on next launch instead
       // of back to this screen, where the paid AI calls would then just fail server-side.
+      // Stash the real transaction amount so Purchase can still fire, exactly once, at the
+      // point sign-in actually links this payment to their account (see cloudProfile.ts).
+      if (purchaseDetails) storePendingPurchase(purchaseDetails)
       setProcessing(false)
       setNeedsSignIn(true)
       return
@@ -87,10 +112,15 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
 
     // Signed in already (checkout carried supabase_user_id): the webhook that links the
     // purchase can lag a couple of seconds, so poll briefly rather than dropping the user
-    // into a "subscription required" error immediately after paying.
+    // into a "subscription required" error immediately after paying. Only once the server
+    // itself confirms the subscription is active do we activate locally and report Purchase —
+    // Paddle's client-side "checkout.completed" alone is not proof a real charge went through.
     const confirmed = await waitForServerSubscription()
     setProcessing(false)
-    if (confirmed) activateSubscription(plan)
+    if (confirmed) {
+      activateSubscription(plan)
+      if (purchaseDetails) trackPurchase(purchaseDetails)
+    }
     onSubscribed()
   }
 
@@ -105,8 +135,14 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       await openPaddleCheckout(
         plan,
         (event) => {
-          if (event.name === 'checkout.completed') {
-            void handleCheckoutCompleted()
+          if (event.name === 'checkout.loaded') {
+            const details = purchaseDetailsFromCheckout(event.data, plan)
+            if (details) trackInitiateCheckout(details)
+          } else if (event.name === 'checkout.payment.selected') {
+            const details = purchaseDetailsFromCheckout(event.data, plan)
+            if (details) trackAddPaymentInfo(details)
+          } else if (event.name === 'checkout.completed') {
+            void handleCheckoutCompleted(event.data)
           } else if (event.name === 'checkout.closed') {
             setProcessing(false)
           } else if (event.name === 'checkout.error') {
