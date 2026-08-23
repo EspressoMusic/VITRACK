@@ -106,6 +106,15 @@ button:active {
   opacity: 0.9;
 }
 
+.nav-tab-transition {
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    color 0.25s ease;
+}
+
 ::selection {
   background-color: var(--accent-soft);
 }
@@ -368,6 +377,32 @@ button:active {
     headline-shine 1s ease-out 0.6s both;
 }
 
+@keyframes gold-sparkle-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+@keyframes gold-sparkle-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 2px rgba(255, 200, 30, 0.75);
+  }
+  50% {
+    box-shadow: 0 0 18px 6px rgba(255, 230, 100, 1);
+  }
+}
+.calendar-day-gold {
+  background: linear-gradient(115deg, #fffde8 0%, #ffd23f 18%, #a5730f 42%, #fff4c2 58%, #ffd23f 78%, #fffde8 100%);
+  background-size: 300% 300%;
+  animation: gold-sparkle-shift 3s ease-in-out infinite, gold-sparkle-glow 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
@@ -375,7 +410,8 @@ button:active {
   .step-enter,
   .spin-slow,
   .tap-effect,
-  .feature-check-chase {
+  .feature-check-chase,
+  .calendar-day-gold {
     animation: none;
   }
   .headline-anim {

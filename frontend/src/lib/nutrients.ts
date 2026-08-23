@@ -11,6 +11,8 @@ export interface NutrientDef {
   foodSources: string[]
   /** Short, plain-language explanation of why this nutrient matters for the body. */
   benefit: string
+  /** One of the handful of highest-impact nutrients shown by default outside advanced mode. */
+  core?: boolean
 }
 
 export const NUTRIENTS: NutrientDef[] = [
@@ -25,6 +27,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Butternut squash', 'Cantaloupe', 'Apricots', 'Red bell peppers', 'Liver', 'Butter',
     ],
     benefit: 'Supports healthy vision, immune defense, and skin repair.',
+    core: true,
   },
   {
     id: 'vitaminC',
@@ -37,6 +40,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Brussels sprouts', 'Grapefruit', 'Papaya', 'Pineapple', 'Tomatoes', 'Cauliflower', 'Guava',
     ],
     benefit: 'Boosts immune function and helps your body absorb iron and repair tissue.',
+    core: true,
   },
   {
     id: 'vitaminD',
@@ -49,6 +53,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Sardines', 'Tuna', 'Fortified milk', 'Fortified orange juice', 'Cod liver oil', 'Fortified cereal',
     ],
     benefit: 'Helps your body absorb calcium for strong bones and supports immune health.',
+    core: true,
   },
   {
     id: 'vitaminE',
@@ -133,6 +138,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Salmon', 'Beef liver', 'Fortified cereal', 'Spinach', 'Sunflower seeds', 'Pistachios',
     ],
     benefit: 'Supports brain development, mood regulation, and a healthy immune system.',
+    core: true,
   },
   {
     id: 'vitaminB7',
@@ -157,6 +163,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Asparagus', 'Broccoli', 'Peanuts', 'Oranges', 'Fortified bread', 'Brussels sprouts',
     ],
     benefit: 'Important for cell growth and DNA production, especially during pregnancy.',
+    core: true,
   },
   {
     id: 'vitaminB12',
@@ -169,6 +176,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Clams', 'Salmon', 'Tuna', 'Beef liver', 'Yogurt', 'Nutritional yeast',
     ],
     benefit: 'Keeps nerve cells healthy and helps make red blood cells and DNA.',
+    core: true,
   },
   {
     id: 'calcium',
@@ -369,4 +377,33 @@ export function percentOfMealTarget(id: NutrientId, amount: number): number {
  *  a "deficiency" to flag red. */
 export function contributionStatus(percent: number): CoverageStatus {
   return percent >= 20 ? 'good' : 'warning'
+}
+
+/** The 6 vitamins with the strongest, most broadly-relevant effect on the body — shown by
+ *  default so the app stays focused instead of overwhelming with all 23 nutrients. */
+export const CORE_NUTRIENTS: NutrientDef[] = NUTRIENTS.filter((n) => n.core)
+
+const ADVANCED_MODE_KEY = 'vitrack:advancedNutrients'
+
+/** Advanced mode reveals every tracked vitamin/mineral instead of just the core set. */
+export function isAdvancedMode(): boolean {
+  return localStorage.getItem(ADVANCED_MODE_KEY) === 'true'
+}
+
+export function setAdvancedMode(enabled: boolean): void {
+  localStorage.setItem(ADVANCED_MODE_KEY, enabled ? 'true' : 'false')
+}
+
+/** The nutrient list the UI should render right now — core-only unless advanced mode is on. */
+export function getVisibleNutrients(): NutrientDef[] {
+  return isAdvancedMode() ? NUTRIENTS : CORE_NUTRIENTS
+}
+
+/** Below this share of a meal's target, an amount reads as a trace rather than something
+ *  worth surfacing — keeps a scanned food's nutrient list from being cluttered with near-zero
+ *  values that don't help the user make any decision. */
+export const MIN_MEAL_DISPLAY_PERCENT = 10
+
+export function hasRespectableAmount(id: NutrientId, amount: number): boolean {
+  return percentOfMealTarget(id, amount) >= MIN_MEAL_DISPLAY_PERCENT
 }

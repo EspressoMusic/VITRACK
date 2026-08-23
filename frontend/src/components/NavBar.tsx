@@ -16,7 +16,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
           aria-current={active === 'calendar' ? 'page' : undefined}
         >
           <span
-            className="flex h-11 w-11 items-center justify-center rounded-full transition"
+            className="nav-tab-transition flex h-11 w-11 items-center justify-center rounded-full"
             style={{
               backgroundColor: active === 'calendar' ? 'var(--accent)' : '#eec978',
               color: active === 'calendar' ? 'white' : 'var(--text-primary)',
@@ -25,36 +25,13 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             <img
               src="/icons/calendar.png"
               alt=""
-              className="h-9 w-9 object-contain transition-transform"
+              className="nav-tab-transition h-9 w-9 object-contain"
               style={{ transform: active === 'calendar' ? 'scale(1.15)' : 'scale(1)' }}
             />
           </span>
         </button>
 
-        <div className="relative flex items-center justify-center py-1">
-          <button
-            onClick={() => onChange('camera')}
-            className="absolute flex h-12 w-12 items-center justify-center rounded-full transition"
-            style={{
-              top: '-28px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: cameraActive ? 'var(--accent)' : '#eec978',
-              color: cameraActive ? 'white' : 'var(--text-primary)',
-              border: '3px solid #d9a441',
-              boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
-            }}
-            aria-current={cameraActive ? 'page' : undefined}
-            aria-label="Camera"
-          >
-            <img
-              src="/icons/camera.png"
-              alt=""
-              className="h-11 w-11 object-contain transition-transform"
-              style={{ transform: cameraActive ? 'scale(1.15)' : 'scale(1)' }}
-            />
-          </button>
-        </div>
+        <div />
 
         <button
           onClick={() => onChange('insights')}
@@ -63,7 +40,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
           aria-current={active === 'insights' ? 'page' : undefined}
         >
           <span
-            className="flex h-11 w-11 items-center justify-center rounded-full transition"
+            className="nav-tab-transition flex h-11 w-11 items-center justify-center rounded-full"
             style={{
               backgroundColor: active === 'insights' ? 'var(--accent)' : '#eec978',
               color: active === 'insights' ? 'white' : 'var(--text-primary)',
@@ -72,10 +49,33 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             <img
               src="/icons/lemon.png"
               alt=""
-              className="h-9 w-9 object-contain transition-transform"
+              className="nav-tab-transition h-9 w-9 object-contain"
               style={{ transform: active === 'insights' ? 'scale(1.15)' : 'scale(1)' }}
             />
           </span>
+        </button>
+
+        <button
+          onClick={() => onChange('camera')}
+          className="nav-tab-transition absolute flex h-[96px] w-[96px] items-center justify-center rounded-full"
+          style={{
+            top: '-30px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: cameraActive ? 'var(--accent)' : '#eec978',
+            color: cameraActive ? 'white' : 'var(--text-primary)',
+            border: '3px solid #d9a441',
+            boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
+          }}
+          aria-current={cameraActive ? 'page' : undefined}
+          aria-label="Camera"
+        >
+          <img
+            src="/icons/camera.png"
+            alt=""
+            className="nav-tab-transition h-[78px] w-[78px] object-contain"
+            style={{ transform: cameraActive ? 'scale(1.15)' : 'scale(1)' }}
+          />
         </button>
       </div>
     </nav>

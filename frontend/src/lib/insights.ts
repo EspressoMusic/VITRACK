@@ -1,6 +1,6 @@
 import type { MealEntry, NutrientId } from '../types'
 import { daysAgoKey } from './date'
-import { NUTRIENTS, sumNutrients, percentOfRda } from './nutrients'
+import { getVisibleNutrients, sumNutrients, percentOfRda } from './nutrients'
 
 export const INSIGHTS_WINDOW_DAYS = 7
 
@@ -29,7 +29,7 @@ export function computeWeeklyInsights(meals: MealEntry[]): WeeklyInsights {
   }
 
   const total = sumNutrients(inWindow.map((m) => m.nutrients))
-  const ranked = NUTRIENTS.map((n) => {
+  const ranked = getVisibleNutrients().map((n) => {
     const avgAmount = total[n.id] / loggedDays.size
     return { id: n.id, avgAmount, percent: percentOfRda(n.id, avgAmount) }
   }).sort((a, b) => a.percent - b.percent)

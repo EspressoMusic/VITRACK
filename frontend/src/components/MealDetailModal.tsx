@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
-import { NUTRIENTS, NUTRIENT_MAP, percentOfMealTarget, coverageStatus } from '../lib/nutrients'
+import { NUTRIENT_MAP, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, coverageStatus } from '../lib/nutrients'
 import { isManualEntryPhoto } from '../lib/mealPhoto'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
@@ -20,7 +20,7 @@ function formatTime(iso: string): string {
 }
 
 export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: () => void }) {
-  const presentNutrients = NUTRIENTS.filter((n) => percentOfMealTarget(n.id, meal.nutrients[n.id]) > 0)
+  const presentNutrients = getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, meal.nutrients[n.id]))
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
