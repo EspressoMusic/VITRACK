@@ -10,6 +10,7 @@ import {
   getStoredProfile,
   isSubscribed,
 } from './profile'
+import { takePendingPurchase, trackPurchase } from './tiktokPixel'
 
 interface ProfileRow {
   goals: NutrientAmounts | null
@@ -83,12 +84,20 @@ export async function waitForServerSubscription(maxAttempts = 6, delayMs = 1500)
  * (e.g. after a cancellation the webhook recorded on an already-linked account) — a
  * non-authoritative "not found" can legitimately mean the Paddle checkout used a different
  * email than the Google account, so it may only grant, never revoke.
+ *
+ * This is also the confirmation point for TikTok's Purchase event when a buyer paid while
+ * signed out (PaywallPanel's "needsSignIn" step): `takePendingPurchase` only returns a value
+ * if *this* browser tab stashed one right after its own Paddle checkout completed, so signing
+ * into an account that already had a subscription from elsewhere (a different tab/device)
+ * never re-fires it — that pending marker simply won't be present.
  */
 async function reconcileSubscription(): Promise<boolean> {
   const server = await fetchServerSubscriptionStatus()
   if (server.subscribed && server.plan) {
     if (!isSubscribed() || getBillingPlan() !== server.plan) {
       activateSubscription(server.plan)
+      const pending = takePendingPurchase()
+      if (pending) trackPurchase(pending)
       return true
     }
     return false
