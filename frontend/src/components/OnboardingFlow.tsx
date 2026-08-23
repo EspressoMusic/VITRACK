@@ -114,7 +114,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden"
       style={{
         backgroundColor: 'var(--surface-0)',
-        backgroundImage: "url('/background-calendar.png')",
+        backgroundImage: "url('/background-onboarding.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
