@@ -3,6 +3,7 @@ import type { BillingPlan } from '../types'
 import { activateSubscription, getStoredGoals } from '../lib/profile'
 import { openPaddleCheckout } from '../lib/paddle'
 import { waitForServerSubscription } from '../lib/cloudProfile'
+import { trackTikTokPurchase } from '../lib/tiktokPixel'
 import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -68,6 +69,11 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   // client-side and can't prove that on its own, so this reconciles with the server before
   // letting the user into the app.
   async function handleCheckoutCompleted() {
+    // Paddle only sends "checkout.completed" once the payment itself has actually gone
+    // through, so this is the right moment to tell TikTok — independent of whether our own
+    // server-side account linking below succeeds.
+    trackTikTokPurchase(plan)
+
     // No accounts system configured at all (self-hosted, fully local build) — there's no
     // server record to check against, so the local unlock is all there is.
     if (!isSupabaseConfigured) {
