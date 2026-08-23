@@ -1,6 +1,7 @@
 import type { BillingPlan } from '../types'
 import { supabase } from './supabase'
 import { activateSubscription, deactivateSubscription } from './profile'
+import { paddleFunctionName } from './paddle'
 
 export interface SubscriptionDetails {
   status: string
@@ -16,9 +17,10 @@ type Action = 'status' | 'change_plan' | 'cancel' | 'resume'
 
 async function callManageSubscription(action: Action, plan?: BillingPlan): Promise<SubscriptionDetails> {
   if (!supabase) throw new Error('Subscription management is not available.')
-  const { data, error } = await supabase.functions.invoke<SubscriptionDetails & { error?: string }>('manage-subscription', {
-    body: { action, plan },
-  })
+  const { data, error } = await supabase.functions.invoke<SubscriptionDetails & { error?: string }>(
+    paddleFunctionName('manage-subscription'),
+    { body: { action, plan } }
+  )
   if (error || !data) throw new Error('Could not reach the server. Please try again.')
   if (data.error) throw new Error(data.error)
 

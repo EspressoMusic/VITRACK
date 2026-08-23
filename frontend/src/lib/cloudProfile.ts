@@ -1,5 +1,6 @@
 import type { BillingPlan, NutrientAmounts, OnboardingProfile } from '../types'
 import { supabase } from './supabase'
+import { paddleFunctionName } from './paddle'
 import {
   activateSubscription,
   deactivateSubscription,
@@ -55,7 +56,7 @@ async function pullProfilePrefsFromCloud(userId: string): Promise<boolean> {
  */
 export async function fetchServerSubscriptionStatus(): Promise<SubscriptionStatus> {
   if (!supabase) return { subscribed: false, plan: null, authoritative: false }
-  const { data, error } = await supabase.functions.invoke<SubscriptionStatus>('link-paddle-subscription')
+  const { data, error } = await supabase.functions.invoke<SubscriptionStatus>(paddleFunctionName('link-paddle-subscription'))
   if (error || !data) return { subscribed: false, plan: null, authoritative: false }
   return data
 }
