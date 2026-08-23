@@ -6,6 +6,16 @@ const environment = import.meta.env.VITE_PADDLE_ENVIRONMENT === 'sandbox' ? 'san
 
 export const isPaddleConfigured = Boolean(clientToken)
 
+/**
+ * Paddle sandbox and production are separate accounts with separate API keys, so the
+ * Supabase edge functions that talk to Paddle's API are deployed twice — once under each
+ * name — reading a matching *-sandbox-suffixed set of secrets. This keeps sandbox testing
+ * from ever touching the live Paddle credentials.
+ */
+export function paddleFunctionName(base: 'link-paddle-subscription' | 'manage-subscription'): string {
+  return environment === 'sandbox' ? `${base}-sandbox` : base
+}
+
 export const PADDLE_PRICE_IDS: Record<BillingPlan, string | undefined> = {
   monthly: import.meta.env.VITE_PADDLE_PRICE_MONTHLY as string | undefined,
   yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY as string | undefined,
