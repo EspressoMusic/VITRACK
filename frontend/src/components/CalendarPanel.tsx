@@ -1,23 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { MealEntry } from '../types'
+import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
-import { NUTRIENTS, NUTRIENT_MAP, sumNutrients, percentOfRda, coverageStatus, type CoverageStatus } from '../lib/nutrients'
+import { NUTRIENT_MAP, getVisibleNutrients, percentOfRda } from '../lib/nutrients'
 import { MealDetailModal } from './MealDetailModal'
 
 const GRID_COLS = 'grid-cols-7'
 
-function dayOverallStatus(entries: MealEntry[]): CoverageStatus | null {
-  if (entries.length === 0) return null
-  const total = sumNutrients(entries.map((e) => e.nutrients))
-  const avgPercent =
-    NUTRIENTS.reduce((sum, n) => sum + Math.min(100, percentOfRda(n.id, total[n.id])), 0) / NUTRIENTS.length
-  return coverageStatus(avgPercent)
-}
-
 function topNutrientLabel(nutrients: MealEntry['nutrients']): string | null {
-  let best: { id: (typeof NUTRIENTS)[number]['id']; percent: number } | null = null
-  for (const n of NUTRIENTS) {
+  let best: { id: NutrientId; percent: number } | null = null
+  for (const n of getVisibleNutrients()) {
     const percent = percentOfRda(n.id, nutrients[n.id])
     if (percent > 0 && (!best || percent > best.percent)) best = { id: n.id, percent }
   }
@@ -74,7 +66,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 text-center">
       <div
         className="mx-auto w-[92%] shrink-0 rounded-3xl p-2.5"
-        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
+        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 7px 0 #c9a463, 0 10px 26px rgba(11,11,11,0.16)' }}
       >
         <div className="mb-1.5 flex items-center justify-between">
           <button
@@ -112,23 +104,21 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
               {week.map((date) => {
                 const key = toLocalDateKey(date)
                 const inMonth = date.getMonth() === cursor.month
-                const status = dayOverallStatus(mealsByDate.get(key) ?? [])
+                const hasActivity = (mealsByDate.get(key)?.length ?? 0) > 0
                 const isToday = key === today
                 const isSelected = key === selectedDate
-                const background = status
-                  ? status === 'good'
-                    ? 'var(--status-good)'
-                    : 'var(--status-critical)'
+                const background = hasActivity
+                  ? undefined
                   : isToday
-                    ? 'var(--accent-soft)'
-                    : 'var(--surface-cream)'
+                    ? 'var(--accent-strong)'
+                    : '#f0dcab'
                 return (
                   <button
                     key={key}
                     onClick={() => setSelectedDate(key)}
-                    className="flex aspect-square flex-col items-center justify-center rounded-lg text-xs font-semibold transition"
+                    className={`flex aspect-square flex-col items-center justify-center rounded-lg text-xs font-semibold transition ${hasActivity ? 'calendar-day-gold' : ''}`}
                     style={{
-                      color: status ? '#ffffff' : inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
+                      color: hasActivity ? '#3a2a06' : isToday ? '#ffffff' : inMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                       background,
                       border: isSelected ? '4px solid #000000' : '3px solid #000000',
                       opacity: inMonth ? 1 : 0.4,
@@ -143,10 +133,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         </div>
       </div>
 
-      <div
-        className="mx-auto mt-2 flex w-[92%] min-h-0 flex-1 flex-col overflow-hidden rounded-3xl p-3"
-        style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
-      >
+      <div className="mx-auto mt-2 flex w-[92%] min-h-0 flex-1 flex-col p-3">
         <h2 className="mb-1 shrink-0 text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
           {selectedLabel}
         </h2>

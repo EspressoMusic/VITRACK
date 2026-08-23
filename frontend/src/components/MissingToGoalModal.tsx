@@ -25,7 +25,7 @@ export function MissingToGoalModal({
       >
         <div className="relative mb-4 flex shrink-0 items-center justify-center">
           <h2
-            className="whitespace-nowrap rounded-full px-4 py-1.5 text-base font-semibold"
+            className="whitespace-nowrap rounded-full py-1.5 pl-4 pr-12 text-base font-semibold"
             style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface-cream)' }}
           >
             What's missing to 100%
@@ -33,7 +33,7 @@ export function MissingToGoalModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="absolute right-0 flex h-8 w-8 items-center justify-center rounded-full"
+            className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full"
             style={{ color: 'var(--text-primary)' }}
           >
             <CloseIcon className="h-5 w-5" />

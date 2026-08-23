@@ -75,7 +75,11 @@ function AppShell() {
       <NavBar active={tab} onChange={setTab} />
 
       {settingsOpen && (
-        <SettingsPanel onClose={() => setSettingsOpen(false)} onDataCleared={bumpRefresh} />
+        <SettingsPanel
+          onClose={() => setSettingsOpen(false)}
+          onDataCleared={bumpRefresh}
+          onNutrientModeChange={bumpRefresh}
+        />
       )}
     </div>
   )

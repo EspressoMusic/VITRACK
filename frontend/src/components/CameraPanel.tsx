@@ -8,7 +8,7 @@ import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
-import { NUTRIENTS, EMPTY_NUTRIENTS, percentOfRda, percentOfMealTarget } from '../lib/nutrients'
+import { EMPTY_NUTRIENTS, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget } from '../lib/nutrients'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
 import {
@@ -43,86 +43,54 @@ function capitalize(s: string): string {
 }
 
 // GPT already interprets free-text quantities in the existing nutrition lookup, so no special
-// parsing is needed on our end for any of these.
-const FRACTION_PRESETS: { label: string; value: string }[] = [
-  { label: '½', value: 'half' },
-  { label: '⅓', value: 'a third' },
-  { label: '¼', value: 'a quarter' },
-]
+// parsing is needed on our end for either of these.
+const ONE_WHOLE = '1 whole'
+const HALF = 'half'
 
-/** Stepper for whole-unit counts (1, 2, 3…) plus fraction chips and an on-demand exact-grams field. */
+/** Three flat quantity options in one row — 1, ½, and an on-demand exact-grams field. */
 function QuantityPicker({
   quantity,
   onQuantityChange,
-  unitLabel,
 }: {
   quantity: string
   onQuantityChange: (v: string) => void
-  /** Overrides the "whole" label with a saved custom food's own unit, e.g. "bowl". */
-  unitLabel?: string
 }) {
-  const wholeMatch = /^(\d+) whole$/.exec(quantity)
-  const wholeActive = !!wholeMatch
-  const wholeCount = wholeMatch ? parseInt(wholeMatch[1], 10) : 1
-  const isFraction = FRACTION_PRESETS.some((p) => p.value === quantity)
-  const [gramsMode, setGramsMode] = useState(!wholeActive && !isFraction && quantity.trim() !== '')
+  const isPreset = quantity === ONE_WHOLE || quantity === HALF
+  const [gramsMode, setGramsMode] = useState(!isPreset && quantity.trim() !== '')
   const gramsInputRef = useRef<HTMLInputElement>(null)
-  const displayUnit = unitLabel ? (wholeCount === 1 ? unitLabel : unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`) : 'whole'
+
+  function selectPreset(value: string) {
+    setGramsMode(false)
+    onQuantityChange(value)
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
-        <div
-          className="flex items-center gap-1 rounded-full px-1 py-1"
-          style={{ backgroundColor: wholeActive ? 'var(--accent)' : 'var(--surface-2)', border: '2px solid #000000' }}
+      <div className="flex flex-nowrap items-center justify-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => selectPreset(ONE_WHOLE)}
+          className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+          style={{
+            backgroundColor: !gramsMode && quantity === ONE_WHOLE ? 'var(--accent)' : 'var(--surface-2)',
+            color: !gramsMode && quantity === ONE_WHOLE ? '#ffffff' : 'var(--text-primary)',
+            border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
+          }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setGramsMode(false)
-              onQuantityChange(`${Math.max(1, wholeCount - 1)} whole`)
-            }}
-            className="flex h-5 w-5 items-center justify-center rounded-full text-sm font-bold"
-            style={{ color: wholeActive ? '#ffffff' : 'var(--text-primary)' }}
-          >
-            −
-          </button>
-          <span
-            className="min-w-[2.75rem] text-center text-xs font-medium"
-            style={{ color: wholeActive ? '#ffffff' : 'var(--text-primary)' }}
-          >
-            {wholeCount} {displayUnit}
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setGramsMode(false)
-              onQuantityChange(`${wholeCount + 1} whole`)
-            }}
-            className="flex h-5 w-5 items-center justify-center rounded-full text-sm font-bold"
-            style={{ color: wholeActive ? '#ffffff' : 'var(--text-primary)' }}
-          >
-            +
-          </button>
-        </div>
-        {FRACTION_PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            onClick={() => {
-              setGramsMode(false)
-              onQuantityChange(p.value)
-            }}
-            className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
-            style={{
-              backgroundColor: !gramsMode && quantity === p.value ? 'var(--accent)' : 'var(--surface-2)',
-              color: !gramsMode && quantity === p.value ? '#ffffff' : 'var(--text-primary)',
-              border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
+          1
+        </button>
+        <button
+          type="button"
+          onClick={() => selectPreset(HALF)}
+          className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+          style={{
+            backgroundColor: !gramsMode && quantity === HALF ? 'var(--accent)' : 'var(--surface-2)',
+            color: !gramsMode && quantity === HALF ? '#ffffff' : 'var(--text-primary)',
+            border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
+          }}
+        >
+          ½
+        </button>
         {gramsMode ? (
           <input
             ref={gramsInputRef}
@@ -142,7 +110,7 @@ function QuantityPicker({
               onQuantityChange('')
               requestAnimationFrame(() => gramsInputRef.current?.focus())
             }}
-            className="rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+            className="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
           >
             Exact grams
@@ -160,6 +128,7 @@ function FoodAutocomplete({
   onNameChange,
   onQuantityChange,
   onConfirm,
+  showQuantity = true,
 }: {
   name: string
   quantity: string
@@ -167,6 +136,8 @@ function FoodAutocomplete({
   onNameChange: (v: string) => void
   onQuantityChange: (v: string) => void
   onConfirm: (name: string) => void
+  /** Lets a caller render the QuantityPicker itself elsewhere in the layout instead. */
+  showQuantity?: boolean
 }) {
   // Custom foods finish loading from IndexedDB asynchronously; re-render once they land so
   // a food someone just saved shows up in search without needing to retype.
@@ -178,8 +149,6 @@ function FoodAutocomplete({
   const suggestions = !confirmed
     ? [...customMatches, ...builtInMatches.filter((n) => !customMatches.some((c) => c.toLowerCase() === n.toLowerCase()))].slice(0, 6)
     : []
-  const matchedCustomFood = confirmed ? findCustomFood(name) : undefined
-
   return (
     <div className="flex flex-col gap-2">
       <div className="relative mx-auto w-2/3">
@@ -226,9 +195,9 @@ function FoodAutocomplete({
           </div>
         )}
       </div>
-      {confirmed && (
+      {confirmed && showQuantity && (
         <div className="mx-auto w-2/3">
-          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} unitLabel={matchedCustomFood?.unitLabel} />
+          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} />
         </div>
       )}
     </div>
@@ -327,16 +296,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
 
-  const visibleNutrients = result ? NUTRIENTS.filter((n) => percentOfRda(n.id, result.nutrients[n.id]) > 0) : []
-  const overallNutrientPercent = visibleNutrients.length
+  const resultNutrients = result
+    ? getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, result.nutrients[n.id]))
+    : []
+  const overallNutrientPercent = resultNutrients.length
     ? Math.round(
-        visibleNutrients.reduce((sum, n) => sum + percentOfMealTarget(n.id, result!.nutrients[n.id]), 0) /
-          visibleNutrients.length
+        resultNutrients.reduce((sum, n) => sum + percentOfMealTarget(n.id, result!.nutrients[n.id]), 0) /
+          resultNutrients.length
       )
     : 0
   // Matches the last row's rise-particle timing (riseDelayMs + second-particle offset + rise duration)
   // so the fill bar only starts filling once every rising particle has reached it.
-  const nutrientRiseTotalMs = visibleNutrients.length ? (visibleNutrients.length - 1) * 90 + 140 + 1100 : 0
+  const nutrientRiseTotalMs = resultNutrients.length ? (resultNutrients.length - 1) * 90 + 140 + 1100 : 0
 
   const [, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
   const [detections, setDetections] = useState<FoodDetection[]>([])
@@ -797,7 +768,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3', boxShadow: '0 4px 0 #1a1a19' }}
           >
-            Log food manually
+            Log manually
           </button>
           <input
             ref={fileInputRef}
@@ -902,10 +873,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 onNameChange={handleManualNameChange}
                 onQuantityChange={setManualQuantity}
                 onConfirm={handleManualConfirm}
+                showQuantity={false}
               />
             </div>
           )}
-          <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <div className={`flex flex-1 flex-col items-center gap-3 ${manualConfirmed ? 'justify-evenly' : 'justify-center'}`}>
             {!manualConfirmed && (
               <FoodAutocomplete
                 name={manualName}
@@ -915,6 +887,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 onQuantityChange={setManualQuantity}
                 onConfirm={handleManualConfirm}
               />
+            )}
+            {manualConfirmed && (
+              <div className="w-2/3">
+                <QuantityPicker quantity={manualQuantity} onQuantityChange={setManualQuantity} />
+              </div>
             )}
             <div className="mx-auto flex w-2/3 flex-col gap-2">
               <button
@@ -944,7 +921,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="rounded-full px-4 py-2 text-xs font-semibold transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#fbedc3', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19', color: 'var(--text-primary)' }}
             >
-              Add custom food or supplement →
+              Add custom food →
             </button>
           </div>
         </div>
@@ -972,10 +949,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 resetCustomFields()
                 setStage('manual')
               }}
-              className="shrink-0 whitespace-nowrap rounded-xl px-4 py-1.5 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
+              aria-label="Back"
+              className="flex shrink-0 items-center justify-center rounded-xl px-3 py-1.5 text-base font-medium transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
-              Back
+              ‹
             </button>
           </div>
         </div>
@@ -985,7 +963,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           <ConfettiBurst count={70} />
 
-          {visibleNutrients.length > 0 && (
+          {resultNutrients.length > 0 && (
             <NutrientFillBar percent={overallNutrientPercent} startDelayMs={nutrientRiseTotalMs} />
           )}
 
@@ -1032,9 +1010,13 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   {manualLoading ? 'Calculating…' : 'Get nutrients'}
                 </button>
               </div>
+            ) : resultNutrients.length === 0 ? (
+              <p className="px-2 py-3 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                No standout nutrients in this serving.
+              </p>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {visibleNutrients.map((n, i) => (
+                {resultNutrients.map((n, i) => (
                   <NutrientBar
                     key={n.id}
                     id={n.id}

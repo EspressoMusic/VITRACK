@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
+import { isAdvancedMode, setAdvancedMode } from '../lib/nutrients'
 import { isInstallable, isStandalone, isIOS, onInstallabilityChange, promptInstall } from '../lib/pwa'
 import {
   isNotificationSupported,
@@ -16,7 +17,16 @@ import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
 
-export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void; onDataCleared: () => void }) {
+export function SettingsPanel({
+  onClose,
+  onDataCleared,
+  onNutrientModeChange,
+}: {
+  onClose: () => void
+  onDataCleared: () => void
+  /** Called after the vitamin/mineral focus toggle changes, so open screens refresh their lists. */
+  onNutrientModeChange: () => void
+}) {
   const { user, signOut, deleteAccount } = useAuth()
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
@@ -27,8 +37,16 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
   const [installable, setInstallable] = useState(isInstallable)
   const [notifPref, setNotifPref] = useState(getNotificationPref)
   const [notifPermission, setNotifPermission] = useState(getNotificationPermission)
+  const [advancedNutrients, setAdvancedNutrients] = useState(isAdvancedMode)
   const isPro = isSubscribed()
   const plan = getBillingPlan()
+
+  function handleToggleAdvancedNutrients() {
+    const next = !advancedNutrients
+    setAdvancedNutrients(next)
+    setAdvancedMode(next)
+    onNutrientModeChange()
+  }
 
   useEffect(() => onInstallabilityChange(() => setInstallable(isInstallable())), [])
 
@@ -265,6 +283,44 @@ export function SettingsPanel({ onClose, onDataCleared }: { onClose: () => void;
                 </div>
               </div>
             )}
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+              Nutrients
+            </p>
+            <div
+              className="flex items-center justify-between rounded-xl p-2"
+              style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+            >
+              <div>
+                <p className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Show all vitamins & minerals
+                </p>
+                <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                  Off focuses the app on the 6 that matter most
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={advancedNutrients}
+                onClick={handleToggleAdvancedNutrients}
+                className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                style={{
+                  backgroundColor: advancedNutrients ? 'var(--accent-strong)' : 'var(--surface-1)',
+                  border: '2px solid #000000',
+                }}
+              >
+                <span
+                  className="h-5 w-5 rounded-full bg-white shadow transition-transform"
+                  style={{
+                    border: '2px solid #000000',
+                    transform: advancedNutrients ? 'translateX(calc(1.75rem - 4px))' : 'translateX(0px)',
+                  }}
+                />
+              </button>
+            </div>
           </div>
 
           <div>

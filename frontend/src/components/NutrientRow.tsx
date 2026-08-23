@@ -18,30 +18,21 @@ export function NutrientRow({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-2xl px-2.5 py-2 text-left transition active:scale-[0.98]"
+      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition active:scale-[0.98]"
       style={{
         backgroundColor: 'var(--surface-cream)',
         border: '1px solid var(--border)',
         boxShadow: '0 4px 10px rgba(26,26,25,0.14)',
       }}
     >
-      <span className="flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: STATUS_VAR[status] }} aria-hidden />
-        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-          {def.name}
-        </span>
+      <span className="w-28 shrink-0 truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+        {def.name}
       </span>
-      <span className="flex items-center gap-1.5">
-        <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-          {amount.toFixed(amount < 10 ? 1 : 0)}
-          {def.unit}
-        </span>
+      <span className="block h-2 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: STATUS_SOFT_VAR[status] }}>
         <span
-          className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-          style={{ backgroundColor: STATUS_SOFT_VAR[status], color: STATUS_VAR[status] }}
-        >
-          {percent}%
-        </span>
+          className="block h-full rounded-full transition-[width] duration-500"
+          style={{ width: `${Math.min(100, percent)}%`, backgroundColor: STATUS_VAR[status] }}
+        />
       </span>
     </button>
   )
