@@ -73,6 +73,33 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+/** Anonymous sessions don't get cloud meal storage (see db.ts's useCloud) — only a real,
+ *  linked identity does. Otherwise every anonymous visitor, including ones who never
+ *  subscribe, would start writing meal rows to Postgres instead of the local IndexedDB. */
+function cloudDbUserId(u: User | null): string | null {
+  return u && !u.is_anonymous ? u.id : null
+}
+
+let anonSignInPromise: Promise<User | null> | null = null
+
+/** De-duped so React StrictMode's double-invoked effect (or any other accidental re-run of
+ *  the mount effect below) can't fire two concurrent signInAnonymously() calls — that raced
+ *  in testing and left the client's active session pointing at a different user than the id
+ *  a caller had just captured, which then failed RLS on the next write. */
+function ensureAnonymousSession(): Promise<User | null> {
+  if (!anonSignInPromise) {
+    anonSignInPromise = supabase!.auth.signInAnonymously().then(({ data, error }) => {
+      if (error) {
+        console.error('Anonymous sign-in failed:', error)
+        anonSignInPromise = null
+        return null
+      }
+      return data.user
+    })
+  }
+  return anonSignInPromise
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -80,10 +107,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return
 
-    supabase.auth.getSession().then(({ data }) => {
-      const sessionUser = data.session?.user ?? null
+    supabase.auth.getSession().then(async ({ data }) => {
+      let sessionUser = data.session?.user ?? null
+
+      // No session at all (first launch, or a cleared one) — sign in anonymously so every
+      // visitor has a real auth.uid() before they ever reach checkout. That id rides along
+      // in the Paddle customData from the very first purchase attempt, so the webhook can
+      // link the subscription immediately and nobody is forced through a Google sign-in
+      // just to redeem what they already paid for.
+      if (!sessionUser) {
+        sessionUser = await ensureAnonymousSession()
+      }
+
       setUser(sessionUser)
-      setCurrentUserId(sessionUser?.id ?? null)
+      setCurrentUserId(cloudDbUserId(sessionUser))
       setLoading(false)
       // Re-verify subscription status on every app load (not just fresh sign-in), so a
       // cancellation or chargeback on Paddle's side eventually revokes local access too.
@@ -98,9 +135,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
-      setCurrentUserId(session?.user?.id ?? null)
+      setCurrentUserId(cloudDbUserId(session?.user ?? null))
       if (event === 'SIGNED_IN' && session?.user) {
-        syncLocalMealsToCloud().catch((err) => console.error('Sync to cloud failed:', err))
+        // Only migrate local meals up on a real sign-in (e.g. linking Google on a device that
+        // already had local history) — not on the automatic anonymous sign-in every visitor
+        // now gets, which would otherwise push a fresh anonymous user's (empty) local data for
+        // no reason, or an existing free user's whole history into a table nothing reads back
+        // from while they're still anonymous.
+        if (!session.user.is_anonymous) {
+          syncLocalMealsToCloud().catch((err) => console.error('Sync to cloud failed:', err))
+        }
         syncProfileWithCloud(session.user.id)
           .then((restored) => {
             if (restored) window.location.reload()
@@ -147,13 +191,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() {
     if (!supabase) return
     await supabase.auth.signOut()
+    // Re-establish an anonymous session right away so the rest of the app (checkout above
+    // all) can keep assuming a signed-in user always exists rather than handling a null gap.
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) console.error('Anonymous sign-in failed:', error)
   }
 
   async function deleteAccount() {
     if (!supabase || !user) return
     const { error } = await supabase.functions.invoke('delete-account')
     if (error) throw error
-    await supabase.auth.signOut()
+    await signOut()
   }
 
   return (

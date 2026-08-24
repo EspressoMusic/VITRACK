@@ -15,7 +15,34 @@ export interface SubscriptionDetails {
 
 type Action = 'status' | 'change_plan' | 'cancel' | 'resume'
 
+// Dev-only preview of the cancel/resume/switch-plan flow against fake data instead of a real
+// linked Paddle subscription: visit `?demo=1`. Compiled out of production builds, same as
+// `?unlock=1`/`?paywall=1` in App.tsx.
+const DEMO_MODE = import.meta.env.DEV && new URLSearchParams(window.location.search).get('demo') === '1'
+let demoDetails: SubscriptionDetails = {
+  status: 'active',
+  plan: 'yearly',
+  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  cancelAtPeriodEnd: false,
+  cancelEffectiveAt: null,
+  updatePaymentMethodUrl: null,
+}
+
 async function callManageSubscription(action: Action, plan?: BillingPlan): Promise<SubscriptionDetails> {
+  if (DEMO_MODE) {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    if (action === 'cancel') {
+      demoDetails = { ...demoDetails, cancelAtPeriodEnd: true, cancelEffectiveAt: demoDetails.currentPeriodEnd }
+    } else if (action === 'resume') {
+      demoDetails = { ...demoDetails, cancelAtPeriodEnd: false, cancelEffectiveAt: null }
+    } else if (action === 'change_plan' && plan) {
+      demoDetails = { ...demoDetails, plan }
+    }
+    const subscribed = demoDetails.status === 'active'
+    if (subscribed && demoDetails.plan) activateSubscription(demoDetails.plan)
+    return demoDetails
+  }
+
   if (!supabase) throw new Error('Subscription management is not available.')
   const { data, error } = await supabase.functions.invoke<SubscriptionDetails & { error?: string }>(
     paddleFunctionName('manage-subscription'),

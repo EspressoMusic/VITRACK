@@ -64,7 +64,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [legalOpen, setLegalOpen] = useState(false)
   const [showAgreeError, setShowAgreeError] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [needsSignIn, setNeedsSignIn] = useState(false)
   const [offerDeadline] = useState(getOfferDeadline)
   const [now, setNow] = useState(Date.now())
   const goals = getStoredGoals()
@@ -99,14 +98,14 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     }
 
     if (!user) {
-      // Don't mark this device "subscribed" yet — if the user closes the tab before signing
-      // in, a stale local flag would drop them straight into the app on next launch instead
-      // of back to this screen, where the paid AI calls would then just fail server-side.
+      // Safety valve for the rare case anonymous sign-in itself failed (offline, blocked
+      // storage, etc.) — never leave someone who already paid stuck behind a sign-in wall.
       // Stash the real transaction amount so Purchase can still fire, exactly once, at the
-      // point sign-in actually links this payment to their account (see cloudProfile.ts).
+      // point a real sign-in later links this payment to an account (see cloudProfile.ts).
       if (purchaseDetails) storePendingPurchase(purchaseDetails)
+      activateSubscription(plan)
       setProcessing(false)
-      setNeedsSignIn(true)
+      onSubscribed()
       return
     }
 
@@ -127,6 +126,15 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   async function handleSubscribe() {
     if (!agreed) {
       setShowAgreeError(true)
+      return
+    }
+    // Without a user id (anonymous or real) to attach, this purchase could never be linked
+    // to any account afterward — an anonymous user has no email to fall back to matching by
+    // (see link-paddle-subscription), so it would become permanently unmanageable: no way to
+    // see it or cancel it from Settings. Block checkout entirely rather than let that happen;
+    // the button below is disabled for the same reason, this is just defense in depth.
+    if (isSupabaseConfigured && !user) {
+      setCheckoutError('Just a moment — setting up your account. Please try again.')
       return
     }
     setCheckoutError(null)
@@ -156,58 +164,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       setProcessing(false)
       setCheckoutError('Checkout is unavailable right now. Please try again later.')
     }
-  }
-
-  if (needsSignIn) {
-    return (
-      <div
-        className="relative mx-auto flex h-dvh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
-        style={{
-          backgroundColor: 'var(--surface-0)',
-          backgroundImage: "url('/background-calendar.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <ConfettiBurst />
-        <div
-          className="relative z-10 flex w-full flex-col items-center gap-3 overflow-hidden rounded-3xl px-6 py-6 text-center"
-          style={{
-            backgroundColor: '#e5c184',
-            border: '2px solid var(--accent-strong)',
-            boxShadow: '0 10px 26px rgba(11,11,11,0.16)',
-          }}
-        >
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.75)', color: 'var(--accent-strong)' }}
-          >
-            <CheckIcon className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-              Payment received — one last step
-            </h1>
-            <p className="mx-auto mt-1 max-w-[90%] text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
-              Sign in with Google to activate your subscription on this account.
-            </p>
-          </div>
-          <div className="relative w-full">
-            <button
-              type="button"
-              tabIndex={-1}
-              aria-hidden="true"
-              className="w-full rounded-full py-2 text-sm font-semibold text-white transition transition-transform active:translate-y-1 active:shadow-none"
-              style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #222', boxShadow: '0 2px 0 #222' }}
-            >
-              Sign in with Google
-            </button>
-            <GoogleSignInOverlay />
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -326,7 +282,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           </div>
           <button
             onClick={handleSubscribe}
-            disabled={processing}
+            disabled={processing || (isSupabaseConfigured && !user)}
             className={`w-full rounded-full py-1.5 text-sm font-semibold text-white transition ${!agreed ? 'opacity-40' : ''}`}
             style={{
               backgroundColor: 'var(--accent-strong)',
