@@ -827,7 +827,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <p className="shrink-0 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
             {capitalize(confirmedFoodName)}
           </p>
-          <div className="thin-scroll flex w-full max-h-[40vh] flex-col gap-1.5 overflow-y-auto">
+          <div className="thin-scroll flex w-full max-h-[40vh] flex-col gap-1.5 overflow-y-auto px-1 pb-2">
             <p className="text-center text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               How much did you eat?
             </p>
