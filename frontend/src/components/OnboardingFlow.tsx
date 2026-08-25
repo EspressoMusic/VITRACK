@@ -1,28 +1,23 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import type { ActivityLevel, DietType, NutrientAmounts, NutrientId, OnboardingProfile, Sex } from '../types'
+import type { ActivityLevel, DietType, NutrientAmounts, OnboardingProfile, Sex } from '../types'
 import { computeNutrientGoals } from '../lib/goals'
 import { completeOnboarding } from '../lib/profile'
 import { NUTRIENT_MAP, NUTRIENTS } from '../lib/nutrients'
 import { playConfirmSound, playTapSound } from '../lib/sound'
-import { ActivityIcon, CakeIcon, LeafIcon, LockIcon, RulerIcon, ScaleIcon, SparkleIcon, UserIcon } from './icons'
+import { useLanguage } from '../contexts/LanguageContext'
+import { LANGUAGES } from '../lib/i18n/lang'
+import { ONBOARDING_STRINGS } from '../lib/i18n/onboarding'
+import { ActivityIcon, CakeIcon, GlobeIcon, LeafIcon, LockIcon, RulerIcon, ScaleIcon, SparkleIcon, UserIcon } from './icons'
 
 type Step = 'welcome' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'calculating' | 'summary'
+type OnboardingStrings = (typeof ONBOARDING_STRINGS)['en']
 
 const STEP_ORDER: Step[] = ['welcome', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'calculating', 'summary']
 const PROGRESS_STEPS: Step[] = ['age', 'sex', 'weight', 'height', 'activity', 'diet']
 
-const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string }[] = [
-  { id: 'sedentary', label: 'Mostly still', desc: 'Little exercise, desk job' },
-  { id: 'moderate', label: 'Somewhat active', desc: 'Active 1–3 times a week' },
-  { id: 'active', label: 'Very active', desc: '4+ workouts a week' },
-]
-
-const DIET_OPTIONS: { id: DietType; label: string; desc: string }[] = [
-  { id: 'omnivore', label: 'Omnivore', desc: 'Meat, fish, dairy — everything' },
-  { id: 'pescatarian', label: 'Pescatarian', desc: 'Fish and dairy, no other meat' },
-  { id: 'vegetarian', label: 'Vegetarian', desc: 'Dairy & eggs, no meat/fish' },
-  { id: 'vegan', label: 'Vegan', desc: 'No animal products at all' },
-]
+const ACTIVITY_IDS: ActivityLevel[] = ['sedentary', 'moderate', 'active']
+const DIET_IDS: DietType[] = ['omnivore', 'pescatarian', 'vegetarian', 'vegan']
+const SEX_IDS: Sex[] = ['female', 'male', 'unspecified']
 
 interface DraftProfile {
   age: string
@@ -77,6 +72,8 @@ function draftToProfile(d: DraftProfile): OnboardingProfile | null {
 }
 
 export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
+  const { lang, dir } = useLanguage()
+  const t = ONBOARDING_STRINGS[lang]
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState<DraftProfile>(EMPTY_DRAFT)
   const [continuePulse, setContinuePulse] = useState(0)
@@ -111,6 +108,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div
+      dir={dir}
       className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden"
       style={{
         backgroundColor: 'var(--surface-0)',
@@ -124,11 +122,11 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
         {step !== 'welcome' && step !== 'calculating' && step !== 'summary' ? (
           <button
             onClick={goBack}
-            aria-label="Back"
+            aria-label={t.backAriaLabel}
             className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
             style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: 'var(--text-primary)' }}
           >
-            ‹
+            {dir === 'rtl' ? '›' : '‹'}
           </button>
         ) : (
           <div className="h-9 w-9" />
@@ -145,29 +143,32 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
             />
           ))}
         </div>
-        <div className="h-9 w-9" />
+        {step === 'welcome' ? <LanguageSwitcher /> : <div className="h-9 w-9" />}
       </div>
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-2">
         <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
-          {step === 'welcome' && <WelcomeStep />}
-          {step === 'age' && <AgeStep value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
-          {step === 'sex' && <SexStep value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
+          {step === 'welcome' && <WelcomeStep t={t} />}
+          {step === 'age' && <AgeStep t={t} value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
+          {step === 'sex' && <SexStep t={t} value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
           {step === 'weight' && (
-            <WeightStep value={draft.weightKg} onChange={(weightKg) => setDraft((d) => ({ ...d, weightKg }))} />
+            <WeightStep t={t} value={draft.weightKg} onChange={(weightKg) => setDraft((d) => ({ ...d, weightKg }))} />
           )}
           {step === 'height' && (
-            <HeightStep value={draft.heightCm} onChange={(heightCm) => setDraft((d) => ({ ...d, heightCm }))} />
+            <HeightStep t={t} value={draft.heightCm} onChange={(heightCm) => setDraft((d) => ({ ...d, heightCm }))} />
           )}
           {step === 'activity' && (
             <ActivityStep
+              t={t}
               value={draft.activityLevel}
               onChange={(activityLevel) => setDraft((d) => ({ ...d, activityLevel }))}
             />
           )}
-          {step === 'diet' && <DietStep value={draft.diet} onChange={(diet) => setDraft((d) => ({ ...d, diet }))} />}
-          {step === 'calculating' && <CalculatingStep />}
-          {step === 'summary' && <SummaryStep goals={previewGoals} />}
+          {step === 'diet' && (
+            <DietStep t={t} value={draft.diet} onChange={(diet) => setDraft((d) => ({ ...d, diet }))} />
+          )}
+          {step === 'calculating' && <CalculatingStep t={t} />}
+          {step === 'summary' && <SummaryStep t={t} goals={previewGoals} />}
         </div>
       </main>
 
@@ -188,8 +189,64 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
               border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
             }}
           >
-            {step === 'welcome' ? "Let's go" : step === 'summary' ? 'See my plan' : 'Continue'}
+            {step === 'welcome' ? t.welcomeCta : step === 'summary' ? t.summaryCta : t.continueCta}
           </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LanguageSwitcher() {
+  const { lang, setLang } = useLanguage()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handlePointerDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label={ONBOARDING_STRINGS[lang].languageButtonLabel}
+        className="flex h-9 w-9 items-center justify-center rounded-full"
+        style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: 'var(--text-primary)' }}
+      >
+        <GlobeIcon className="h-4 w-4" />
+      </button>
+      {open && (
+        <div
+          className="absolute end-0 top-11 z-30 flex flex-col overflow-hidden rounded-2xl py-1"
+          style={{
+            backgroundColor: 'var(--surface-cream)',
+            border: '1.5px solid var(--accent-strong)',
+            boxShadow: '0 8px 20px rgba(11,11,11,0.18)',
+            minWidth: 132,
+          }}
+        >
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => {
+                setLang(l.id)
+                setOpen(false)
+              }}
+              className="px-4 py-2 text-start text-sm font-medium transition"
+              style={{
+                backgroundColor: l.id === lang ? 'var(--accent-soft)' : 'transparent',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {l.nativeLabel}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -352,7 +409,7 @@ function ChoiceButton({
         setPulse((p) => p + 1)
         onClick()
       }}
-      className={`flex flex-col items-start gap-0.5 rounded-2xl text-left transition ${compact ? 'px-3.5 py-2' : 'px-4 py-1.5'} ${pulse > 0 ? 'tap-effect' : ''}`}
+      className={`flex flex-col items-start gap-0.5 rounded-2xl text-start transition ${compact ? 'px-3.5 py-2' : 'px-4 py-1.5'} ${pulse > 0 ? 'tap-effect' : ''}`}
       style={{
         backgroundColor: selected ? 'var(--accent-soft)' : 'var(--surface-cream)',
         border: selected ? '2px solid var(--accent-strong)' : '1px solid var(--border-strong)',
@@ -373,7 +430,7 @@ function ChoiceButton({
   )
 }
 
-function WelcomeStep() {
+function WelcomeStep({ t }: { t: OnboardingStrings }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 text-center">
       <span
@@ -383,42 +440,32 @@ function WelcomeStep() {
         <SparkleIcon className="h-8 w-8" />
       </span>
       <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-        Let's set up your targets
+        {t.welcome.title}
       </h1>
       <p className="max-w-[80%] text-sm" style={{ color: 'var(--text-secondary)' }}>
-        A few quick questions — no cardio required.
+        {t.welcome.subtitle}
       </p>
     </div>
   )
 }
 
-function AgeStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function AgeStep({ t, value, onChange }: { t: OnboardingStrings; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard icon={<CakeIcon className="h-5 w-5" />} title="How old are you?" subtitle="Your vitamin needs age too, just less gracefully.">
-        <WheelPicker value={value} onChange={onChange} unit="years" min={18} max={100} initial={25} />
+      <StepCard icon={<CakeIcon className="h-5 w-5" />} title={t.age.title} subtitle={t.age.subtitle}>
+        <WheelPicker value={value} onChange={onChange} unit={t.age.unit} min={18} max={100} initial={25} />
       </StepCard>
     </div>
   )
 }
 
-const SEX_OPTIONS: { id: Sex; label: string }[] = [
-  { id: 'female', label: 'Female' },
-  { id: 'male', label: 'Male' },
-  { id: 'unspecified', label: 'Prefer not to say' },
-]
-
-function SexStep({ value, onChange }: { value: Sex | null; onChange: (v: Sex) => void }) {
+function SexStep({ t, value, onChange }: { t: OnboardingStrings; value: Sex | null; onChange: (v: Sex) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard
-        icon={<UserIcon className="h-5 w-5" />}
-        title="Male or female?"
-        subtitle="Biology plays favorites with a few nutrients."
-      >
+      <StepCard icon={<UserIcon className="h-5 w-5" />} title={t.sex.title} subtitle={t.sex.subtitle}>
         <div className="flex w-full flex-col gap-1">
-          {SEX_OPTIONS.map((opt) => (
-            <ChoiceButton key={opt.id} selected={value === opt.id} onClick={() => onChange(opt.id)} label={opt.label} />
+          {SEX_IDS.map((id) => (
+            <ChoiceButton key={id} selected={value === id} onClick={() => onChange(id)} label={t.sex.options[id]} />
           ))}
         </div>
       </StepCard>
@@ -426,50 +473,46 @@ function SexStep({ value, onChange }: { value: Sex | null; onChange: (v: Sex) =>
   )
 }
 
-function WeightStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function WeightStep({ t, value, onChange }: { t: OnboardingStrings; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard
-        icon={<ScaleIcon className="h-5 w-5" />}
-        title="What's your weight?"
-        subtitle="Bigger frame, bigger nutrient budget."
-      >
-        <WheelPicker value={value} onChange={onChange} unit="kg" min={30} max={250} initial={70} />
+      <StepCard icon={<ScaleIcon className="h-5 w-5" />} title={t.weight.title} subtitle={t.weight.subtitle}>
+        <WheelPicker value={value} onChange={onChange} unit={t.weight.unit} min={30} max={250} initial={70} />
       </StepCard>
     </div>
   )
 }
 
-function HeightStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function HeightStep({ t, value, onChange }: { t: OnboardingStrings; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard
-        icon={<RulerIcon className="h-5 w-5" />}
-        title="And your height?"
-        subtitle="Tall or short, we still crunch the numbers."
-      >
-        <WheelPicker value={value} onChange={onChange} unit="cm" min={100} max={230} initial={170} />
+      <StepCard icon={<RulerIcon className="h-5 w-5" />} title={t.height.title} subtitle={t.height.subtitle}>
+        <WheelPicker value={value} onChange={onChange} unit={t.height.unit} min={100} max={230} initial={170} />
       </StepCard>
     </div>
   )
 }
 
-function ActivityStep({ value, onChange }: { value: ActivityLevel | null; onChange: (v: ActivityLevel) => void }) {
+function ActivityStep({
+  t,
+  value,
+  onChange,
+}: {
+  t: OnboardingStrings
+  value: ActivityLevel | null
+  onChange: (v: ActivityLevel) => void
+}) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard
-        icon={<ActivityIcon className="h-5 w-5" />}
-        title="How active are you?"
-        subtitle="Couch or gym — we adjust."
-      >
+      <StepCard icon={<ActivityIcon className="h-5 w-5" />} title={t.activity.title} subtitle={t.activity.subtitle}>
         <div className="flex w-full flex-col gap-1">
-          {ACTIVITY_OPTIONS.map((opt) => (
+          {ACTIVITY_IDS.map((id) => (
             <ChoiceButton
-              key={opt.id}
-              selected={value === opt.id}
-              onClick={() => onChange(opt.id)}
-              label={opt.label}
-              description={opt.desc}
+              key={id}
+              selected={value === id}
+              onClick={() => onChange(id)}
+              label={t.activity.options[id].label}
+              description={t.activity.options[id].desc}
             />
           ))}
         </div>
@@ -478,22 +521,18 @@ function ActivityStep({ value, onChange }: { value: ActivityLevel | null; onChan
   )
 }
 
-function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: DietType) => void }) {
+function DietStep({ t, value, onChange }: { t: OnboardingStrings; value: DietType | null; onChange: (v: DietType) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard
-        icon={<LeafIcon className="h-5 w-5" />}
-        title="What's your diet?"
-        subtitle="Salad fans, mind the B12."
-      >
+      <StepCard icon={<LeafIcon className="h-5 w-5" />} title={t.diet.title} subtitle={t.diet.subtitle}>
         <div className="flex w-full flex-col gap-1.5">
-          {DIET_OPTIONS.map((opt) => (
+          {DIET_IDS.map((id) => (
             <ChoiceButton
-              key={opt.id}
-              selected={value === opt.id}
-              onClick={() => onChange(opt.id)}
-              label={opt.label}
-              description={opt.desc}
+              key={id}
+              selected={value === id}
+              onClick={() => onChange(id)}
+              label={t.diet.options[id].label}
+              description={t.diet.options[id].desc}
               compact
             />
           ))}
@@ -503,15 +542,13 @@ function DietStep({ value, onChange }: { value: DietType | null; onChange: (v: D
   )
 }
 
-const CALCULATING_MESSAGES = ['Analyzing your profile…', 'Calculating vitamin needs…', 'Personalizing your targets…']
-
-function CalculatingStep() {
+function CalculatingStep({ t }: { t: OnboardingStrings }) {
   const [msgIndex, setMsgIndex] = useState(0)
 
   useEffect(() => {
-    const t = setInterval(() => setMsgIndex((i) => (i + 1) % CALCULATING_MESSAGES.length), 550)
-    return () => clearInterval(t)
-  }, [])
+    const timer = setInterval(() => setMsgIndex((i) => (i + 1) % t.calculating.messages.length), 550)
+    return () => clearInterval(timer)
+  }, [t])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -524,22 +561,16 @@ function CalculatingStep() {
         </span>
       </span>
       <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-        {CALCULATING_MESSAGES[msgIndex]}
+        {t.calculating.messages[msgIndex]}
       </p>
     </div>
   )
 }
 
-const PREVIEW_NUTRIENTS: NutrientId[] = ['vitaminD', 'iron', 'vitaminB12']
+const PREVIEW_NUTRIENTS: ('vitaminD' | 'iron' | 'vitaminB12')[] = ['vitaminD', 'iron', 'vitaminB12']
 const LOCKED_COUNT = NUTRIENTS.length - PREVIEW_NUTRIENTS.length
 
-const NUTRIENT_BENEFITS: Partial<Record<NutrientId, string>> = {
-  vitaminD: 'Bones, mood & immunity',
-  iron: 'Energy & focus, less fatigue',
-  vitaminB12: 'Nerve health & steady energy',
-}
-
-function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
+function SummaryStep({ t, goals }: { t: OnboardingStrings; goals: NutrientAmounts | null }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <div
@@ -552,10 +583,10 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
       >
         <div>
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Your daily targets are ready
+            {t.summary.title}
           </h2>
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Based on your answers — here's what your body needs each day, and why it matters.
+            {t.summary.subtitle}
           </p>
         </div>
 
@@ -564,15 +595,15 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
             {PREVIEW_NUTRIENTS.map((id) => (
               <div
                 key={id}
-                className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-left"
+                className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-start"
                 style={{ backgroundColor: 'var(--accent-soft)', border: '1px solid var(--border-strong)' }}
               >
                 <div className="min-w-0">
                   <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {NUTRIENT_MAP[id].name}
+                    {t.summary.nutrientNames[id]}
                   </div>
                   <div className="truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {NUTRIENT_BENEFITS[id]}
+                    {t.summary.nutrientBenefits[id]}
                   </div>
                 </div>
                 <div className="shrink-0 text-xs font-bold" style={{ color: 'var(--accent-strong)' }}>
@@ -586,13 +617,13 @@ function SummaryStep({ goals }: { goals: NutrientAmounts | null }) {
               style={{ backgroundColor: 'var(--accent-strong)', border: '1px solid #7a4c14' }}
             >
               <LockIcon className="h-3.5 w-3.5 shrink-0 text-white" />
-              <span className="text-[11px] font-bold text-white">+{LOCKED_COUNT} more targets unlock next</span>
+              <span className="text-[11px] font-bold text-white">{t.summary.lockedMore(LOCKED_COUNT)}</span>
             </div>
           </div>
         )}
 
         <p className="px-2 text-[11px]" style={{ color: '#000000' }}>
-          A rough estimate, not medical advice — check a doctor for anything specific.
+          {t.summary.disclaimer}
         </p>
       </div>
     </div>

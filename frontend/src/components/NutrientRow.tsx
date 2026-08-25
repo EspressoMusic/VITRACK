@@ -1,5 +1,7 @@
 import type { NutrientId } from '../types'
-import { NUTRIENT_MAP, coverageStatus, percentOfRda } from '../lib/nutrients'
+import { coverageStatus, percentOfRda } from '../lib/nutrients'
+import { useLanguage } from '../contexts/LanguageContext'
+import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 
 export function NutrientRow({
@@ -11,14 +13,15 @@ export function NutrientRow({
   amount: number
   onClick: () => void
 }) {
-  const def = NUTRIENT_MAP[id]
+  const { lang } = useLanguage()
+  const content = NUTRIENT_CONTENT[lang][id]
   const percent = percentOfRda(id, amount)
   const status = coverageStatus(percent)
 
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition active:scale-[0.98]"
+      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-start transition active:scale-[0.98]"
       style={{
         backgroundColor: 'var(--surface-cream)',
         border: '1px solid var(--border)',
@@ -26,7 +29,7 @@ export function NutrientRow({
       }}
     >
       <span className="w-28 shrink-0 truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-        {def.name}
+        {content.name}
       </span>
       <span className="block h-2 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: STATUS_SOFT_VAR[status] }}>
         <span

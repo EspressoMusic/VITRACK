@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceRoleKey)
   const { data: row } = await admin
-    .from('paddle_subscriptions')
+    .from('paddle_subscriptions_sandbox')
     .select('paddle_subscription_id')
     .eq('user_id', userData.user.id)
     .order('updated_at', { ascending: false })
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
 
     const details = describe(sub)
     if (action !== 'status') {
-      await admin.rpc('paddle_upsert_subscription', {
+      await admin.rpc('paddle_upsert_subscription_sandbox', {
         p_subscription_id: sub.id,
         p_customer_id: sub.customer_id,
         p_status: sub.status,

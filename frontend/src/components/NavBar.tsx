@@ -1,6 +1,11 @@
+import { useLanguage } from '../contexts/LanguageContext'
+import { NAV_BAR_STRINGS } from '../lib/i18n/navBar'
+
 export type Tab = 'camera' | 'calendar' | 'insights'
 
 export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
+  const { lang } = useLanguage()
+  const t = NAV_BAR_STRINGS[lang]
   const cameraActive = active === 'camera'
 
   return (
@@ -12,7 +17,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
         <button
           onClick={() => onChange('calendar')}
           className="flex flex-col items-center justify-center py-1.5 transition"
-          aria-label="Calendar"
+          aria-label={t.calendar}
           aria-current={active === 'calendar' ? 'page' : undefined}
         >
           <span
@@ -36,7 +41,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
         <button
           onClick={() => onChange('insights')}
           className="flex flex-col items-center justify-center py-1.5 transition"
-          aria-label="Insights"
+          aria-label={t.insights}
           aria-current={active === 'insights' ? 'page' : undefined}
         >
           <span
@@ -68,7 +73,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
           }}
           aria-current={cameraActive ? 'page' : undefined}
-          aria-label="Camera"
+          aria-label={t.camera}
         >
           <img
             src="/icons/camera.png"

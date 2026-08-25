@@ -1,5 +1,6 @@
 import type { CoverageStatus } from '../lib/nutrients'
-import { STATUS_LABEL } from '../lib/nutrients'
+import { useLanguage } from '../contexts/LanguageContext'
+import { STATUS_DOT_STRINGS } from '../lib/i18n/statusDot'
 
 const STATUS_VAR: Record<CoverageStatus, string> = {
   good: 'var(--status-good)',
@@ -16,6 +17,7 @@ const STATUS_SOFT_VAR: Record<CoverageStatus, string> = {
 }
 
 export function StatusDot({ status, showLabel = false }: { status: CoverageStatus; showLabel?: boolean }) {
+  const { lang } = useLanguage()
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
@@ -25,7 +27,7 @@ export function StatusDot({ status, showLabel = false }: { status: CoverageStatu
       />
       {showLabel && (
         <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {STATUS_LABEL[status]}
+          {STATUS_DOT_STRINGS[lang][status]}
         </span>
       )}
     </span>

@@ -41,7 +41,7 @@ export function WeeklyGoalGlass({ percent, onClick }: { percent: number; onClick
 
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-2.5 top-4 h-20 w-9 rounded-full"
+        className="pointer-events-none absolute -start-2.5 top-4 h-20 w-9 rounded-full"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.85), transparent 70%)',
           transform: 'rotate(15deg)',

@@ -2,6 +2,9 @@ import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
 import { NUTRIENT_MAP, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, coverageStatus } from '../lib/nutrients'
 import { isManualEntryPhoto } from '../lib/mealPhoto'
+import { useLanguage } from '../contexts/LanguageContext'
+import { MEAL_DETAIL_MODAL_STRINGS } from '../lib/i18n/mealDetailModal'
+import type { Lang } from '../lib/i18n/lang'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
 
@@ -11,15 +14,19 @@ const CONFIDENCE_VAR: Record<MealEntry['confidence'], string> = {
   low: 'var(--status-critical)',
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' })
+const DATE_LOCALE: Record<Lang, string> = { en: 'en-US', he: 'he-IL', ar: 'ar' }
+
+function formatDate(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleDateString(DATE_LOCALE[lang], { month: 'short', day: 'numeric' })
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+function formatTime(iso: string, lang: Lang): string {
+  return new Date(iso).toLocaleTimeString(DATE_LOCALE[lang], { hour: 'numeric', minute: '2-digit' })
 }
 
 export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: () => void }) {
+  const { lang } = useLanguage()
+  const t = MEAL_DETAIL_MODAL_STRINGS[lang]
   const presentNutrients = getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, meal.nutrients[n.id]))
 
   return createPortal(
@@ -35,19 +42,19 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
       >
         <div className="relative mb-2.5 flex shrink-0 items-center justify-center">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Meal details
+            {t.title}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="absolute right-0 flex h-7 w-7 items-center justify-center rounded-full"
+            aria-label={t.closeAriaLabel}
+            className="absolute end-0 flex h-7 w-7 items-center justify-center rounded-full"
             style={{ color: 'var(--text-primary)' }}
           >
             <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pe-1">
           <div className="relative shrink-0 overflow-hidden rounded-2xl" style={{ border: '2px solid #000000', boxShadow: '0 6px 16px rgba(26,26,25,0.18)' }}>
             {isManualEntryPhoto(meal.imageDataUrl) ? (
               <div className="flex h-28 w-full items-center justify-center px-4 text-center" style={{ backgroundColor: '#f6e4bb' }}>
@@ -55,7 +62,7 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
                   className="text-xl font-bold capitalize"
                   style={{ color: 'var(--text-primary)', textShadow: '0 1px 4px rgba(255,255,255,0.5)' }}
                 >
-                  {meal.foods[0]?.name || 'Meal'}
+                  {meal.foods[0]?.name || t.mealFallbackName}
                 </span>
               </div>
             ) : (
@@ -66,16 +73,16 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
               style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 100%)' }}
             />
             <span
-              className="absolute bottom-1.5 left-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+              className="absolute bottom-1.5 start-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
               style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)' }}
             >
-              {formatDate(meal.createdAt)} · {formatTime(meal.createdAt)}
+              {formatDate(meal.createdAt, lang)} · {formatTime(meal.createdAt, lang)}
             </span>
             <span
-              className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize"
+              className="absolute end-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
               style={{ backgroundColor: CONFIDENCE_VAR[meal.confidence], color: 'white' }}
             >
-              {meal.confidence}
+              {t.confidence[meal.confidence]}
             </span>
           </div>
 
@@ -84,13 +91,13 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
               className="rounded-2xl px-2.5 py-3 text-center text-xs font-medium"
               style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
             >
-              No food detected.
+              {t.noFoodDetected}
             </p>
           ) : (
             <>
               <div className="flex flex-col gap-1 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}>
                 <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  Foods
+                  {t.foodsLabel}
                 </p>
                 {meal.foods.map((f, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
@@ -109,11 +116,11 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
 
               <div className="flex flex-col gap-1">
                 <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  Nutrients
+                  {t.nutrientsLabel}
                 </p>
                 {presentNutrients.length === 0 ? (
                   <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    No nutrient data for this meal.
+                    {t.noNutrientData}
                   </p>
                 ) : (
                   <div className="flex flex-col gap-1">

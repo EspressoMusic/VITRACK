@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
   const admin = createClient(supabaseUrl, serviceRoleKey)
 
   const { data: linkedRow } = await admin
-    .from('paddle_subscriptions')
+    .from('paddle_subscriptions_sandbox')
     .select('status, plan')
     .eq('user_id', userData.user.id)
     .order('updated_at', { ascending: false })
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
         const priceId = sub.items?.[0]?.price?.id
         const plan = priceId ? PRICE_PLAN[priceId] ?? null : null
 
-        await admin.rpc('paddle_upsert_subscription', {
+        await admin.rpc('paddle_upsert_subscription_sandbox', {
           p_subscription_id: sub.id,
           p_customer_id: customerId,
           p_status: sub.status,

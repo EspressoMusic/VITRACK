@@ -3,6 +3,8 @@ import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { coverageStatus, isAdvancedMode } from '../lib/nutrients'
 import { computeWeeklyInsights } from '../lib/insights'
+import { useLanguage } from '../contexts/LanguageContext'
+import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
 import { NutrientRow } from './NutrientRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
@@ -10,6 +12,8 @@ import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
 
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
+  const { lang } = useLanguage()
+  const t = INSIGHTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [missingOpen, setMissingOpen] = useState(false)
@@ -78,10 +82,10 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
       <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
         <WeeklyGoalGlass percent={0} />
         <p className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
-          Nothing here yet
+          {t.nothingHereYet}
         </p>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Snap a meal to see how you're doing.
+          {t.snapAMealPrompt}
         </p>
       </div>
     )
@@ -104,7 +108,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
               className="flex items-center justify-center whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-semibold"
               style={{ backgroundColor: '#f6e4bb', color: '#8a6414', border: '1px solid #d9a441' }}
             >
-              Nice work! no deficiencies
+              {t.niceWorkNoDeficiencies}
             </p>
           ) : (
             <div className="flex flex-col">

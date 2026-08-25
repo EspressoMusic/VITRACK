@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { APP_STRINGS } from './lib/i18n/app'
 import { NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
@@ -26,6 +28,8 @@ import { maybeNotifyVitaminStatus } from './lib/notifications'
 const CameraPanel = lazy(() => import('./components/CameraPanel').then((m) => ({ default: m.CameraPanel })))
 
 function AppShell() {
+  const { lang } = useLanguage()
+  const t = APP_STRINGS[lang]
   const [tab, setTab] = useState<Tab>('camera')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
@@ -52,7 +56,7 @@ function AppShell() {
       >
         <button
           onClick={() => setSettingsOpen(true)}
-          aria-label="Open settings"
+          aria-label={t.openSettingsAriaLabel}
           className="flex h-11 w-11 items-center justify-center transition"
           style={{ pointerEvents: 'auto' }}
         >
@@ -121,29 +125,31 @@ export default function App() {
   }, [])
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        {showThankYou ? (
-          <ThankYouPage
-            onContinue={() => {
-              window.location.hash = ''
-              setShowThankYou(false)
-            }}
-          />
-        ) : !onboarded ? (
-          <OnboardingFlow onComplete={() => setOnboarded(true)} />
-        ) : !subscribed ? (
-          <PaywallPanel
-            onSubscribed={() => {
-              window.location.hash = 'thank-you'
-              setSubscribed(true)
-              setShowThankYou(true)
-            }}
-          />
-        ) : (
-          <AppShell />
-        )}
-      </AuthProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          {showThankYou ? (
+            <ThankYouPage
+              onContinue={() => {
+                window.location.hash = ''
+                setShowThankYou(false)
+              }}
+            />
+          ) : !onboarded ? (
+            <OnboardingFlow onComplete={() => setOnboarded(true)} />
+          ) : !subscribed ? (
+            <PaywallPanel
+              onSubscribed={() => {
+                window.location.hash = 'thank-you'
+                setSubscribed(true)
+                setShowThankYou(true)
+              }}
+            />
+          ) : (
+            <AppShell />
+          )}
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   )
 }

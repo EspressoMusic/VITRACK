@@ -132,10 +132,14 @@ function describeQuantity(quantity: string, food: CustomFood): string {
   return `${quantity.trim()} ${food.unitLabel}`
 }
 
-/** Computes nutrients for a saved custom food at the given quantity, scaled from its base portion. */
+/**
+ * Computes nutrients for a saved custom food at the given quantity, scaled from its base portion.
+ * `note` lets the caller supply a translated display string; defaults to English when omitted.
+ */
 export function scaleCustomFood(
   food: CustomFood,
-  quantity: string
+  quantity: string,
+  note: string = 'Calculated from your saved custom entry.'
 ): { foods: { name: string; portion: string }[]; nutrients: NutrientAmounts; confidence: 'high'; note: string } | null {
   const multiplier = quantityMultiplier(quantity, food)
   if (multiplier === null) return null
@@ -148,6 +152,6 @@ export function scaleCustomFood(
     foods: [{ name: food.name, portion: describeQuantity(quantity, food) }],
     nutrients,
     confidence: 'high',
-    note: 'Calculated from your saved custom entry.',
+    note,
   }
 }

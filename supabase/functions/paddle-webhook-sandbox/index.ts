@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const userId = typeof data.custom_data?.supabase_user_id === 'string' ? data.custom_data.supabase_user_id : null
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-    const { error } = await admin.rpc('paddle_upsert_subscription', {
+    const { error } = await admin.rpc('paddle_upsert_subscription_sandbox', {
       p_subscription_id: data.id,
       p_customer_id: data.customer_id,
       p_status: data.status,

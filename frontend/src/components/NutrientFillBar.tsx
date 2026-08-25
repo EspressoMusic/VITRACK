@@ -20,13 +20,13 @@ export function NutrientFillBar({ percent, startDelayMs = 0 }: { percent: number
       }}
     >
       <div
-        className="absolute inset-y-0 right-0 transition-[width] duration-[1100ms] ease-out"
+        className="absolute inset-y-0 end-0 transition-[width] duration-[1100ms] ease-out"
         style={{
           width: `${fill}%`,
           background: 'linear-gradient(90deg, #a3e8fb 0%, #5fc9f3 55%, #0ea5e9 100%)',
         }}
       >
-        <div className="liquid-wave-layer-v absolute inset-y-0 left-0" aria-hidden>
+        <div className="liquid-wave-layer-v absolute inset-y-0 start-0" aria-hidden>
           <svg viewBox="0 0 20 400" preserveAspectRatio="none" className="liquid-wave-svg-v block h-[200%] w-4">
             <path
               d="M10 0 C 20 50, 0 150, 10 200 C 20 250, 0 350, 10 400 L20 400 L20 0 Z"
@@ -34,7 +34,7 @@ export function NutrientFillBar({ percent, startDelayMs = 0 }: { percent: number
             />
           </svg>
         </div>
-        <div className="liquid-wave-layer-v liquid-wave-layer-v2 absolute inset-y-0 left-0" aria-hidden>
+        <div className="liquid-wave-layer-v liquid-wave-layer-v2 absolute inset-y-0 start-0" aria-hidden>
           <svg viewBox="0 0 20 400" preserveAspectRatio="none" className="liquid-wave-svg-v block h-[200%] w-3">
             <path
               d="M12 0 C 2 60, 22 140, 12 200 C 2 260, 22 340, 12 400 L20 400 L20 0 Z"
@@ -46,7 +46,7 @@ export function NutrientFillBar({ percent, startDelayMs = 0 }: { percent: number
 
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-1 top-0.5 h-7 w-5 rounded-full"
+        className="pointer-events-none absolute -start-1 top-0.5 h-7 w-5 rounded-full"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.85), transparent 70%)',
           transform: 'rotate(15deg)',

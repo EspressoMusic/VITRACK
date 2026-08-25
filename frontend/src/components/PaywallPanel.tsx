@@ -11,6 +11,8 @@ import { CheckIcon, ClockIcon, LockIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
+import { useLanguage } from '../contexts/LanguageContext'
+import { PAYWALL_PANEL_STRINGS } from '../lib/i18n/paywallPanel'
 import {
   trackInitiateCheckout,
   trackAddPaymentInfo,
@@ -28,13 +30,6 @@ function purchaseDetailsFromCheckout(data: CheckoutData | undefined, plan: Billi
   if (!data || !item) return null
   return { plan, priceId: item.price_id, value: data.totals.total, currency: data.currency_code }
 }
-
-const FEATURES = [
-  'Vitamin & mineral targets',
-  'AI meal photo analysis',
-  'Calendar history & insights',
-  'Deficiency alerts & food tips',
-]
 
 const OFFER_DEADLINE_KEY = 'vitrack:offerDeadline'
 const OFFER_WINDOW_MS = 24 * 60 * 60 * 1000
@@ -58,6 +53,8 @@ function formatCountdown(ms: number): string {
 
 export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const { user } = useAuth()
+  const { lang, dir } = useLanguage()
+  const t = PAYWALL_PANEL_STRINGS[lang]
   const [plan, setPlan] = useState<BillingPlan>('yearly')
   const [processing, setProcessing] = useState(false)
   const [agreed, setAgreed] = useState(false)
@@ -134,7 +131,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     // see it or cancel it from Settings. Block checkout entirely rather than let that happen;
     // the button below is disabled for the same reason, this is just defense in depth.
     if (isSupabaseConfigured && !user) {
-      setCheckoutError('Just a moment — setting up your account. Please try again.')
+      setCheckoutError(t.errors.accountSetup)
       return
     }
     setCheckoutError(null)
@@ -155,14 +152,14 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             setProcessing(false)
           } else if (event.name === 'checkout.error') {
             setProcessing(false)
-            setCheckoutError('Checkout failed. Please try again.')
+            setCheckoutError(t.errors.checkoutFailed)
           }
         },
         user ? { supabase_user_id: user.id } : undefined
       )
     } catch {
       setProcessing(false)
-      setCheckoutError('Checkout is unavailable right now. Please try again later.')
+      setCheckoutError(t.errors.checkoutUnavailable)
     }
   }
 
@@ -188,7 +185,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       >
         <div className="shrink-0 text-center">
           <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight">
-            One step from a whole new you
+            {t.headline}
           </h1>
         </div>
 
@@ -220,8 +217,8 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           </div>
         )}
 
-        <div className="flex w-full shrink-0 flex-col gap-1 text-left">
-          {FEATURES.map((f, i) => (
+        <div className="flex w-full shrink-0 flex-col gap-1 text-start">
+          {t.features.map((f, i) => (
             <div key={f} className="flex items-center gap-2">
               <span
                 className="feature-check-chase flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full"
@@ -241,18 +238,26 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             featured
             selected={plan === 'yearly'}
             onSelect={() => setPlan('yearly')}
-            title="Yearly"
+            title={t.yearly.title}
+            originalPrice="$198"
             price="$99"
-            period="/year"
-            note="≈ $8.25/mo"
-            badge="Save 57%"
+            period={t.yearly.period}
+            note={t.yearly.note}
+            badge={t.yearly.badge}
             countdown={formatCountdown(offerDeadline - now)}
           />
-          <PlanCard selected={plan === 'monthly'} onSelect={() => setPlan('monthly')} title="Monthly" price="$19" period="/month" />
+          <PlanCard
+            selected={plan === 'monthly'}
+            onSelect={() => setPlan('monthly')}
+            title={t.monthly.title}
+            originalPrice="$38"
+            price="$19"
+            period={t.monthly.period}
+          />
         </div>
 
         <div className="w-full shrink-0">
-          <div className="mb-1 flex items-center gap-2 text-left">
+          <div className="mb-1 flex items-center gap-2 text-start">
             <button
               type="button"
               role="switch"
@@ -264,19 +269,21 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               <span
                 className="h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
                 style={{
-                  transform: agreed ? 'translateX(calc(1.375rem - 4px))' : 'translateX(0px)',
+                  transform: agreed
+                    ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * (1.375rem - 4px)))`
+                    : 'translateX(0px)',
                   border: '1px solid #222',
                 }}
               />
             </button>
             <span className="whitespace-nowrap text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-              I agree to the{' '}
+              {t.agreePrefix}
               <button
                 type="button"
                 onClick={() => setLegalOpen(true)}
                 style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
               >
-                Terms & Privacy Policy
+                {t.agreeLinkLabel}
               </button>
             </span>
           </div>
@@ -290,7 +297,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               opacity: processing ? 0.7 : undefined,
             }}
           >
-            {processing ? 'Processing…' : 'Unlock my plan'}
+            {processing ? t.processingCta : t.subscribeCta}
           </button>
           {checkoutError && (
             <p className="mt-1 text-center text-[10px] font-medium" style={{ color: 'var(--status-critical)' }}>
@@ -298,13 +305,13 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             </p>
           )}
           <p className="mt-1 text-center text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
-            Auto-renews, cancel anytime. Secure checkout by Paddle.
+            {t.footerNote}
             {isSupabaseConfigured && (
               <>
                 {' '}
                 <span className="relative inline-block">
                   <button type="button" tabIndex={-1} aria-hidden="true" className="underline">
-                    Already purchased?
+                    {t.alreadyPurchased}
                   </button>
                   <GoogleSignInOverlay />
                 </span>
@@ -323,7 +330,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--accent-strong)', boxShadow: '0 10px 26px rgba(11,11,11,0.25)' }}
           >
             <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Please agree to the Terms of Use first
+              {t.agreeErrorModal}
             </p>
           </div>
         </div>
@@ -336,6 +343,7 @@ function PlanCard({
   selected,
   onSelect,
   title,
+  originalPrice,
   price,
   period,
   note,
@@ -346,6 +354,7 @@ function PlanCard({
   selected: boolean
   onSelect: () => void
   title: string
+  originalPrice?: string
   price: string
   period: string
   note?: string
@@ -358,7 +367,7 @@ function PlanCard({
   return (
     <button
       onClick={onSelect}
-      className="relative flex items-center justify-between overflow-hidden rounded-2xl px-4 py-2 text-left transition"
+      className="relative flex items-center justify-between overflow-hidden rounded-2xl px-4 py-2 text-start transition"
       style={{
         backgroundColor: isGold ? '#d1a350' : selected ? '#e8bd72' : '#f7ead0',
         border: isGold ? '3px solid #7a4c14' : selected ? '3px solid #6b3f10' : '3px solid var(--accent-strong)',
@@ -392,7 +401,15 @@ function PlanCard({
           </div>
         )}
       </div>
-      <div className="ml-1 flex shrink-0 items-baseline gap-1">
+      <div className="ms-1 flex shrink-0 items-baseline gap-1">
+        {originalPrice && (
+          <span
+            className="text-xs line-through opacity-70"
+            style={{ color: isGold ? '#6b4a18' : 'var(--text-muted)' }}
+          >
+            {originalPrice}
+          </span>
+        )}
         <span className="text-lg font-bold" style={{ color: textColor }}>
           {price}
         </span>

@@ -1,6 +1,9 @@
 import { createPortal } from 'react-dom'
 import type { NutrientId } from '../types'
 import { NUTRIENT_MAP, coverageStatus, percentOfRda, percentOfMealTarget, targetFor, mealTargetFor } from '../lib/nutrients'
+import { useLanguage } from '../contexts/LanguageContext'
+import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
+import { NUTRIENT_DETAIL_MODAL_STRINGS } from '../lib/i18n/nutrientDetailModal'
 import { StatusDot, STATUS_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
 
@@ -16,7 +19,10 @@ export function NutrientDetailModal({
   perMeal?: boolean
   onClose: () => void
 }) {
+  const { lang } = useLanguage()
+  const t = NUTRIENT_DETAIL_MODAL_STRINGS[lang]
   const def = NUTRIENT_MAP[id]
+  const content = NUTRIENT_CONTENT[lang][id]
   const percent = perMeal ? percentOfMealTarget(id, amount) : percentOfRda(id, amount)
   const status = coverageStatus(percent)
   const target = perMeal ? mealTargetFor(id) : targetFor(id)
@@ -35,12 +41,12 @@ export function NutrientDetailModal({
       >
         <div className="relative flex shrink-0 items-center justify-center px-4 pb-1.5 pt-3">
           <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
-            {def.name}
+            {content.name}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="absolute right-3 flex h-7 w-7 items-center justify-center rounded-full"
+            aria-label={t.closeAriaLabel}
+            className="absolute end-3 flex h-7 w-7 items-center justify-center rounded-full"
             style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: 'var(--text-primary)' }}
           >
             <CloseIcon className="h-3.5 w-3.5" />
@@ -73,7 +79,7 @@ export function NutrientDetailModal({
             <div className="grid grid-cols-2 gap-1.5">
               <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}>
                 <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  Consumed
+                  {t.consumed}
                 </div>
                 <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {amount.toFixed(amount < 10 ? 1 : 0)}
@@ -87,10 +93,10 @@ export function NutrientDetailModal({
               </div>
               <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}>
                 <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  {remaining > 0 ? 'Remaining' : 'Status'}
+                  {remaining > 0 ? t.remaining : t.status}
                 </div>
                 <div className="text-xs font-semibold" style={{ color: remaining > 0 ? STATUS_VAR[status] : 'var(--status-good)' }}>
-                  {remaining > 0 ? `${remaining.toFixed(remaining < 10 ? 1 : 0)}${def.unit} to go` : 'Goal met'}
+                  {remaining > 0 ? t.toGo(`${remaining.toFixed(remaining < 10 ? 1 : 0)}${def.unit}`) : t.goalMet}
                 </div>
               </div>
             </div>
@@ -98,21 +104,21 @@ export function NutrientDetailModal({
 
           <div className="mt-2">
             <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Why it matters
+              {t.whyItMatters}
             </p>
             <div className="rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
               <p className="text-xs leading-snug" style={{ color: 'var(--text-primary)' }}>
-                {def.benefit}
+                {content.benefit}
               </p>
             </div>
           </div>
 
           <div className="mt-2">
             <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {status === 'good' ? "You're covered" : 'Foods to close the gap'}
+              {status === 'good' ? t.youAreCovered : t.foodsToCloseTheGap}
             </p>
             <div className="flex flex-wrap gap-1 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
-              {def.foodSources.map((food) => (
+              {content.foodSources.map((food) => (
                 <span
                   key={food}
                   className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium"

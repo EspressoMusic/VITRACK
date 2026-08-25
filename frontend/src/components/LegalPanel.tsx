@@ -1,7 +1,16 @@
 import { LEGAL_PARTS, LEGAL_LAST_UPDATED } from '../lib/legalContent'
 import { CloseIcon } from './icons'
+import { useLanguage } from '../contexts/LanguageContext'
+import { LEGAL_PANEL_STRINGS } from '../lib/i18n/legalPanel'
 
+// Note: LEGAL_PARTS (part titles/tab labels, headings, and all body paragraphs) comes from
+// ../lib/legalContent.ts and is intentionally left English-only — it is the actual Terms of
+// Use / Privacy Policy document text, long and legally load-bearing, and lives outside this
+// workstream's scope. Only this panel's own UI chrome is translated below.
 export function LegalPanel({ onClose }: { onClose: () => void }) {
+  const { lang } = useLanguage()
+  const t = LEGAL_PANEL_STRINGS[lang]
+
   function scrollToPart(id: string) {
     document.getElementById(`legal-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -22,12 +31,12 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
           style={{ borderBottom: '1px solid rgba(26,26,25,0.15)' }}
         >
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Terms & Privacy Policy
+            {t.title}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full"
+            aria-label={t.closeAria}
+            className="absolute end-4 flex h-8 w-8 items-center justify-center rounded-full"
             style={{ color: 'var(--text-secondary)' }}
           >
             <CloseIcon className="h-5 w-5" />
@@ -36,7 +45,7 @@ export function LegalPanel({ onClose }: { onClose: () => void }) {
 
         <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4" style={{ color: 'var(--text-primary)' }}>
           <p className="mb-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-            Last updated: {LEGAL_LAST_UPDATED}
+            {t.lastUpdatedPrefix} {LEGAL_LAST_UPDATED}
           </p>
 
           <div className="mb-5 flex flex-wrap gap-1.5">

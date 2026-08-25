@@ -1,5 +1,7 @@
 import type { NutrientAmounts, NutrientId } from '../types'
 import { getVisibleNutrients } from '../lib/nutrients'
+import { useLanguage } from '../contexts/LanguageContext'
+import { CUSTOM_NUTRITION_FORM_STRINGS } from '../lib/i18n/customNutritionForm'
 
 /**
  * Lets the user key in nutrient amounts straight off a product's nutrition-facts label —
@@ -17,13 +19,15 @@ export function CustomNutritionForm({
   values: NutrientAmounts
   onValueChange: (id: NutrientId, v: number) => void
 }) {
+  const { lang } = useLanguage()
+  const t = CUSTOM_NUTRITION_FORM_STRINGS[lang]
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <input
         type="text"
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
-        placeholder="Food or supplement name…"
+        placeholder={t.namePlaceholder}
         className="mx-auto w-[70%] rounded-xl px-3 py-2 text-sm"
         style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
       />
@@ -32,7 +36,7 @@ export function CustomNutritionForm({
         style={{ border: '3px solid #000000' }}
       >
         <div
-          className="thin-scroll grid h-full grid-cols-1 gap-1.5 overflow-y-auto py-2 pl-2 pr-3"
+          className="thin-scroll grid h-full grid-cols-1 gap-1.5 overflow-y-auto py-2 ps-2 pe-3"
           style={{ backgroundColor: '#e5c184' }}
         >
           {getVisibleNutrients().map((n) => (

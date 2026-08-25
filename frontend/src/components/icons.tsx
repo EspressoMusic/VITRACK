@@ -18,6 +18,16 @@ export function CameraIcon({ className }: IconProps) {
   )
 }
 
+export function GlobeIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5c2.6 2.4 4 5.3 4 8.5s-1.4 6.1-4 8.5c-2.6-2.4-4-5.3-4-8.5s1.4-6.1 4-8.5Z" />
+      <path d="M4 12h16" />
+    </svg>
+  )
+}
+
 export function CalendarIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 122.88 122.88" fill="currentColor">

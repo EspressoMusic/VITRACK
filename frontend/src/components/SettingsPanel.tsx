@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
@@ -16,6 +17,7 @@ import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, Dow
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
+import { SETTINGS_PANEL_STRINGS } from '../lib/i18n/settingsPanel'
 
 export function SettingsPanel({
   onClose,
@@ -28,6 +30,8 @@ export function SettingsPanel({
   onNutrientModeChange: () => void
 }) {
   const { user, signOut, deleteAccount } = useAuth()
+  const { lang } = useLanguage()
+  const t = SETTINGS_PANEL_STRINGS[lang]
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
   const [confirmingRetake, setConfirmingRetake] = useState(false)
@@ -88,7 +92,7 @@ export function SettingsPanel({
       setConfirmingDeleteAccount(false)
       onClose()
     } catch {
-      setAuthError('Could not delete account.')
+      setAuthError(t.account.deleteAccountError)
     }
   }
 
@@ -105,22 +109,22 @@ export function SettingsPanel({
       >
         <div className="relative mb-2 flex shrink-0 items-center justify-center">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Settings
+            {t.title}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close settings"
-            className="absolute right-0 flex h-6 w-6 items-center justify-center rounded-full"
+            aria-label={t.closeAriaLabel}
+            className="absolute end-0 flex h-6 w-6 items-center justify-center rounded-full"
             style={{ color: 'var(--text-primary)' }}
           >
             <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pr-1">
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pe-1">
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Account
+              {t.account.heading}
             </p>
 
             {user && !user.is_anonymous ? (
@@ -146,7 +150,7 @@ export function SettingsPanel({
                     color: 'var(--text-primary)',
                   }}
                 >
-                  <LogOutIcon className="h-4 w-4" /> Sign out
+                  <LogOutIcon className="h-4 w-4" /> {t.account.signOut}
                 </button>
 
                 {!confirmingDeleteAccount ? (
@@ -155,12 +159,12 @@ export function SettingsPanel({
                     className="text-center text-xs font-medium underline"
                     style={{ color: 'var(--status-critical)' }}
                   >
-                    Delete account
+                    {t.account.deleteAccount}
                   </button>
                 ) : (
                   <div className="flex flex-col gap-2">
                     <p className="text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
-                      Deletes everything. Can't be undone.
+                      {t.account.deleteConfirm}
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -168,14 +172,14 @@ export function SettingsPanel({
                         className="flex-1 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                         style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
                       >
-                        Cancel
+                        {t.account.cancel}
                       </button>
                       <button
                         onClick={handleDeleteAccount}
                         className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
                         style={{ backgroundColor: 'var(--status-critical)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                       >
-                        Delete
+                        {t.account.delete}
                       </button>
                     </div>
                   </div>
@@ -191,13 +195,13 @@ export function SettingsPanel({
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                     style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                   >
-                    <UserIcon className="h-4 w-4" /> Sign in with Google
+                    <UserIcon className="h-4 w-4" /> {t.account.signInGoogle}
                   </button>
                   <GoogleSignInOverlay />
                 </div>
                 {!isSupabaseConfigured && (
                   <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                    Not connected yet.
+                    {t.account.notConnected}
                   </p>
                 )}
               </div>
@@ -211,7 +215,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Subscription
+              {t.subscription.heading}
             </p>
             {isPro ? (
               <button
@@ -224,11 +228,11 @@ export function SettingsPanel({
                     <StarIcon className="h-4 w-4" />
                   </span>
                   <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                    Pro plan · {plan === 'yearly' ? 'Yearly' : 'Monthly'}
+                    {t.subscription.proPlan(plan === 'yearly' ? t.subscription.yearly : t.subscription.monthly)}
                   </span>
                 </div>
                 <span className="text-[11px] underline" style={{ color: 'var(--text-primary)' }}>
-                  Manage
+                  {t.subscription.manage}
                 </span>
               </button>
             ) : (
@@ -241,7 +245,7 @@ export function SettingsPanel({
                     <StarIcon className="h-4 w-4" />
                   </span>
                   <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                    Free plan
+                    {t.subscription.freePlan}
                   </span>
                 </div>
               </div>
@@ -250,7 +254,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Health profile
+              {t.healthProfile.heading}
             </p>
             {!confirmingRetake ? (
               <button
@@ -258,12 +262,12 @@ export function SettingsPanel({
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
               >
-                Retake questionnaire
+                {t.healthProfile.retakeQuestionnaire}
               </button>
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                  This recalculates your targets from scratch.
+                  {t.healthProfile.retakeConfirm}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -271,14 +275,14 @@ export function SettingsPanel({
                     className="flex-1 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                     style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
                   >
-                    Cancel
+                    {t.healthProfile.cancel}
                   </button>
                   <button
                     onClick={handleRetakeQuestionnaire}
                     className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
                     style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                   >
-                    Retake
+                    {t.healthProfile.retake}
                   </button>
                 </div>
               </div>
@@ -287,7 +291,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Nutrients
+              {t.nutrients.heading}
             </p>
             <div
               className="flex items-center justify-between rounded-xl p-2"
@@ -295,10 +299,10 @@ export function SettingsPanel({
             >
               <div>
                 <p className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                  Show all vitamins & minerals
+                  {t.nutrients.showAll}
                 </p>
                 <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                  Off focuses the app on the 6 that matter most
+                  {t.nutrients.showAllDesc}
                 </p>
               </div>
               <button
@@ -325,7 +329,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              App
+              {t.app.heading}
             </p>
             <div className="flex flex-col gap-2">
               {installable && (
@@ -334,7 +338,7 @@ export function SettingsPanel({
                   className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                   style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                 >
-                  <DownloadIcon className="h-4 w-4" /> Download app
+                  <DownloadIcon className="h-4 w-4" /> {t.app.downloadApp}
                 </button>
               )}
               {!installable && isIOS() && !isStandalone() && (
@@ -342,7 +346,7 @@ export function SettingsPanel({
                   className="rounded-xl p-2 text-xs"
                   style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
                 >
-                  To install: tap the Share button in Safari, then "Add to Home Screen".
+                  {t.app.iosInstallHint}
                 </p>
               )}
 
@@ -357,11 +361,11 @@ export function SettingsPanel({
                     </span>
                     <div>
                       <p className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                        Vitamin reminders
+                        {t.app.vitaminReminders}
                       </p>
                       {notifPermission === 'denied' && (
                         <p className="text-[11px]" style={{ color: 'var(--status-critical)' }}>
-                          Blocked in browser settings
+                          {t.app.blockedInBrowser}
                         </p>
                       )}
                     </div>
@@ -394,7 +398,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Data
+              {t.data.heading}
             </p>
             <div className="flex flex-col gap-2">
               {!confirmingClear ? (
@@ -403,12 +407,12 @@ export function SettingsPanel({
                   className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                   style={{ backgroundColor: 'var(--status-critical-soft)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--status-critical)' }}
                 >
-                  <TrashIcon className="h-4 w-4" /> Clear all data
+                  <TrashIcon className="h-4 w-4" /> {t.data.clearAllData}
                 </button>
               ) : (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
-                    Deletes everything. Can't be undone.
+                    {t.data.clearConfirm}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -416,14 +420,14 @@ export function SettingsPanel({
                       className="flex-1 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                       style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
                     >
-                      Cancel
+                      {t.data.cancel}
                     </button>
                     <button
                       onClick={handleClear}
                       className="flex-1 rounded-xl py-2 text-[13px] font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
                       style={{ backgroundColor: 'var(--status-critical)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                     >
-                      Delete
+                      {t.data.delete}
                     </button>
                   </div>
                 </div>
@@ -433,7 +437,7 @@ export function SettingsPanel({
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              Support
+              {t.support.heading}
             </p>
             <div className="flex flex-col gap-2">
               <a
@@ -441,14 +445,14 @@ export function SettingsPanel({
                 className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
               >
-                Contact support
+                {t.support.contactSupport}
               </a>
               <button
                 onClick={() => setLegalOpen(true)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
               >
-                <DocumentIcon className="h-4 w-4" /> Terms & Privacy
+                <DocumentIcon className="h-4 w-4" /> {t.support.termsAndPrivacy}
               </button>
             </div>
           </div>

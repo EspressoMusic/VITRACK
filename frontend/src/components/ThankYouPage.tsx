@@ -3,10 +3,14 @@ import { isSupabaseConfigured } from '../lib/supabase'
 import { ConfettiBurst } from './ConfettiBurst'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { SparkleIcon } from './icons'
+import { useLanguage } from '../contexts/LanguageContext'
+import { THANK_YOU_PAGE_STRINGS } from '../lib/i18n/thankYouPage'
 
 /** Static post-purchase landing screen at #thank-you — used as the TikTok ad conversion URL. */
 export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
   const { user } = useAuth()
+  const { lang } = useLanguage()
+  const t = THANK_YOU_PAGE_STRINGS[lang]
 
   return (
     <div
@@ -36,10 +40,10 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
         </span>
         <div>
           <h1 className="mb-1 text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            You're in!
+            {t.title}
           </h1>
           <p className="text-sm leading-snug" style={{ color: 'var(--text-secondary)' }}>
-            Real food, real vitamins, real energy — your transformation starts today.
+            {t.subtitle}
           </p>
         </div>
         {isSupabaseConfigured && user && !user.is_anonymous ? (
@@ -49,10 +53,10 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
               className="mt-2 w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
             >
-              Get started
+              {t.getStarted}
             </button>
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              Saved to {user.email}
+              {t.savedTo(user.email ?? '')}
             </p>
           </>
         ) : isSupabaseConfigured ? (
@@ -65,12 +69,12 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
                 className="w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
               >
-                Sign in with Google
+                {t.signInWithGoogle}
               </button>
               <GoogleSignInOverlay />
             </div>
             <button type="button" onClick={onContinue} className="text-xs underline" style={{ color: 'var(--text-secondary)' }}>
-              Continue without saving
+              {t.continueWithoutSaving}
             </button>
           </>
         ) : (
@@ -79,7 +83,7 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
             className="mt-2 w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
             style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
           >
-            Get started
+            {t.getStarted}
           </button>
         )}
       </div>

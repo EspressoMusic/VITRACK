@@ -2,18 +2,21 @@ import { useEffect, useMemo, useState } from 'react'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
-import { NUTRIENT_MAP, getVisibleNutrients, percentOfRda } from '../lib/nutrients'
+import { getVisibleNutrients, percentOfRda } from '../lib/nutrients'
+import { useLanguage } from '../contexts/LanguageContext'
+import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
+import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
 import { MealDetailModal } from './MealDetailModal'
 
 const GRID_COLS = 'grid-cols-7'
 
-function topNutrientLabel(nutrients: MealEntry['nutrients']): string | null {
+function topNutrient(nutrients: MealEntry['nutrients']): NutrientId | null {
   let best: { id: NutrientId; percent: number } | null = null
   for (const n of getVisibleNutrients()) {
     const percent = percentOfRda(n.id, nutrients[n.id])
     if (percent > 0 && (!best || percent > best.percent)) best = { id: n.id, percent }
   }
-  return best ? `Rich in ${NUTRIENT_MAP[best.id].name}` : null
+  return best ? best.id : null
 }
 
 function formatTime(iso: string): string {
@@ -21,6 +24,8 @@ function formatTime(iso: string): string {
 }
 
 export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
+  const { lang, dir } = useLanguage()
+  const t = CALENDAR_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [cursor, setCursor] = useState(() => {
     const now = new Date()
@@ -60,7 +65,8 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     })
   }
 
-  const selectedLabel = selectedDate === today ? `Today · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
+  const selectedLabel =
+    selectedDate === today ? `${t.todayPrefix} · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 text-center">
@@ -71,22 +77,22 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         <div className="mb-1.5 flex items-center justify-between">
           <button
             onClick={() => changeMonth(-1)}
-            aria-label="Previous month"
+            aria-label={t.prevMonthAriaLabel}
             className="flex h-6 w-6 items-center justify-center text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
-            ‹
+            {dir === 'rtl' ? '›' : '‹'}
           </button>
           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {monthLabel(cursor.year, cursor.month)}
           </span>
           <button
             onClick={() => changeMonth(1)}
-            aria-label="Next month"
+            aria-label={t.nextMonthAriaLabel}
             className="flex h-6 w-6 items-center justify-center text-sm"
             style={{ color: 'var(--text-secondary)' }}
           >
-            ›
+            {dir === 'rtl' ? '‹' : '›'}
           </button>
         </div>
 
@@ -140,36 +146,39 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
 
         {selectedMeals.length === 0 ? (
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            No meals logged this day.
+            {t.noMealsLoggedThisDay}
           </p>
         ) : (
-          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
-            {selectedMeals.map((meal) => (
-              <button
-                key={meal.id}
-                onClick={() => setSelectedMeal(meal)}
-                className="flex items-center gap-1.5 rounded-lg p-1 text-left transition-transform active:translate-y-1 active:shadow-none"
-                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
-              >
-                <img
-                  src={meal.imageDataUrl}
-                  alt=""
-                  className="h-6 w-6 shrink-0 rounded-md object-cover"
-                  style={{ border: '1px solid var(--border)' }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : 'Meal'}
-                  </p>
-                  <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
-                    {topNutrientLabel(meal.nutrients) ?? 'No standout nutrients'}
-                  </p>
-                </div>
-                <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                  {formatTime(meal.createdAt)}
-                </span>
-              </button>
-            ))}
+          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
+            {selectedMeals.map((meal) => {
+              const topId = topNutrient(meal.nutrients)
+              return (
+                <button
+                  key={meal.id}
+                  onClick={() => setSelectedMeal(meal)}
+                  className="flex items-center gap-1.5 rounded-lg p-1 text-start transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
+                >
+                  <img
+                    src={meal.imageDataUrl}
+                    alt=""
+                    className="h-6 w-6 shrink-0 rounded-md object-cover"
+                    style={{ border: '1px solid var(--border)' }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : t.mealFallbackName}
+                    </p>
+                    <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
+                      {topId ? t.richIn(NUTRIENT_CONTENT[lang][topId].name) : t.noStandoutNutrients}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
+                    {formatTime(meal.createdAt)}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

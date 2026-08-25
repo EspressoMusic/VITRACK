@@ -8,18 +8,24 @@ import {
   type SubscriptionDetails,
 } from '../lib/subscriptionManagement'
 import { CloseIcon, SwapIcon } from './icons'
+import { useLanguage } from '../contexts/LanguageContext'
+import { SUBSCRIPTION_MANAGE_PANEL_STRINGS } from '../lib/i18n/subscriptionManagePanel'
+import type { Lang } from '../lib/i18n/lang'
 
-const PLAN_INFO: Record<BillingPlan, { title: string; price: string; period: string }> = {
-  yearly: { title: 'Yearly', price: '$99', period: '/year' },
-  monthly: { title: 'Monthly', price: '$19', period: '/month' },
+const PLAN_PRICE: Record<BillingPlan, string> = {
+  yearly: '$99',
+  monthly: '$19',
 }
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, lang: Lang): string {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const locale = lang === 'he' ? 'he-IL' : lang === 'ar' ? 'ar' : 'en-US'
+  return new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
+  const { lang } = useLanguage()
+  const t = SUBSCRIPTION_MANAGE_PANEL_STRINGS[lang]
   const [details, setDetails] = useState<SubscriptionDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +43,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
         setSelectedPlan(d.plan)
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load your subscription.')
+        if (!cancelled) setError(err instanceof Error ? err.message : t.errors.load)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -45,7 +51,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   async function handleSwitchPlan() {
     if (!selectedPlan) return
@@ -57,7 +63,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
       setConfirmingSwitch(false)
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not switch your plan.')
+      setError(err instanceof Error ? err.message : t.errors.switch)
     } finally {
       setBusy(false)
     }
@@ -72,7 +78,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
       setConfirmingCancel(false)
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not cancel your subscription.')
+      setError(err instanceof Error ? err.message : t.errors.cancel)
     } finally {
       setBusy(false)
     }
@@ -86,7 +92,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
       setDetails(d)
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not resume your subscription.')
+      setError(err instanceof Error ? err.message : t.errors.resume)
     } finally {
       setBusy(false)
     }
@@ -108,28 +114,28 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
       >
         <div className="relative mb-2 flex shrink-0 items-center justify-center">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Manage subscription
+            {t.title}
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="absolute right-0 flex h-6 w-6 items-center justify-center rounded-full"
+            aria-label={t.closeAria}
+            className="absolute end-0 flex h-6 w-6 items-center justify-center rounded-full"
             style={{ color: 'var(--text-primary)' }}
           >
             <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pr-1">
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pe-1">
           {loading && (
             <p className="text-center text-[13px]" style={{ color: 'var(--text-primary)' }}>
-              Loading your subscription…
+              {t.loading}
             </p>
           )}
 
           {!loading && !details && (
             <p className="text-center text-[13px]" style={{ color: 'var(--status-critical)' }}>
-              {error || 'No subscription found on this account.'}
+              {error || t.noSubscription}
             </p>
           )}
 
@@ -141,10 +147,10 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                   style={{ backgroundColor: 'var(--status-critical-soft)', border: '2px solid #000000' }}
                 >
                   <p className="text-[13px] font-semibold" style={{ color: 'var(--status-critical)' }}>
-                    Cancels on {formatDate(details.cancelEffectiveAt)}
+                    {t.cancelsOn(formatDate(details.cancelEffectiveAt, lang))}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                    You won't be charged again. Your Pro access stays active until then.
+                    {t.cancelNotice}
                   </p>
                   <button
                     onClick={handleResume}
@@ -158,7 +164,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                       opacity: busy ? 0.7 : undefined,
                     }}
                   >
-                    {busy ? 'Working…' : 'Keep my subscription'}
+                    {busy ? t.working : t.keepMySubscription}
                   </button>
                 </div>
               ) : (
@@ -167,11 +173,11 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                   style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
                 >
                   <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {details.plan === 'yearly' ? 'Yearly' : 'Monthly'} plan
+                    {t.planInfo[details.plan === 'yearly' ? 'yearly' : 'monthly'].title}
                   </span>
                   {details.currentPeriodEnd && (
                     <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                      Renews {formatDate(details.currentPeriodEnd)}
+                      {t.renews(formatDate(details.currentPeriodEnd, lang))}
                     </span>
                   )}
                 </div>
@@ -180,11 +186,11 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
               {canSwitchPlans && otherPlan && (
                 <div>
                   <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-                    Billing cycle
+                    {t.billingCycle}
                   </p>
                   <div className="flex flex-col gap-1.5">
                     {(['yearly', 'monthly'] as const).map((p) => {
-                      const info = PLAN_INFO[p]
+                      const info = t.planInfo[p]
                       const isSelected = selectedPlan === p
                       const isCurrent = details.plan === p
                       return (
@@ -194,7 +200,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                             setSelectedPlan(p)
                             setConfirmingSwitch(false)
                           }}
-                          className="flex items-center justify-between rounded-xl px-3 py-2 text-left transition"
+                          className="flex items-center justify-between rounded-xl px-3 py-2 text-start transition"
                           style={{
                             backgroundColor: isSelected ? '#e8bd72' : 'var(--surface-cream)',
                             border: isSelected ? '3px solid #6b3f10' : '2px solid #000000',
@@ -202,10 +208,10 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                         >
                           <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>
                             {info.title}
-                            {isCurrent && <span style={{ color: 'var(--text-secondary)' }}> · current</span>}
+                            {isCurrent && <span style={{ color: 'var(--text-secondary)' }}> · {t.current}</span>}
                           </span>
                           <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            {info.price}
+                            {PLAN_PRICE[p]}
                             <span className="text-[11px] font-normal" style={{ color: 'var(--text-secondary)' }}>
                               {info.period}
                             </span>
@@ -223,14 +229,12 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                           className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-[13px] font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
                           style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                         >
-                          <SwapIcon className="h-4 w-4" /> Switch to {PLAN_INFO[selectedPlan].title}
+                          <SwapIcon className="h-4 w-4" /> {t.switchTo(t.planInfo[selectedPlan].title)}
                         </button>
                       ) : (
                         <>
                           <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                            You'll switch to {PLAN_INFO[selectedPlan].title} ({PLAN_INFO[selectedPlan].price}
-                            {PLAN_INFO[selectedPlan].period}) right away. Paddle will charge or credit a prorated
-                            amount for the switch today.
+                            {t.switchConfirm(t.planInfo[selectedPlan].title, PLAN_PRICE[selectedPlan], t.planInfo[selectedPlan].period)}
                           </p>
                           <div className="flex gap-2">
                             <button
@@ -241,7 +245,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                               className="flex-1 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                               style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
                             >
-                              Cancel
+                              {t.cancelAction}
                             </button>
                             <button
                               onClick={handleSwitchPlan}
@@ -254,7 +258,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                                 opacity: busy ? 0.7 : undefined,
                               }}
                             >
-                              {busy ? 'Switching…' : 'Confirm'}
+                              {busy ? t.switching : t.confirm}
                             </button>
                           </div>
                         </>
@@ -272,7 +276,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                   className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                   style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
                 >
-                  Update payment method
+                  {t.updatePaymentMethod}
                 </a>
               )}
 
@@ -284,14 +288,14 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                       className="flex w-full items-center justify-center rounded-xl py-2 text-[13px] font-medium underline"
                       style={{ color: 'var(--status-critical)' }}
                     >
-                      Cancel subscription
+                      {t.cancelSubscriptionLink}
                     </button>
                   ) : (
                     <div className="flex flex-col gap-2 rounded-xl p-2.5" style={{ backgroundColor: 'var(--status-critical-soft)', border: '2px solid #000000' }}>
                       <p className="text-xs font-medium" style={{ color: 'var(--status-critical)' }}>
                         {details.currentPeriodEnd
-                          ? `You'll keep Pro access until ${formatDate(details.currentPeriodEnd)}. You will not be charged again after that.`
-                          : "You'll keep Pro access until the end of your current billing period. You will not be charged again after that."}
+                          ? t.cancelConfirmWithDate(formatDate(details.currentPeriodEnd, lang))
+                          : t.cancelConfirmNoDate}
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -299,7 +303,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                           className="flex-1 rounded-xl py-2 text-[13px] font-medium transition-transform active:translate-y-1 active:shadow-none"
                           style={{ border: '2px solid #000000', boxShadow: '0 2px 0 #000000', color: 'var(--text-primary)' }}
                         >
-                          Keep subscription
+                          {t.keepSubscriptionAction}
                         </button>
                         <button
                           onClick={handleCancel}
@@ -312,7 +316,7 @@ export function SubscriptionManagePanel({ onClose, onChanged }: { onClose: () =>
                             opacity: busy ? 0.7 : undefined,
                           }}
                         >
-                          {busy ? 'Canceling…' : 'Cancel subscription'}
+                          {busy ? t.canceling : t.cancelSubscriptionButton}
                         </button>
                       </div>
                     </div>

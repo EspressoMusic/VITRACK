@@ -27,6 +27,8 @@ import {
   type DetectorStatus,
   type FoodDetection,
 } from '../lib/foodDetector'
+import { useLanguage } from '../contexts/LanguageContext'
+import { CAMERA_PANEL_STRINGS, type CameraPanelStrings } from '../lib/i18n/cameraPanel'
 
 type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result'
 
@@ -51,9 +53,11 @@ const HALF = 'half'
 function QuantityPicker({
   quantity,
   onQuantityChange,
+  t,
 }: {
   quantity: string
   onQuantityChange: (v: string) => void
+  t: CameraPanelStrings
 }) {
   const isPreset = quantity === ONE_WHOLE || quantity === HALF
   const [gramsMode, setGramsMode] = useState(!isPreset && quantity.trim() !== '')
@@ -98,7 +102,7 @@ function QuantityPicker({
             inputMode="numeric"
             value={quantity}
             onChange={(e) => onQuantityChange(e.target.value)}
-            placeholder="grams"
+            placeholder={t.quantity.gramsPlaceholder}
             className="w-20 rounded-full px-2.5 py-1 text-center text-xs font-medium"
             style={{ backgroundColor: 'var(--accent)', color: '#ffffff', border: '2px solid #000000' }}
           />
@@ -113,7 +117,7 @@ function QuantityPicker({
             className="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-primary)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
           >
-            Exact grams
+            {t.quantity.exactGrams}
           </button>
         )}
       </div>
@@ -129,6 +133,7 @@ function FoodAutocomplete({
   onQuantityChange,
   onConfirm,
   showQuantity = true,
+  t,
 }: {
   name: string
   quantity: string
@@ -138,6 +143,7 @@ function FoodAutocomplete({
   onConfirm: (name: string) => void
   /** Lets a caller render the QuantityPicker itself elsewhere in the layout instead. */
   showQuantity?: boolean
+  t: CameraPanelStrings
 }) {
   // Custom foods finish loading from IndexedDB asynchronously; re-render once they land so
   // a food someone just saved shows up in search without needing to retype.
@@ -156,21 +162,21 @@ function FoodAutocomplete({
           type="text"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Type a food name…"
-          className="w-full rounded-xl py-2.5 pl-3 text-base"
+          placeholder={t.autocomplete.namePlaceholder}
+          className="w-full rounded-xl py-2.5 ps-3 text-base"
           style={{
             backgroundColor: 'var(--surface-2)',
             border: '3px solid #000000',
             color: 'var(--text-primary)',
-            paddingRight: confirmed ? '2.25rem' : '0.75rem',
+            paddingInlineEnd: confirmed ? '2.25rem' : '0.75rem',
           }}
         />
         {confirmed && (
           <button
             type="button"
             onClick={() => onNameChange('')}
-            aria-label="Clear food name"
-            className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-sm font-bold"
+            aria-label={t.autocomplete.clearNameAriaLabel}
+            className="absolute end-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-sm font-bold"
             style={{ backgroundColor: '#000000', color: '#ffffff' }}
           >
             ×
@@ -178,7 +184,7 @@ function FoodAutocomplete({
         )}
         {suggestions.length > 0 && (
           <div
-            className="absolute left-0 right-0 top-full z-10 mt-1 flex flex-col overflow-hidden rounded-xl"
+            className="absolute inset-x-0 top-full z-10 mt-1 flex flex-col overflow-hidden rounded-xl"
             style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border-strong)' }}
           >
             {suggestions.map((s) => (
@@ -186,7 +192,7 @@ function FoodAutocomplete({
                 key={s}
                 type="button"
                 onClick={() => onConfirm(s)}
-                className="px-3 py-2 text-left text-sm"
+                className="px-3 py-2 text-start text-sm"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {s}
@@ -197,7 +203,7 @@ function FoodAutocomplete({
       </div>
       {confirmed && showQuantity && (
         <div className="mx-auto w-2/3">
-          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} />
+          <QuantityPicker quantity={quantity} onQuantityChange={onQuantityChange} t={t} />
         </div>
       )}
     </div>
@@ -279,6 +285,8 @@ function drawDetections(canvas: HTMLCanvasElement, detections: FoodDetection[]) 
 }
 
 export function CameraPanel({ onLogged }: { onLogged: () => void }) {
+  const { lang, dir } = useLanguage()
+  const t = CAMERA_PANEL_STRINGS[lang]
   const [stage, setStage] = useState<Stage>('camera')
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [scanErrorMsg, setScanErrorMsg] = useState<string | null>(null)
@@ -415,7 +423,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           audio: false,
         })
         if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop())
+          stream.getTracks().forEach((track) => track.stop())
           return
         }
         devLog('camera', 'Stream started.')
@@ -427,7 +435,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         intervalId = window.setInterval(runDetection, DETECTION_INTERVAL_MS)
       } catch (err) {
         devLog('camera', 'getUserMedia failed.')
-        if (!cancelled) setCameraError('Camera unavailable or permission denied — use "Upload a photo" instead.')
+        if (!cancelled) setCameraError(t.cameraUnavailable)
       }
     }
 
@@ -436,9 +444,12 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       cancelled = true
       if (intervalId !== undefined) window.clearInterval(intervalId)
       videoRef.current?.removeEventListener('loadeddata', handleLoadedData)
-      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
+    // Camera setup/teardown is tied to `stage` only — it must not restart (and briefly drop
+    // the live stream) just because the user switches language mid-scan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
 
   // COCO-SSD is a hint layer only (bounding box + optional label) — it must never gate
@@ -496,7 +507,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       if (!id.food) {
         devLog('vision-api', 'No food detected — falling back to manual entry.')
         resetManualFields()
-        setAnalyzeErrorMsg("Couldn't recognize the food.")
+        setAnalyzeErrorMsg(t.identify.notRecognized)
         setStage('manual')
         return
       }
@@ -509,7 +520,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       setScanErrorMsg(
         err instanceof AnalyzeError
           ? err.message
-          : 'Could not reach the food identification service. Check your connection and try again.'
+          : t.identify.serviceUnreachable
       )
       setStage('camera')
     }
@@ -519,7 +530,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     const video = videoRef.current
     if (!video || video.videoWidth === 0) {
       devLog('capture', 'No video frame available.')
-      setScanErrorMsg('Could not capture a photo. Point the camera at the food and try again.')
+      setScanErrorMsg(t.scanErrors.noFrame)
       return
     }
 
@@ -528,7 +539,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       dataUrl = downscaleToDataUrl(video, video.videoWidth, video.videoHeight)
     } catch (err) {
       devLog('capture', 'Frame capture failed.')
-      setScanErrorMsg('Could not capture a photo. Try again.')
+      setScanErrorMsg(t.scanErrors.captureFailed)
       return
     }
 
@@ -554,7 +565,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         dataUrl = downscaleToDataUrl(img, img.naturalWidth, img.naturalHeight)
       } catch (err) {
         devLog('capture', 'Uploaded image processing failed.')
-        setScanErrorMsg('Could not read that photo. Try a different one.')
+        setScanErrorMsg(t.scanErrors.readFailed)
         return
       }
       devLog('capture', 'Uploaded photo ready for scanning.')
@@ -562,7 +573,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     }
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      setScanErrorMsg('Could not read that photo. Try a different one.')
+      setScanErrorMsg(t.scanErrors.readFailed)
     }
     img.src = objectUrl
   }
@@ -580,7 +591,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     } catch (err) {
       devLog('nutrition', 'Lookup failed.')
       setAnalyzeErrorMsg(
-        err instanceof AnalyzeError ? err.message : 'Could not reach the analysis server. Is the backend running?'
+        err instanceof AnalyzeError ? err.message : t.analyzeUnreachable
       )
       setStage('quantity')
     }
@@ -597,7 +608,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     // those directly instead of re-asking the AI estimator every time it's logged again.
     const customFood = findCustomFood(manualName)
     if (customFood) {
-      const scaled = scaleCustomFood(customFood, manualQuantity)
+      const scaled = scaleCustomFood(customFood, manualQuantity, t.scaledFromCustomNote)
       if (scaled) {
         devLog('nutrition', `Scaled from saved custom entry: ${customFood.name}`)
         setResult(scaled)
@@ -614,7 +625,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       setStage('result')
     } catch (err) {
       setAnalyzeErrorMsg(
-        err instanceof AnalyzeError ? err.message : 'Could not reach the analysis server. Is the backend running?'
+        err instanceof AnalyzeError ? err.message : t.analyzeUnreachable
       )
       setStage('manual')
     }
@@ -628,7 +639,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       foods: [{ name: customName.trim(), portion: '1' }],
       nutrients: customValues,
       confidence: 'high',
-      note: 'Nutrition facts entered manually from the product label.',
+      note: t.customEntryNote,
     })
     setStage('result')
   }
@@ -642,7 +653,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       setResult(res)
     } catch (err) {
       setAnalyzeErrorMsg(
-        err instanceof AnalyzeError ? err.message : 'Could not reach the analysis server. Is the backend running?'
+        err instanceof AnalyzeError ? err.message : t.analyzeUnreachable
       )
     } finally {
       setManualLoading(false)
@@ -721,11 +732,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   className="text-xl font-bold capitalize"
                   style={{ color: '#fffaf0', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
                 >
-                  {result?.foods[0]?.name || 'Meal'}
+                  {result?.foods[0]?.name || t.result.mealFallbackName}
                 </span>
               </div>
             ) : (
-              <img src={photo} alt="Captured meal" className="h-full w-full object-cover" />
+              <img src={photo} alt={t.capturedMealAlt} className="h-full w-full object-cover" />
             ))}
           {(stage === 'identifying' || stage === 'analyzing') && (
             <div
@@ -734,7 +745,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             >
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
               <span className="text-sm font-medium text-white">
-                {stage === 'identifying' ? 'Identifying food…' : 'Getting nutrients…'}
+                {stage === 'identifying' ? t.overlay.identifying : t.overlay.gettingNutrients}
               </span>
             </div>
           )}
@@ -745,7 +756,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         <div className="mx-auto flex w-[80%] flex-col items-center gap-3">
           {stableDetection && !cameraError && (
             <p className="text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {foodEmoji(stableDetection.normalizedName)} {stableDetection.normalizedName} detected
+              {foodEmoji(stableDetection.normalizedName)} {t.detectedSuffix(stableDetection.normalizedName)}
             </p>
           )}
           <button
@@ -754,21 +765,21 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             className="w-3/4 rounded-full py-2 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
             style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
           >
-            Scan Food
+            {t.actions.scanFood}
           </button>
           <button
             onClick={handleUploadClick}
             className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
           >
-            Upload photo
+            {t.actions.uploadPhoto}
           </button>
           <button
             onClick={() => setStage('manual')}
             className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
             style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3', boxShadow: '0 4px 0 #1a1a19' }}
           >
-            Log manually
+            {t.actions.logManually}
           </button>
           <input
             ref={fileInputRef}
@@ -788,7 +799,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               {identification.displayName || capitalize(identification.food)}
             </p>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Is this correct?
+              {t.confirm.isCorrect}
             </p>
           </div>
 
@@ -801,14 +812,14 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="flex-1 rounded-full py-2.5 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#e8863a', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
             >
-              Confirm
+              {t.confirm.confirm}
             </button>
             <button
               onClick={retake}
               className="flex-1 rounded-full py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
-              Retake photo
+              {t.confirm.retakePhoto}
             </button>
           </div>
         </div>
@@ -829,9 +840,9 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           </p>
           <div className="thin-scroll flex w-full max-h-[40vh] flex-col gap-1.5 overflow-y-auto px-1 pb-2">
             <p className="text-center text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-              How much did you eat?
+              {t.quantityStage.howMuch}
             </p>
-            <QuantityPicker quantity={confirmQuantity} onQuantityChange={setConfirmQuantity} />
+            <QuantityPicker quantity={confirmQuantity} onQuantityChange={setConfirmQuantity} t={t} />
           </div>
 
           <div className="mt-2 flex w-full shrink-0 gap-2">
@@ -841,14 +852,14 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="flex-[2] rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: 'var(--accent)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
             >
-              Calculate nutrients
+              {t.quantityStage.calculate}
             </button>
             <button
               onClick={() => setStage('confirm')}
               className="flex-1 rounded-full py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
-              Back
+              {t.quantityStage.back}
             </button>
           </div>
         </div>
@@ -874,6 +885,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 onQuantityChange={setManualQuantity}
                 onConfirm={handleManualConfirm}
                 showQuantity={false}
+                t={t}
               />
             </div>
           )}
@@ -886,11 +898,12 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 onNameChange={handleManualNameChange}
                 onQuantityChange={setManualQuantity}
                 onConfirm={handleManualConfirm}
+                t={t}
               />
             )}
             {manualConfirmed && (
               <div className="w-2/3">
-                <QuantityPicker quantity={manualQuantity} onQuantityChange={setManualQuantity} />
+                <QuantityPicker quantity={manualQuantity} onQuantityChange={setManualQuantity} t={t} />
               </div>
             )}
             <div className="mx-auto flex w-2/3 flex-col gap-2">
@@ -900,7 +913,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: 'var(--accent)', border: '3px solid #222', boxShadow: '0 3px 0 #222' }}
               >
-                Calculate nutrients
+                {t.quantityStage.calculate}
               </button>
               <button
                 onClick={() => {
@@ -911,7 +924,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 className="flex w-full items-center justify-center whitespace-nowrap rounded-xl py-2.5 text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
                 style={{ backgroundColor: '#f6e4bb', border: '3px solid #222', boxShadow: '0 3px 0 #222', color: 'var(--text-primary)' }}
               >
-                Cancel
+                {t.manual.cancel}
               </button>
             </div>
           </div>
@@ -921,7 +934,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="rounded-full px-4 py-2 text-xs font-semibold transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#fbedc3', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19', color: 'var(--text-primary)' }}
             >
-              Add custom food →
+              {t.manual.addCustomFood} {dir === 'rtl' ? '←' : '→'}
             </button>
           </div>
         </div>
@@ -942,18 +955,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="flex flex-1 items-center justify-center whitespace-nowrap rounded-xl px-3 py-1.5 text-center text-xs font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: 'var(--accent)', border: '2px solid #222', boxShadow: '0 2px 0 #222' }}
             >
-              Use these values
+              {t.custom.useTheseValues}
             </button>
             <button
               onClick={() => {
                 resetCustomFields()
                 setStage('manual')
               }}
-              aria-label="Back"
+              aria-label={t.custom.backAriaLabel}
               className="flex shrink-0 items-center justify-center rounded-xl px-3 py-1.5 text-base font-medium transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
             >
-              ‹
+              {dir === 'rtl' ? '›' : '‹'}
             </button>
           </div>
         </div>
@@ -970,7 +983,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <div className="flex flex-col items-center justify-center gap-1 px-2 text-center">
             {result.foods.length === 0 ? (
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                No food recognized in this photo. 😫
+                {t.result.noFoodRecognized}
               </span>
             ) : (
               result.foods.map((f, i) => (
@@ -1000,6 +1013,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   onNameChange={handleManualNameChange}
                   onQuantityChange={setManualQuantity}
                   onConfirm={handleManualConfirm}
+                  t={t}
                 />
                 <button
                   onClick={runManualFixup}
@@ -1007,12 +1021,12 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   className="rounded-full py-2 text-xs font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
                   style={{ backgroundColor: 'var(--accent)', border: '1px solid #1a1a19', boxShadow: '0 1px 0 #1a1a19' }}
                 >
-                  {manualLoading ? 'Calculating…' : 'Get nutrients'}
+                  {manualLoading ? t.result.calculating : t.result.getNutrients}
                 </button>
               </div>
             ) : resultNutrients.length === 0 ? (
               <p className="px-2 py-3 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                No standout nutrients in this serving.
+                {t.result.noStandoutNutrients}
               </p>
             ) : (
               <div className="flex flex-col gap-1.5">
@@ -1035,7 +1049,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               className="rounded-full px-12 py-3 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
               style={{ backgroundColor: 'var(--accent)', border: '4px solid #1a1a19', boxShadow: '0 4px 0 #1a1a19' }}
             >
-              Save
+              {t.result.save}
             </button>
           </div>
         </div>

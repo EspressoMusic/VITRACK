@@ -151,3 +151,53 @@ $$;
 
 revoke all on function paddle_upsert_subscription(text, text, text, text, timestamptz, uuid) from public, anon, authenticated;
 grant execute on function paddle_upsert_subscription(text, text, text, text, timestamptz, uuid) to service_role;
+
+-- Sandbox-only twin of paddle_subscriptions. The sandbox edge functions (link-paddle-
+-- subscription-sandbox, paddle-webhook-sandbox, manage-subscription-sandbox) must never
+-- write into the real paddle_subscriptions table above — a free Paddle Sandbox "purchase"
+-- during testing would otherwise leave a row there that the production link-paddle-
+-- subscription function treats as a real, authoritative paid subscription and grants Pro
+-- access for. This table is that isolation boundary.
+create table if not exists paddle_subscriptions_sandbox (
+  paddle_subscription_id text primary key,
+  paddle_customer_id text not null,
+  user_id uuid references auth.users (id) on delete set null,
+  status text not null,
+  plan text,
+  current_period_end timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists paddle_subscriptions_sandbox_user_id_idx on paddle_subscriptions_sandbox (user_id);
+
+alter table paddle_subscriptions_sandbox enable row level security;
+
+create policy "Users can read their own sandbox subscription"
+  on paddle_subscriptions_sandbox for select
+  using (auth.uid() = user_id);
+
+create or replace function paddle_upsert_subscription_sandbox(
+  p_subscription_id text,
+  p_customer_id text,
+  p_status text,
+  p_plan text,
+  p_current_period_end timestamptz,
+  p_user_id uuid
+) returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into paddle_subscriptions_sandbox (paddle_subscription_id, paddle_customer_id, status, plan, current_period_end, user_id, updated_at)
+  values (p_subscription_id, p_customer_id, p_status, p_plan, p_current_period_end, p_user_id, now())
+  on conflict (paddle_subscription_id) do update
+  set paddle_customer_id = excluded.paddle_customer_id,
+      status = excluded.status,
+      plan = coalesce(excluded.plan, paddle_subscriptions_sandbox.plan),
+      current_period_end = excluded.current_period_end,
+      user_id = coalesce(excluded.user_id, paddle_subscriptions_sandbox.user_id),
+      updated_at = now();
+$$;
+
+revoke all on function paddle_upsert_subscription_sandbox(text, text, text, text, timestamptz, uuid) from public, anon, authenticated;
+grant execute on function paddle_upsert_subscription_sandbox(text, text, text, text, timestamptz, uuid) to service_role;
