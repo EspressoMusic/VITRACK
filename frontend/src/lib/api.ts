@@ -6,6 +6,7 @@ export interface AnalyzeResult {
   foods: IdentifiedFood[]
   nutrients: NutrientAmounts
   confidence: 'low' | 'medium' | 'high'
+  isJunkFood?: boolean
   note?: string
 }
 

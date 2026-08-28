@@ -24,3 +24,13 @@ npm-debug.log*
 
 .vercel
 .env*
+
+# Capacitor native platforms — generated projects, not part of the web deploy
+frontend/android
+frontend/ios
+
+# Supabase CLI local state
+supabase/.temp
+
+# Locally built app downloads, not served from source
+website/downloads

@@ -71,12 +71,19 @@ const REPORT_TOOL = {
           enum: ['low', 'medium', 'high'],
           description: 'Your confidence in this estimate given photo clarity and how easy the foods/portions were to judge.',
         },
+        isJunkFood: {
+          type: 'boolean',
+          description:
+            'True if this is primarily an ultra-processed, fried, sugary, or refined-flour food with little nutritional ' +
+            'value on its own (pastries, candy, soda, chips, fast food, deep-fried items, etc). False for whole or ' +
+            'minimally-processed foods (fruits, vegetables, grains, proteins, dairy) even if eaten as part of a treat-ish meal.',
+        },
         note: {
           type: 'string',
           description: 'One short, friendly sentence noting any major assumptions made about hidden ingredients or portion size.',
         },
       },
-      required: ['foods', 'nutrients', 'confidence'],
+      required: ['foods', 'nutrients', 'confidence', 'isJunkFood'],
     },
   },
 }
@@ -87,15 +94,18 @@ then estimate the TOTAL vitamin and mineral content of the whole meal using stan
 knowledge (e.g. USDA FoodData Central figures) for those portions. Always call the report_nutrition tool
 with your best numeric estimate for every field, even if approximate — never leave a nutrient blank or zero
 unless the food genuinely contains none of it. Be realistic: a single meal rarely supplies 100% of any
-nutrient's daily allowance. If the image does not show food at all, still call the tool with an empty
-foods array, all nutrients at 0, confidence "low", and a note explaining that no food was recognized.`
+nutrient's daily allowance. Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined
+items, false for whole or minimally-processed foods. If the image does not show food at all, still call the
+tool with an empty foods array, all nutrients at 0, confidence "low", and a note explaining that no food was recognized.`
 
 const TEXT_SYSTEM_PROMPT = `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
 A user manually logs a food they ate by typing its name and the quantity they consumed, with no photo.
 Estimate the TOTAL vitamin and mineral content of that food and quantity using standard nutrition-database
 knowledge (e.g. USDA FoodData Central figures). Always call the report_nutrition tool with your best numeric
 estimate for every field, even if approximate — never leave a nutrient blank or zero unless the food genuinely
-contains none of it. Report exactly one entry in the foods array, using the given name and quantity as its portion.`
+contains none of it. Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false
+for whole or minimally-processed foods. Report exactly one entry in the foods array, using the given name and
+quantity as its portion.`
 
 // The model occasionally returns a plain text reply instead of the requested tool call
 // (transient, not tied to any particular input) — one retry clears it almost every time.
@@ -143,13 +153,13 @@ async function analyzeFoodText(foodName: string, quantity: string) {
     },
   ])
 
-  const { foods = [], nutrients = {}, confidence = 'low', note } = JSON.parse(toolCall.function.arguments)
+  const { foods = [], nutrients = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
 
   const normalizedNutrients = Object.fromEntries(
     NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
   )
 
-  return { foods, nutrients: normalizedNutrients, confidence, note }
+  return { foods, nutrients: normalizedNutrients, confidence, isJunkFood, note }
 }
 
 async function analyzeFoodImage(imageDataUrl: string) {
@@ -168,13 +178,13 @@ async function analyzeFoodImage(imageDataUrl: string) {
     },
   ])
 
-  const { foods = [], nutrients = {}, confidence = 'low', note } = JSON.parse(toolCall.function.arguments)
+  const { foods = [], nutrients = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
 
   const normalizedNutrients = Object.fromEntries(
     NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
   )
 
-  return { foods, nutrients: normalizedNutrients, confidence, note }
+  return { foods, nutrients: normalizedNutrients, confidence, isJunkFood, note }
 }
 
 const corsHeaders = {

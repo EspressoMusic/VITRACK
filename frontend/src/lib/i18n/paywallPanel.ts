@@ -12,6 +12,9 @@ interface PaywallPanelStrings {
   processingCta: string
   footerNote: string
   alreadyPurchased: string
+  supportAriaLabel: string
+  supportEmailLabel: string
+  supportWhatsappLabel: string
   errors: {
     accountSetup: string
     checkoutFailed: string
@@ -37,6 +40,9 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
     processingCta: 'Processing…',
     footerNote: 'Auto-renews, cancel anytime. Secure checkout by Paddle.',
     alreadyPurchased: 'Already purchased?',
+    supportAriaLabel: 'Contact support',
+    supportEmailLabel: 'Email us',
+    supportWhatsappLabel: 'WhatsApp us',
     errors: {
       accountSetup: 'Just a moment — setting up your account. Please try again.',
       checkoutFailed: 'Checkout failed. Please try again.',
@@ -60,6 +66,9 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
     processingCta: 'מעבד…',
     footerNote: 'מתחדש אוטומטית, אפשר לבטל בכל עת. תשלום מאובטח דרך Paddle.',
     alreadyPurchased: 'כבר רכשת?',
+    supportAriaLabel: 'פנייה לתמיכה',
+    supportEmailLabel: 'שליחת מייל',
+    supportWhatsappLabel: 'וואטסאפ',
     errors: {
       accountSetup: 'רגע אחד — מגדירים את החשבון שלך. נסו שוב.',
       checkoutFailed: 'התשלום נכשל. נסו שוב.',
@@ -83,6 +92,9 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
     processingCta: 'جارٍ المعالجة…',
     footerNote: 'يتجدد تلقائيًا، يمكن الإلغاء في أي وقت. دفع آمن عبر Paddle.',
     alreadyPurchased: 'اشتريت من قبل؟',
+    supportAriaLabel: 'تواصل مع الدعم',
+    supportEmailLabel: 'راسلنا عبر البريد',
+    supportWhatsappLabel: 'واتساب',
     errors: {
       accountSetup: 'لحظة واحدة — يتم إعداد حسابك. حاول مرة أخرى.',
       checkoutFailed: 'فشلت عملية الدفع. حاول مرة أخرى.',

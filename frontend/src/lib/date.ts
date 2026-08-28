@@ -27,6 +27,10 @@ export function monthLabel(year: number, month: number): string {
   return `${MONTH_NAMES[month]} ${year}`
 }
 
+export function shortMonthLabel(year: number, month: number): string {
+  return `${MONTH_NAMES[month].slice(0, 3)} ${year}`
+}
+
 export { MONTH_NAMES, WEEKDAY_NAMES }
 
 /** Builds a 6x7 calendar grid (leading/trailing days from adjacent months included). */
@@ -56,5 +60,5 @@ export function isoWeekNumber(d: Date): number {
 export function formatFriendlyDate(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number)
   const date = new Date(y, m - 1, d)
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }

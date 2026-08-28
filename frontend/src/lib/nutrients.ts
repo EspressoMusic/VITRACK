@@ -201,6 +201,7 @@ export const NUTRIENTS: NutrientDef[] = [
       'Chickpeas', 'Tofu', 'Quinoa', 'Dark chocolate', 'Cashews', 'Beef liver',
     ],
     benefit: 'Helps red blood cells carry oxygen through the body and prevents fatigue.',
+    core: true,
   },
   {
     id: 'magnesium',

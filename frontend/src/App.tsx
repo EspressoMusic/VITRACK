@@ -6,6 +6,7 @@ import { APP_STRINGS } from './lib/i18n/app'
 import { NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
+import { SuperfoodsPanel } from './components/SuperfoodsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
@@ -35,7 +36,12 @@ function AppShell() {
   const [refreshSignal, setRefreshSignal] = useState(0)
   const bumpRefresh = () => setRefreshSignal((n) => n + 1)
 
-  const panelBg = { camera: 'background-camera', calendar: 'background-calendar', insights: 'background-insights' }[tab]
+  const panelBg = {
+    camera: 'background-camera',
+    calendar: 'background-calendar',
+    insights: 'background-insights',
+    superfoods: 'background-insights',
+  }[tab]
 
   useEffect(() => {
     getAllMeals().then((meals) => {
@@ -47,20 +53,33 @@ function AppShell() {
 
   return (
     <div
-      className="app-shell relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden"
+      className="app-shell relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
       style={{ '--panel-bg': `url('/${panelBg}.png')` } as React.CSSProperties}
     >
       <div
-        className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-end px-3 pt-1.5"
+        className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-between px-3 pt-1.5"
         style={{ pointerEvents: 'none' }}
       >
+        <button
+          onClick={() => setTab('superfoods')}
+          aria-label={t.openSuperfoodsAriaLabel}
+          className="flex h-11 w-11 items-center justify-center transition"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <img src="/icons/fruits/avocado.png" alt="" className="icon-idle-wiggle h-9 w-9 object-contain" />
+        </button>
         <button
           onClick={() => setSettingsOpen(true)}
           aria-label={t.openSettingsAriaLabel}
           className="flex h-11 w-11 items-center justify-center transition"
           style={{ pointerEvents: 'auto' }}
         >
-          <img src="/icons/settings.png" alt="" className="h-9 w-9 object-contain" />
+          <img
+            src="/icons/settings.png"
+            alt=""
+            className="icon-idle-wiggle h-9 w-9 object-contain"
+            style={{ animationDelay: '3s' }}
+          />
         </button>
       </div>
 
@@ -73,6 +92,7 @@ function AppShell() {
           )}
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
+          {tab === 'superfoods' && <SuperfoodsPanel />}
         </div>
       </main>
 

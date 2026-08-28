@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { MealEntry, NutrientAmounts, NutrientId } from '../types'
 import { analyzeFoodText, identifyFood, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
 import { addMeal } from '../lib/db'
@@ -27,6 +27,7 @@ import {
   type DetectorStatus,
   type FoodDetection,
 } from '../lib/foodDetector'
+import { decodeBarcodeFromFrame, lookupProductByBarcode } from '../lib/barcode'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CAMERA_PANEL_STRINGS, type CameraPanelStrings } from '../lib/i18n/cameraPanel'
 
@@ -316,6 +317,12 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   // Matches the last row's rise-particle timing (riseDelayMs + second-particle offset + rise duration)
   // so the fill bar only starts filling once every rising particle has reached it.
   const nutrientRiseTotalMs = resultNutrients.length ? (resultNutrients.length - 1) * 90 + 140 + 1100 : 0
+  // Picked once per result, not on every re-render, so it doesn't change while the screen is up.
+  const junkFoodLine = useMemo(
+    () => t.junkFood[Math.floor(Math.random() * t.junkFood.length)],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [result]
+  )
 
   const [, setDetectorStatus] = useState<DetectorStatus>(getDetectorStatus)
   const [detections, setDetections] = useState<FoodDetection[]>([])
@@ -328,6 +335,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectingRef = useRef(false)
+  const barcodeDetectingRef = useRef(false)
+  const barcodeAttemptedRef = useRef<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const resultScrollRef = useRef<HTMLDivElement>(null)
 
@@ -383,11 +392,63 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     if (stage !== 'camera') return
     setDetections([])
     setCameraReady(false)
+    barcodeAttemptedRef.current = new Set()
     let cancelled = false
     let intervalId: number | undefined
+    let barcodeIntervalId: number | undefined
 
     function handleLoadedData() {
       if (!cancelled) setCameraReady(true)
+    }
+
+    // Runs alongside COCO-SSD on the same live frame. A matched product skips straight to the
+    // same confirm/quantity flow as a photo scan; a barcode that reads fine but isn't in Open
+    // Food Facts' database (common for smaller/regional brands) falls back to the normal AI-vision
+    // identification on that same frame rather than leaving the user with silent, dead feedback.
+    async function runBarcodeDetection() {
+      const video = videoRef.current
+      if (!video || video.readyState < 2 || video.videoWidth === 0) return
+      if (barcodeDetectingRef.current) return
+      barcodeDetectingRef.current = true
+      try {
+        const code = await decodeBarcodeFromFrame(video)
+        if (!code || cancelled || barcodeAttemptedRef.current.has(code)) return
+        barcodeAttemptedRef.current.add(code)
+        devLog('barcode', `Detected: ${code}`)
+
+        let dataUrl: string
+        try {
+          dataUrl = downscaleToDataUrl(video, video.videoWidth, video.videoHeight)
+        } catch (err) {
+          devLog('barcode', 'Frame capture for barcode hit failed.')
+          return
+        }
+
+        const product = await lookupProductByBarcode(code, lang)
+        if (cancelled) return
+
+        if (product) {
+          devLog('barcode', `Product matched: ${product.name}`)
+          setPhoto(dataUrl)
+          setIdentification({
+            food: product.name.toLowerCase(),
+            displayName: product.name,
+            emoji: '🛒',
+            confidence: 1,
+            alternatives: [],
+          })
+          setConfirmQuantity('')
+          setStage('confirm')
+          return
+        }
+
+        devLog('barcode', 'No product match — falling back to AI identification.')
+        await identifyCapturedPhoto(dataUrl)
+      } catch (err) {
+        devLog('barcode', 'Detection or lookup failed.')
+      } finally {
+        barcodeDetectingRef.current = false
+      }
     }
 
     async function runDetection() {
@@ -433,6 +494,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           videoRef.current.addEventListener('loadeddata', handleLoadedData)
         }
         intervalId = window.setInterval(runDetection, DETECTION_INTERVAL_MS)
+        barcodeIntervalId = window.setInterval(runBarcodeDetection, DETECTION_INTERVAL_MS)
       } catch (err) {
         devLog('camera', 'getUserMedia failed.')
         if (!cancelled) setCameraError(t.cameraUnavailable)
@@ -443,6 +505,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     return () => {
       cancelled = true
       if (intervalId !== undefined) window.clearInterval(intervalId)
+      if (barcodeIntervalId !== undefined) window.clearInterval(barcodeIntervalId)
       videoRef.current?.removeEventListener('loadeddata', handleLoadedData)
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
@@ -691,10 +754,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col gap-3 px-4 pb-3 pt-3">
+    <div className="relative mx-auto flex h-full max-w-md flex-col gap-3 px-4 pb-3 pt-3">
       {stage === 'camera' && scanErrorMsg && (
         <p
-          className="shrink-0 rounded-lg px-3 py-2 text-center text-xs font-medium"
+          className="absolute inset-x-4 top-3 z-20 rounded-lg px-3 py-2 text-center text-xs font-medium"
           style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
         >
           {scanErrorMsg}
@@ -826,10 +889,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       )}
 
       {stage === 'quantity' && (
-        <div className="flex min-h-0 flex-1 flex-col items-center gap-2 py-1">
+        <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 py-1">
           {analyzeErrorMsg && (
             <p
-              className="w-full shrink-0 rounded-lg px-3 py-2 text-center text-xs font-medium"
+              className="absolute inset-x-0 top-1 z-20 rounded-lg px-3 py-2 text-center text-xs font-medium"
               style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
             >
               {analyzeErrorMsg}
@@ -866,10 +929,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       )}
 
       {stage === 'manual' && (
-        <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-3">
           {analyzeErrorMsg && (
             <p
-              className="rounded-lg px-3 py-2 text-xs"
+              className="absolute inset-x-0 top-0 z-20 rounded-lg px-3 py-2 text-xs"
               style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
             >
               {analyzeErrorMsg}
@@ -976,7 +1039,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           <ConfettiBurst count={70} />
 
-          {resultNutrients.length > 0 && (
+          {resultNutrients.length > 0 && !result.isJunkFood && (
             <NutrientFillBar percent={overallNutrientPercent} startDelayMs={nutrientRiseTotalMs} />
           )}
 
@@ -1024,6 +1087,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                   {manualLoading ? t.result.calculating : t.result.getNutrients}
                 </button>
               </div>
+            ) : result.isJunkFood ? (
+              <p className="px-3 py-4 text-center text-sm font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
+                {junkFoodLine}
+              </p>
             ) : resultNutrients.length === 0 ? (
               <p className="px-2 py-3 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {t.result.noStandoutNutrients}

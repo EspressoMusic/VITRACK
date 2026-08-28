@@ -222,6 +222,32 @@ button:active {
   animation: modal-card-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+@keyframes food-wiggle-in {
+  0% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.15) rotate(-14deg);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1.05) rotate(11deg);
+  }
+  75% {
+    transform: scale(1.02) rotate(-7deg);
+  }
+  88% {
+    transform: scale(1) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+.food-wiggle-in {
+  animation: food-wiggle-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @keyframes confetti-fall {
   0% {
     transform: translateY(-10vh) rotate(0deg);
@@ -403,6 +429,75 @@ button:active {
   animation: gold-sparkle-shift 3s ease-in-out infinite, gold-sparkle-glow 1.8s ease-in-out infinite;
 }
 
+@keyframes featured-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px rgba(255, 200, 30, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 20px 7px rgba(255, 221, 90, 0.95);
+  }
+}
+.featured-card-glow {
+  position: relative;
+  overflow: hidden;
+  animation: featured-glow-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes superfood-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.superfood-float {
+  animation: superfood-bob 2.4s ease-in-out infinite;
+}
+
+/** Sits still most of the loop and only wiggles briefly near the end, so it reads as an
+ *  occasional idle nudge rather than a continuous animation. */
+@keyframes icon-idle-wiggle {
+  0%,
+  85% {
+    transform: rotate(0deg) scale(1);
+  }
+  89% {
+    transform: rotate(-10deg) scale(1.08);
+  }
+  93% {
+    transform: rotate(8deg) scale(1.08);
+  }
+  97% {
+    transform: rotate(-4deg) scale(1.03);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+.icon-idle-wiggle {
+  animation: icon-idle-wiggle 6s ease-in-out infinite;
+}
+
+@keyframes sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(25deg);
+  }
+}
+.sparkle-dot {
+  position: absolute;
+  pointer-events: none;
+  animation: sparkle-twinkle 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
@@ -411,8 +506,15 @@ button:active {
   .spin-slow,
   .tap-effect,
   .feature-check-chase,
-  .calendar-day-gold {
+  .calendar-day-gold,
+  .featured-card-glow,
+  .superfood-float,
+  .food-wiggle-in,
+  .icon-idle-wiggle {
     animation: none;
+  }
+  .sparkle-dot {
+    display: none;
   }
   .headline-anim {
     animation: none;
@@ -432,13 +534,13 @@ button:active {
   }
 }
 
-/* Compact scrollbars for the day-detail / insights lists */
-.thin-scroll::-webkit-scrollbar {
-  width: 8px;
+/* Scrollable day-detail / insights lists — still scrollable, just no visible scrollbar */
+.thin-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.thin-scroll::-webkit-scrollbar-thumb {
-  background-color: #e8863a;
-  border-radius: 9999px;
+.thin-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Number wheel picker (onboarding) — scrollable, but no visible scrollbar */

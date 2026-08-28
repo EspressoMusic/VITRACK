@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
-import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
+import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
 import { getVisibleNutrients, percentOfRda } from '../lib/nutrients'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
@@ -84,7 +84,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
             {dir === 'rtl' ? '›' : '‹'}
           </button>
           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {monthLabel(cursor.year, cursor.month)}
+            {shortMonthLabel(cursor.year, cursor.month)}
           </span>
           <button
             onClick={() => changeMonth(1)}
@@ -99,7 +99,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         <div className={`mb-1 grid ${GRID_COLS} gap-0.5 text-center text-[10px] font-medium`}>
           {WEEKDAY_NAMES.map((w) => (
             <span key={w} style={{ color: '#000000' }}>
-              {w}
+              {w.slice(0, 1)}
             </span>
           ))}
         </div>
@@ -144,11 +144,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
           {selectedLabel}
         </h2>
 
-        {selectedMeals.length === 0 ? (
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {t.noMealsLoggedThisDay}
-          </p>
-        ) : (
+        {selectedMeals.length === 0 ? null : (
           <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
             {selectedMeals.map((meal) => {
               const topId = topNutrient(meal.nutrients)

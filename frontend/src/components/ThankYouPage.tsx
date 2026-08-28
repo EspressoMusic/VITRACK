@@ -14,7 +14,7 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
 
   return (
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-md flex-col items-center justify-center overflow-hidden px-6 py-6"
+      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-6 py-6"
       style={{
         backgroundColor: 'var(--surface-0)',
         backgroundImage: "url('/background-calendar.png')",

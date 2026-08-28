@@ -29,7 +29,7 @@ export function MissingToGoalModal({
       >
         <div className="relative mb-4 flex shrink-0 items-center justify-center">
           <h2
-            className="whitespace-nowrap rounded-full py-1.5 ps-4 pe-12 text-base font-semibold"
+            className="whitespace-nowrap rounded-full py-1.5 ps-4 pe-12 text-sm font-semibold"
             style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface-cream)' }}
           >
             {t.title}

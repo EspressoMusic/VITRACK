@@ -57,6 +57,8 @@ export interface CameraPanelStrings {
     save: string
     mealFallbackName: string
   }
+  /** Shown instead of the nutrient list when the AI flags the food as junk/ultra-processed. One is picked at random. */
+  junkFood: string[]
   capturedMealAlt: string
   customEntryNote: string
   scaledFromCustomNote: string
@@ -119,6 +121,16 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'Save',
       mealFallbackName: 'Meal',
     },
+    junkFood: [
+      "This is basically dessert wearing a food costume. The vitamins ran away screaming. 🏃💨",
+      "We checked twice. The only nutrient in here is joy (temporary).",
+      "Vitamins? In THIS economy? Not today.",
+      "This meal's nutritional value took one look at itself and quit.",
+      "Somewhere, a vegetable is very disappointed in you right now. 🥦",
+      "We went looking for vitamins and found regret instead.",
+      "100% flavor, 0% nutrition — an honest trade.",
+      "Nutrition facts: mostly vibes.",
+    ],
     capturedMealAlt: 'Captured meal',
     customEntryNote: 'Nutrition facts entered manually from the product label.',
     scaledFromCustomNote: 'Calculated from your saved custom entry.',
@@ -179,6 +191,16 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'שמירה',
       mealFallbackName: 'ארוחה',
     },
+    junkFood: [
+      'זה בעיקר קינוח שמתחפש לארוחה. הויטמינים ברחו צורחים. 🏃💨',
+      'בדקנו פעמיים. הרכיב התזונתי היחיד כאן הוא שמחה (זמנית).',
+      'ויטמינים? במשק הזה? לא היום.',
+      'הערך התזונתי של הארוחה הזאת הביט בעצמו והתפטר.',
+      'איפשהו, ירק מאוד מאוכזב ממך כרגע. 🥦',
+      'חיפשנו ויטמינים ומצאנו חרטה.',
+      '100% טעם, 0% תזונה — עסקה הוגנת.',
+      'ערכים תזונתיים: בעיקר תחושות.',
+    ],
     capturedMealAlt: 'תמונת הארוחה שצולמה',
     customEntryNote: 'ערכים תזונתיים שהוזנו ידנית מתווית המוצר.',
     scaledFromCustomNote: 'מחושב מהערך המותאם אישית ששמרת.',
@@ -239,6 +261,16 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'حفظ',
       mealFallbackName: 'وجبة',
     },
+    junkFood: [
+      'هذه في الأساس حلوى متنكرة كوجبة. الفيتامينات هربت صارخة. 🏃💨',
+      'تحققنا مرتين. المكوّن الغذائي الوحيد هنا هو السعادة (المؤقتة).',
+      'فيتامينات؟ في هذا الاقتصاد؟ ليس اليوم.',
+      'القيمة الغذائية لهذه الوجبة نظرت إلى نفسها واستقالت.',
+      'في مكان ما، خضار محبط جدًا منك الآن. 🥦',
+      'بحثنا عن فيتامينات ووجدنا ندمًا.',
+      '100% نكهة، 0% تغذية — صفقة عادلة.',
+      'القيم الغذائية: أحاسيس في الغالب.',
+    ],
     capturedMealAlt: 'صورة الوجبة الملتقطة',
     customEntryNote: 'قيم غذائية أُدخلت يدويًا من ملصق المنتج.',
     scaledFromCustomNote: 'مُحتسب من إدخالك المخصّص المحفوظ.',

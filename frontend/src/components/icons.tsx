@@ -234,6 +234,17 @@ export function SwapIcon({ className }: IconProps) {
   )
 }
 
+export function HeadsetIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+      <rect x="2.5" y="13" width="4" height="6.5" rx="1.6" />
+      <rect x="17.5" y="13" width="4" height="6.5" rx="1.6" />
+      <path d="M19.5 19.5v.5a2.5 2.5 0 0 1-2.5 2.5h-2.5" />
+    </svg>
+  )
+}
+
 export function CakeIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
@@ -241,6 +252,14 @@ export function CakeIcon({ className }: IconProps) {
       <path d="M3 20h18" />
       <path d="M8 11.5V8M12 11.5V8M16 11.5V8" />
       <path d="M8 5.5c0-1 .6-1.3.6-2S8 2 8 2M12 5.5c0-1 .6-1.3.6-2S12 2 12 2M16 5.5c0-1 .6-1.3.6-2S16 2 16 2" />
+    </svg>
+  )
+}
+
+export function HeartIcon({ className, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <svg className={className} {...base} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 8 1.6 4.5 5 3.4c2.2-0.7 4.5 0.2 6 2.1 1.5-1.9 3.8-2.8 6-2.1 3.4 1.1 4.7 4.6 3 7.8-2.5 4.7-10 9.3-10 9.3Z" />
     </svg>
   )
 }

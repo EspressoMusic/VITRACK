@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PaddleEventData } from '@paddle/paddle-js'
 import type { BillingPlan } from '../types'
 import { activateSubscription, getStoredGoals } from '../lib/profile'
@@ -7,7 +7,7 @@ import { waitForServerSubscription } from '../lib/cloudProfile'
 import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { CheckIcon, ClockIcon, LockIcon } from './icons'
+import { CheckIcon, ClockIcon, HeadsetIcon, LockIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -22,6 +22,7 @@ import {
 } from '../lib/tiktokPixel'
 
 type CheckoutData = NonNullable<PaddleEventData['data']>
+type PaywallStrings = (typeof PAYWALL_PANEL_STRINGS)['en']
 
 /** Pulls the real charged amount/currency/price-id out of a Paddle checkout event — never
  *  the marketing display price — for accurate TikTok Pixel reporting. */
@@ -165,7 +166,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
 
   return (
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
+      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
       style={{
         backgroundColor: 'var(--surface-0)',
         backgroundImage: "url('/background-calendar.png')",
@@ -318,6 +319,25 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               </>
             )}
           </p>
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => {
+                activateSubscription(plan)
+                onSubscribed()
+              }}
+              className="mt-1.5 w-full rounded-full py-1 text-[10px] font-semibold"
+              style={{ color: 'var(--text-secondary)', border: '1px dashed var(--text-secondary)' }}
+            >
+              Dev: skip payment
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="absolute top-0 end-0 z-20 p-3" style={{ pointerEvents: 'none' }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <SupportMenu t={t} dir={dir} />
         </div>
       </div>
 
@@ -418,5 +438,63 @@ function PlanCard({
         </span>
       </div>
     </button>
+  )
+}
+
+function SupportMenu({ t, dir }: { t: PaywallStrings; dir: 'ltr' | 'rtl' }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handlePointerDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    return () => document.removeEventListener('mousedown', handlePointerDown)
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative" dir={dir}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={t.supportAriaLabel}
+        className="flex h-8 w-8 items-center justify-center rounded-full"
+        style={{ backgroundColor: 'rgba(255,255,255,0.55)', color: 'var(--text-primary)' }}
+      >
+        <HeadsetIcon className="h-4 w-4" />
+      </button>
+      {open && (
+        <div
+          className="absolute end-0 top-10 z-30 flex flex-col overflow-hidden rounded-2xl py-1"
+          style={{
+            backgroundColor: 'var(--surface-cream)',
+            border: '1.5px solid var(--accent-strong)',
+            boxShadow: '0 8px 20px rgba(11,11,11,0.18)',
+            minWidth: 170,
+          }}
+        >
+          <a
+            href="mailto:shilohdhd1@gmail.com"
+            className="whitespace-nowrap px-4 py-2 text-start text-xs font-medium"
+            style={{ color: 'var(--text-primary)' }}
+            onClick={() => setOpen(false)}
+          >
+            {t.supportEmailLabel}
+          </a>
+          <a
+            href="https://wa.me/972586122187"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="whitespace-nowrap px-4 py-2 text-start text-xs font-medium"
+            style={{ color: 'var(--text-primary)' }}
+            onClick={() => setOpen(false)}
+          >
+            {t.supportWhatsappLabel}
+          </a>
+        </div>
+      )}
+    </div>
   )
 }

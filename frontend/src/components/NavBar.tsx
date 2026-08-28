@@ -1,7 +1,7 @@
 import { useLanguage } from '../contexts/LanguageContext'
 import { NAV_BAR_STRINGS } from '../lib/i18n/navBar'
 
-export type Tab = 'camera' | 'calendar' | 'insights'
+export type Tab = 'camera' | 'calendar' | 'insights' | 'superfoods'
 
 export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
   const { lang } = useLanguage()

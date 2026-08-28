@@ -5,6 +5,7 @@ import { coverageStatus, isAdvancedMode } from '../lib/nutrients'
 import { computeWeeklyInsights } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
+import { NUTRIENT_FEELING } from '../lib/i18n/nutrientFeelings'
 import { NutrientRow } from './NutrientRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
@@ -29,6 +30,9 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
+  // `ranked` is sorted worst-first, so the first deficient entry is the nutrient most worth
+  // calling out — that's the one whose real-world symptom the user is most likely to notice.
+  const worstDeficient = deficient[0] ?? null
 
   // Slowly auto-scrolls the nutrient list downward so the user can see everything without
   // manually scrolling, pausing at the bottom before looping back to the top. Only needed in
@@ -80,13 +84,9 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   if (meals.length === 0) {
     return (
       <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
-        <WeeklyGoalGlass percent={0} />
-        <p className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
-          {t.nothingHereYet}
-        </p>
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {t.snapAMealPrompt}
-        </p>
+        <div className="mt-3">
+          <WeeklyGoalGlass percent={0} />
+        </div>
       </div>
     )
   }
@@ -94,14 +94,26 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4">
       {showConfetti && <ConfettiBurst />}
-      <div className="mx-auto mb-1 flex shrink-0 flex-col items-center text-center">
-        <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
+      <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
+        {worstDeficient && (
+          <button
+            type="button"
+            onClick={() => setSelectedNutrient(worstDeficient.id)}
+            className="max-w-[85%] text-base font-extrabold underline decoration-dotted underline-offset-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {t.feelingSentence(NUTRIENT_FEELING[lang][worstDeficient.id])}
+          </button>
+        )}
+        <div className="mt-3">
+          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
+        </div>
       </div>
 
       <div className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col">
         <div
           ref={scrollRef}
-          className={`thin-scroll flex min-h-0 flex-1 flex-col gap-1 p-1.5 ${isAdvancedMode() ? 'overflow-y-auto' : 'overflow-hidden'}`}
+          className="thin-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5"
         >
           {deficient.length === 0 ? (
             <p
