@@ -13,8 +13,8 @@ import { SUBSCRIPTION_MANAGE_PANEL_STRINGS } from '../lib/i18n/subscriptionManag
 import type { Lang } from '../lib/i18n/lang'
 
 const PLAN_PRICE: Record<BillingPlan, string> = {
-  yearly: '$99',
-  monthly: '$19',
+  yearly: '$89',
+  monthly: '$9.99',
 }
 
 function formatDate(iso: string | null, lang: Lang): string {

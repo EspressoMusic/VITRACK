@@ -4,7 +4,7 @@ interface PaywallPanelStrings {
   headline: string
   features: [string, string, string, string]
   yearly: { title: string; note: string; badge: string; period: string }
-  monthly: { title: string; period: string }
+  monthly: { title: string; period: string; note: string }
   agreePrefix: string
   agreeLinkLabel: string
   agreeErrorModal: string
@@ -31,8 +31,8 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'Calendar history & insights',
       'Deficiency alerts & food tips',
     ],
-    yearly: { title: 'Yearly', note: '≈ $8.25/mo', badge: 'Save 57%', period: '/year' },
-    monthly: { title: 'Monthly', period: '/month' },
+    yearly: { title: 'Yearly', note: '≈ $7.42/mo', badge: 'Save 55%', period: '/year' },
+    monthly: { title: 'Monthly', period: '/month', note: '3-day free trial' },
     agreePrefix: 'I agree to the ',
     agreeLinkLabel: 'Terms & Privacy Policy',
     agreeErrorModal: 'Please agree to the Terms of Use first',
@@ -57,8 +57,8 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'היסטוריית לוח שנה ותובנות',
       'התראות על חוסרים וטיפים לתזונה',
     ],
-    yearly: { title: 'שנתי', note: '≈ $8.25/חודש', badge: 'חיסכון של 57%', period: '/שנה' },
-    monthly: { title: 'חודשי', period: '/חודש' },
+    yearly: { title: 'שנתי', note: '≈ $7.42/חודש', badge: 'חיסכון של 55%', period: '/שנה' },
+    monthly: { title: 'חודשי', period: '/חודש', note: 'תקופת ניסיון של 3 ימים בחינם' },
     agreePrefix: 'אני מאשר/ת את ',
     agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
     agreeErrorModal: 'יש לאשר קודם את תנאי השימוש',
@@ -83,8 +83,8 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'سجل التقويم والرؤى',
       'تنبيهات النقص ونصائح غذائية',
     ],
-    yearly: { title: 'سنوي', note: '≈ $8.25/شهريًا', badge: 'وفّر 57%', period: '/سنويًا' },
-    monthly: { title: 'شهري', period: '/شهريًا' },
+    yearly: { title: 'سنوي', note: '≈ $7.42/شهريًا', badge: 'وفّر 55%', period: '/سنويًا' },
+    monthly: { title: 'شهري', period: '/شهريًا', note: 'تجربة مجانية لمدة 3 أيام' },
     agreePrefix: 'أوافق على ',
     agreeLinkLabel: 'الشروط وسياسة الخصوصية',
     agreeErrorModal: 'يرجى الموافقة على شروط الاستخدام أولاً',
