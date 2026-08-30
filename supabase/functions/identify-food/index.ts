@@ -9,6 +9,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { requireActiveSubscription } from '../_shared/subscription.ts'
 import { getClientIp } from '../_shared/clientIp.ts'
+import { fetchOpenAI } from '../_shared/openaiRetry.ts'
 
 const MODEL = Deno.env.get('OPENAI_VISION_MODEL') || 'gpt-4o-mini'
 
@@ -99,7 +100,7 @@ interface IdentifyResult {
 
 async function identifyFood(imageDataUrl: string): Promise<IdentifyResult> {
   const apiKey = Deno.env.get('OPENAI_API_KEY')?.split(/\s/)[0]?.replace(/^['"]|['"]$/g, '')
-  const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+  const openaiRes = await fetchOpenAI('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,

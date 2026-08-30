@@ -7,7 +7,7 @@ import { waitForServerSubscription } from '../lib/cloudProfile'
 import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { CheckIcon, ClockIcon, HeadsetIcon, LockIcon } from './icons'
+import { CheckIcon, HeadsetIcon, LockIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -32,26 +32,6 @@ function purchaseDetailsFromCheckout(data: CheckoutData | undefined, plan: Billi
   return { plan, priceId: item.price_id, value: data.totals.total, currency: data.currency_code }
 }
 
-const OFFER_DEADLINE_KEY = 'vitrack:offerDeadline'
-const OFFER_WINDOW_MS = 24 * 60 * 60 * 1000
-
-/** Persists a 24h deadline on first view so the countdown survives reloads instead of resetting. */
-function getOfferDeadline(): number {
-  const stored = Number(localStorage.getItem(OFFER_DEADLINE_KEY))
-  if (Number.isFinite(stored) && stored > Date.now()) return stored
-  const deadline = Date.now() + OFFER_WINDOW_MS
-  localStorage.setItem(OFFER_DEADLINE_KEY, String(deadline))
-  return deadline
-}
-
-function formatCountdown(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
-  const h = Math.floor(totalSeconds / 3600)
-  const m = Math.floor((totalSeconds % 3600) / 60)
-  const s = totalSeconds % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
 export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const { user } = useAuth()
   const { lang, dir } = useLanguage()
@@ -62,8 +42,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [legalOpen, setLegalOpen] = useState(false)
   const [showAgreeError, setShowAgreeError] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [offerDeadline] = useState(getOfferDeadline)
-  const [now, setNow] = useState(Date.now())
   const goals = getStoredGoals()
 
   useEffect(() => {
@@ -71,11 +49,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     const t = setTimeout(() => setShowAgreeError(false), 2200)
     return () => clearTimeout(t)
   }, [showAgreeError])
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
 
   // The paid AI features check the server's own subscription record, not this local flag
   // (see supabase/functions/_shared/subscription.ts) — a purchase only actually works once
@@ -240,12 +213,10 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             selected={plan === 'yearly'}
             onSelect={() => setPlan('yearly')}
             title={t.yearly.title}
-            originalPrice="$198"
+            originalPrice="$120"
             price="$89"
             period={t.yearly.period}
             note={t.yearly.note}
-            badge={t.yearly.badge}
-            countdown={formatCountdown(offerDeadline - now)}
           />
           <PlanCard
             selected={plan === 'monthly'}
@@ -367,9 +338,7 @@ function PlanCard({
   price,
   period,
   note,
-  badge,
   featured,
-  countdown,
 }: {
   selected: boolean
   onSelect: () => void
@@ -378,9 +347,7 @@ function PlanCard({
   price: string
   period: string
   note?: string
-  badge?: string
   featured?: boolean
-  countdown?: string
 }) {
   const isGold = featured && selected
   const textColor = isGold ? '#2c1a04' : 'var(--text-primary)'
@@ -400,20 +367,6 @@ function PlanCard({
           <span className="text-sm font-semibold" style={{ color: textColor }}>
             {title}
           </span>
-          {badge && (
-            <span
-              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white"
-              style={{ backgroundColor: 'var(--status-good)' }}
-            >
-              {badge}
-            </span>
-          )}
-          {countdown && (
-            <span className="flex shrink-0 items-center gap-0.5 text-[9px] font-bold" style={{ color: 'var(--status-critical)' }}>
-              <ClockIcon className="h-2.5 w-2.5" />
-              {countdown}
-            </span>
-          )}
         </div>
         {note && (
           <div className="truncate text-xs" style={{ color: isGold ? '#5c3d10' : 'var(--text-secondary)' }}>

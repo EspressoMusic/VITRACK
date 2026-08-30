@@ -28,7 +28,7 @@ export function monthLabel(year: number, month: number): string {
 }
 
 export function shortMonthLabel(year: number, month: number): string {
-  return `${MONTH_NAMES[month].slice(0, 3)} ${year}`
+  return `${MONTH_NAMES[month].slice(0, 3)} ${String(year).slice(-2)}`
 }
 
 export { MONTH_NAMES, WEEKDAY_NAMES }

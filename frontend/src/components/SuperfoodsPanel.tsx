@@ -87,7 +87,7 @@ function SuperfoodImage({ food, className, emojiSize = '1.75em' }: { food: Super
   )
 }
 
-function SuperfoodDetailModal({ food, onClose }: { food: SuperfoodDef; onClose: () => void }) {
+export function SuperfoodDetailModal({ food, onClose }: { food: SuperfoodDef; onClose: () => void }) {
   const { lang } = useLanguage()
   const content = SUPERFOOD_CONTENT[lang][food.id]
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
@@ -144,9 +144,9 @@ function SuperfoodRow({
     <button
       onClick={onSelect}
       className="relative flex w-28 shrink-0 flex-col items-center justify-start gap-1 rounded-xl px-1 py-2.5 text-center"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', scrollSnapAlign: 'start' }}
     >
-      <SuperfoodImage food={food} className="h-10 w-10 shrink-0" />
+      <SuperfoodImage food={food} className="h-14 w-14 shrink-0" emojiSize="2.5em" />
       <span className="w-full truncate text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
         {content.name}
       </span>
@@ -177,7 +177,7 @@ function SuperfoodList({
   }
 
   return (
-    <div className="wheel-scroll grid h-full auto-rows-min grid-cols-2 justify-items-center gap-1.5 overflow-y-auto content-start">
+    <div className="thin-scroll grid h-full auto-rows-min grid-cols-2 justify-items-center gap-1.5 overflow-y-auto content-start pb-1">
       {items.map((food) => (
         <SuperfoodRow key={food.id} food={food} lang={lang} onSelect={() => onSelect(food)} />
       ))}
@@ -194,14 +194,14 @@ export function SuperfoodsPanel() {
   const rest = useMemo(() => SUPERFOODS.filter((f) => f.id !== featured.id), [featured.id])
 
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pb-2.5 pt-1">
+    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pt-1">
       <button
         onClick={() => setSelected(featured)}
         className="featured-card-glow calendar-day-gold mx-auto mb-2 flex w-28 shrink-0 flex-col items-center justify-start gap-1 rounded-xl px-1 py-2.5 text-center transition-transform active:translate-y-0.5"
         style={{ border: '2px solid #000000' }}
       >
         <span className="shine-sweep" aria-hidden />
-        <SuperfoodImage food={featured} className="superfood-float h-10 w-10 shrink-0" />
+        <SuperfoodImage food={featured} className="superfood-float h-14 w-14 shrink-0" emojiSize="2.5em" />
         <span className="w-full truncate text-[12px] font-semibold" style={{ color: '#3a2a06' }}>
           {featuredContent.name}
         </span>
@@ -209,6 +209,8 @@ export function SuperfoodsPanel() {
           {featuredContent.power}
         </span>
       </button>
+
+      <div className="mx-1 h-1 shrink-0 rounded-full" style={{ backgroundColor: '#d9a441' }} aria-hidden />
 
       <div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
         <div className="min-w-0 flex-1 overflow-hidden">

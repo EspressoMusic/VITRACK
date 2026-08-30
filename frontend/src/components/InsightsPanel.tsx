@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
-import { coverageStatus, isAdvancedMode } from '../lib/nutrients'
-import { computeWeeklyInsights } from '../lib/insights'
+import { coverageStatus } from '../lib/nutrients'
+import { computeWeeklyInsights, computeTodayFeeling } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
 import { NUTRIENT_FEELING } from '../lib/i18n/nutrientFeelings'
 import { NutrientRow } from './NutrientRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
+import { FeelingExplainerModal } from './FeelingExplainerModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -17,6 +18,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const t = INSIGHTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
+  const [feelingOpen, setFeelingOpen] = useState(false)
   const [missingOpen, setMissingOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiFired = useRef(false)
@@ -30,47 +32,81 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
-  // `ranked` is sorted worst-first, so the first deficient entry is the nutrient most worth
-  // calling out — that's the one whose real-world symptom the user is most likely to notice.
-  const worstDeficient = deficient[0] ?? null
 
-  // Slowly auto-scrolls the nutrient list downward so the user can see everything without
-  // manually scrolling, pausing at the bottom before looping back to the top. Only needed in
-  // advanced mode, where all nutrients don't fit on screen — simple mode never scrolls.
+  // Grounded in today's meals only (not the week's rolling average) so the "why might I feel
+  // this way" callout tracks what was actually eaten today.
+  const todayFeeling = useMemo(() => computeTodayFeeling(meals), [meals])
+
+  // Auto-scrolls the nutrient list downward so the user can see everything without manually
+  // scrolling. Each stop reveals one more row at the bottom with its full pill flush against
+  // the container edge — never paused with a row sliced in half, which is what made it look
+  // broken against the floating camera button/artwork right below this panel. A partial row
+  // is only ever left at the *top* (against the harmless space below the goal gauge above),
+  // never at the bottom.
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || !isAdvancedMode()) return
+    if (!el) return
 
+    const STEP_MS = 500
+    const PAUSE_MS = 1400
     let frameId: number
-    let pauseTimeout: ReturnType<typeof setTimeout> | undefined
-    const SPEED = 15 // px per second
+    let timeoutId: ReturnType<typeof setTimeout>
+    let cancelled = false
 
-    let lastTime = performance.now()
-    function step(time: number) {
-      const dt = (time - lastTime) / 1000
-      lastTime = time
-      if (el) {
-        const maxScroll = el.scrollHeight - el.clientHeight
-        if (maxScroll > 0) {
-          if (el.scrollTop >= maxScroll - 0.5) {
-            el.scrollTop = maxScroll
-            pauseTimeout = setTimeout(() => {
-              if (el) el.scrollTop = 0
-              lastTime = performance.now()
-              frameId = requestAnimationFrame(step)
-            }, 1500)
-            return
-          }
-          el.scrollTop = Math.min(maxScroll, el.scrollTop + SPEED * dt)
+    function easeInOutQuad(t: number): number {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+    }
+
+    function animateTo(target: number, onDone: () => void) {
+      const start = el!.scrollTop
+      const distance = target - start
+      const startTime = performance.now()
+      function frame(now: number) {
+        if (cancelled) return
+        const t = Math.min(1, (now - startTime) / STEP_MS)
+        el!.scrollTop = start + distance * easeInOutQuad(t)
+        if (t < 1) {
+          frameId = requestAnimationFrame(frame)
+        } else {
+          onDone()
         }
       }
-      frameId = requestAnimationFrame(step)
+      frameId = requestAnimationFrame(frame)
     }
-    frameId = requestAnimationFrame(step)
+
+    /** Scroll targets that each land with some row's bottom edge flush against the container's
+     *  bottom — i.e. reveal rows strictly by whole rows, ending with the true max scroll. */
+    function buildStops(): number[] {
+      const rows = Array.from(el!.querySelectorAll<HTMLElement>('button'))
+      const maxScroll = el!.scrollHeight - el!.clientHeight
+      if (rows.length === 0 || maxScroll <= 0) return []
+
+      const stops = [0]
+      for (const row of rows) {
+        const bottomFlush = row.offsetTop + row.offsetHeight - el!.clientHeight
+        if (bottomFlush > stops[stops.length - 1] + 0.5 && bottomFlush < maxScroll - 0.5) {
+          stops.push(bottomFlush)
+        }
+      }
+      stops.push(maxScroll)
+      return stops
+    }
+
+    function goTo(stops: number[], index: number) {
+      animateTo(stops[index], () => {
+        timeoutId = setTimeout(() => {
+          goTo(stops, index + 1 >= stops.length ? 0 : index + 1)
+        }, PAUSE_MS)
+      })
+    }
+
+    const stops = buildStops()
+    if (stops.length > 0) goTo(stops, 0)
 
     return () => {
+      cancelled = true
       cancelAnimationFrame(frameId)
-      if (pauseTimeout) clearTimeout(pauseTimeout)
+      clearTimeout(timeoutId)
     }
   }, [ranked])
 
@@ -92,17 +128,17 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-4">
+    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        {worstDeficient && (
+        {todayFeeling && (
           <button
             type="button"
-            onClick={() => setSelectedNutrient(worstDeficient.id)}
-            className="max-w-[85%] text-base font-extrabold underline decoration-dotted underline-offset-2"
-            style={{ color: 'var(--text-primary)' }}
+            onClick={() => setFeelingOpen(true)}
+            className="max-w-[85%] text-lg font-extrabold leading-snug tracking-tight"
+            style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
           >
-            {t.feelingSentence(NUTRIENT_FEELING[lang][worstDeficient.id])}
+            {t.feelingSentence(NUTRIENT_FEELING[lang][todayFeeling.id])}
           </button>
         )}
         <div className="mt-3">
@@ -160,6 +196,10 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           amount={ranked.find((r) => r.id === selectedNutrient)?.avgAmount ?? 0}
           onClose={() => setSelectedNutrient(null)}
         />
+      )}
+
+      {feelingOpen && todayFeeling && (
+        <FeelingExplainerModal id={todayFeeling.id} onClose={() => setFeelingOpen(false)} />
       )}
 
       {missingOpen && (

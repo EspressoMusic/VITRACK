@@ -1,6 +1,7 @@
 import type { BillingPlan, NutrientAmounts, OnboardingProfile } from '../types'
-import { computeNutrientGoals } from './goals'
+import { computeMacroGoals, computeNutrientGoals } from './goals'
 import { setActiveGoals } from './nutrients'
+import { setActiveMacroGoals } from './macros'
 
 const PROFILE_KEY = 'vitrack:profile'
 const GOALS_KEY = 'vitrack:goals'
@@ -22,9 +23,11 @@ export function getStoredGoals(): NutrientAmounts | null {
   return raw ? (JSON.parse(raw) as NutrientAmounts) : null
 }
 
-/** Loads any previously-computed goals into lib/nutrients.ts. Call once on app start. */
+/** Loads any previously-computed goals into lib/nutrients.ts and lib/macros.ts. Call once on app start. */
 export function loadPersistedGoals(): void {
   setActiveGoals(getStoredGoals())
+  const profile = getStoredProfile()
+  setActiveMacroGoals(profile ? computeMacroGoals(profile) : null)
 }
 
 export function completeOnboarding(profile: OnboardingProfile): NutrientAmounts {
@@ -33,6 +36,7 @@ export function completeOnboarding(profile: OnboardingProfile): NutrientAmounts 
   localStorage.setItem(GOALS_KEY, JSON.stringify(goals))
   localStorage.setItem(ONBOARDED_KEY, 'true')
   setActiveGoals(goals)
+  setActiveMacroGoals(computeMacroGoals(profile))
   return goals
 }
 
@@ -53,11 +57,13 @@ export function devSkipOnboarding(): void {
       heightCm: 170,
       activityLevel: 'moderate',
       diet: 'omnivore',
+      goal: 'maintain',
     }
     const goals = computeNutrientGoals(sampleProfile)
     localStorage.setItem(PROFILE_KEY, JSON.stringify(sampleProfile))
     localStorage.setItem(GOALS_KEY, JSON.stringify(goals))
     setActiveGoals(goals)
+    setActiveMacroGoals(computeMacroGoals(sampleProfile))
   }
 }
 
@@ -89,7 +95,10 @@ export function applyCloudProfile(data: {
   subscribed?: boolean | null
   plan?: BillingPlan | null
 }): void {
-  if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile))
+  if (data.profile) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile))
+    setActiveMacroGoals(computeMacroGoals(data.profile))
+  }
   if (data.goals) {
     localStorage.setItem(GOALS_KEY, JSON.stringify(data.goals))
     setActiveGoals(data.goals)

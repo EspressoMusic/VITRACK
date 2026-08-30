@@ -1,6 +1,6 @@
 import type { MealEntry, NutrientId } from '../types'
-import { daysAgoKey } from './date'
-import { getVisibleNutrients, sumNutrients, percentOfRda } from './nutrients'
+import { daysAgoKey, todayKey } from './date'
+import { coverageStatus, getVisibleNutrients, sumNutrients, percentOfRda } from './nutrients'
 
 export const INSIGHTS_WINDOW_DAYS = 7
 
@@ -37,4 +37,27 @@ export function computeWeeklyInsights(meals: MealEntry[]): WeeklyInsights {
   const weeklyCompletion = Math.round(ranked.reduce((sum, r) => sum + Math.min(100, r.percent), 0) / ranked.length)
 
   return { loggedDayCount: loggedDays.size, ranked, weeklyCompletion }
+}
+
+export interface TodayFeeling {
+  id: NutrientId
+  amount: number
+  percent: number
+}
+
+/** Today's worst-covered nutrient, judged against today's meals only (not the week's rolling
+ *  average) — so the "why might I feel this way" callout stays grounded in what was actually
+ *  eaten today. Returns null before anything has been logged today, since a totally empty day
+ *  would otherwise flag every nutrient as deficient. */
+export function computeTodayFeeling(meals: MealEntry[]): TodayFeeling | null {
+  const todayMeals = meals.filter((m) => m.date === todayKey())
+  if (todayMeals.length === 0) return null
+
+  const total = sumNutrients(todayMeals.map((m) => m.nutrients))
+  const deficient = getVisibleNutrients()
+    .map((n) => ({ id: n.id, amount: total[n.id], percent: percentOfRda(n.id, total[n.id]) }))
+    .filter((r) => coverageStatus(r.percent) !== 'good')
+    .sort((a, b) => a.percent - b.percent)
+
+  return deficient[0] ?? null
 }

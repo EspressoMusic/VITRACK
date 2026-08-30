@@ -55,6 +55,7 @@ export interface CameraPanelStrings {
     getNutrients: string
     noStandoutNutrients: string
     save: string
+    saved: string
     mealFallbackName: string
   }
   /** Shown instead of the nutrient list when the AI flags the food as junk/ultra-processed. One is picked at random. */
@@ -119,6 +120,7 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       getNutrients: 'Get nutrients',
       noStandoutNutrients: 'No standout nutrients in this serving.',
       save: 'Save',
+      saved: 'Saved!',
       mealFallbackName: 'Meal',
     },
     junkFood: [
@@ -189,6 +191,7 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       getNutrients: 'קבלת נוטריינטים',
       noStandoutNutrients: 'אין נוטריינטים בולטים במנה הזו.',
       save: 'שמירה',
+      saved: 'נשמר!',
       mealFallbackName: 'ארוחה',
     },
     junkFood: [
@@ -259,6 +262,7 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       getNutrients: 'الحصول على العناصر الغذائية',
       noStandoutNutrients: 'لا توجد عناصر غذائية بارزة في هذه الحصة.',
       save: 'حفظ',
+      saved: 'تم الحفظ!',
       mealFallbackName: 'وجبة',
     },
     junkFood: [

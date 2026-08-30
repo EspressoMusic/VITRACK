@@ -1,5 +1,25 @@
-import type { ActivityLevel, NutrientAmounts, OnboardingProfile } from '../types'
+import type { ActivityLevel, MacroAmounts, NutrientAmounts, OnboardingProfile, WeightGoal } from '../types'
 import { NUTRIENTS } from './nutrients'
+
+/** Calorie adjustment off TDEE for each goal — a moderate, sustainable pace in either direction. */
+const CALORIE_ADJUSTMENT: Record<WeightGoal, number> = {
+  lose: -500,
+  maintain: 0,
+  gain: 300,
+}
+
+/** Protein target in g/kg body weight — higher for both cutting and bulking, where preserving
+ *  or building muscle matters most, per common sports-nutrition guidance (~0.8g/kg is only
+ *  the sedentary-maintenance minimum). */
+const PROTEIN_PER_KG: Record<WeightGoal, number> = {
+  lose: 1.8,
+  maintain: 1.4,
+  gain: 1.8,
+}
+
+/** Fat as a share of total calories — kept steady across goals; protein is set directly by body
+ *  weight above, and carbs absorb whatever calories are left over. */
+const FAT_CALORIE_SHARE = 0.3
 
 /** Standard activity-level multipliers (PAL) used with Mifflin-St Jeor to estimate daily energy use. */
 const PAL: Record<ActivityLevel, number> = {
@@ -75,4 +95,23 @@ export function computeNutrientGoals(profile: OnboardingProfile): NutrientAmount
   goals.manganese = female ? 1.8 : 2.3
 
   return goals
+}
+
+/**
+ * Rough, non-medical daily calories/protein/carbs/fat targets from the onboarding questionnaire.
+ * Calories start from estimated TDEE, shifted by the stated goal; protein is set directly from
+ * body weight (most reliable driver of muscle preservation/growth), fat is a fixed share of
+ * calories, and carbs take whatever calories remain. A wellness approximation, not a clinical plan.
+ */
+export function computeMacroGoals(profile: OnboardingProfile): MacroAmounts {
+  // Pre-existing stored profiles predate the goal question, so default gracefully.
+  const goal = profile.goal ?? 'maintain'
+  const calories = Math.max(1200, round0(estimateTdee(profile) + CALORIE_ADJUSTMENT[goal]))
+  const proteinG = round0(profile.weightKg * PROTEIN_PER_KG[goal])
+  const fatG = round0((calories * FAT_CALORIE_SHARE) / 9)
+  const proteinCalories = proteinG * 4
+  const fatCalories = fatG * 9
+  const carbsG = Math.max(0, round0((calories - proteinCalories - fatCalories) / 4))
+
+  return { calories, carbsG, fatG, proteinG }
 }

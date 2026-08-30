@@ -30,7 +30,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             <img
               src="/icons/calendar.png"
               alt=""
-              className="nav-tab-transition h-9 w-9 object-contain"
+              className="nav-tab-transition h-[42px] w-[42px] object-contain drop-shadow-[0_3px_4px_rgba(0,0,0,0.3)]"
               style={{ transform: active === 'calendar' ? 'scale(1.15)' : 'scale(1)' }}
             />
           </span>
@@ -52,9 +52,9 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
             }}
           >
             <img
-              src="/icons/lemon.png"
+              src="/icons/heart.png"
               alt=""
-              className="nav-tab-transition h-9 w-9 object-contain"
+              className="nav-tab-transition h-[34px] w-[34px] object-contain drop-shadow-[0_3px_4px_rgba(0,0,0,0.3)]"
               style={{ transform: active === 'insights' ? 'scale(1.15)' : 'scale(1)' }}
             />
           </span>
@@ -78,7 +78,7 @@ export function NavBar({ active, onChange }: { active: Tab; onChange: (tab: Tab)
           <img
             src="/icons/camera.png"
             alt=""
-            className="nav-tab-transition h-[78px] w-[78px] object-contain"
+            className="nav-tab-transition h-[78px] w-[78px] object-contain drop-shadow-[0_3px_4px_rgba(0,0,0,0.3)]"
             style={{ transform: cameraActive ? 'scale(1.15)' : 'scale(1)' }}
           />
         </button>

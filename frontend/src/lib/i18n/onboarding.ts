@@ -6,7 +6,13 @@ interface OnboardingStrings {
   welcomeCta: string
   summaryCta: string
   continueCta: string
-  welcome: { title: string; subtitle: string }
+  welcome: {
+    title: string
+    subtitle: string
+    highlightWord: string
+    badges: [string, string, string]
+    benefits: [string, string, string, string]
+  }
   age: { title: string; subtitle: string; unit: string }
   sex: {
     title: string
@@ -34,6 +40,15 @@ interface OnboardingStrings {
       vegan: { label: string; desc: string }
     }
   }
+  goal: {
+    title: string
+    subtitle: string
+    options: {
+      lose: { label: string; desc: string }
+      maintain: { label: string; desc: string }
+      gain: { label: string; desc: string }
+    }
+  }
   calculating: { messages: [string, string, string] }
   summary: {
     title: string
@@ -54,7 +69,10 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     continueCta: 'Continue',
     welcome: {
       title: "Let's set up your targets",
-      subtitle: 'A few quick questions — no cardio required.',
+      subtitle: 'Your body needs more than calories',
+      highlightWord: 'more',
+      badges: ['2-minute setup', 'Fully personalized', 'Private & secure'],
+      benefits: ['Better sleep 😴', 'Better workouts 💪', 'More energy ⚡', 'Sharper focus 🎯'],
     },
     age: {
       title: 'How old are you?',
@@ -95,6 +113,15 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
         vegan: { label: 'Vegan', desc: 'No animal products at all' },
       },
     },
+    goal: {
+      title: "What's your goal?",
+      subtitle: 'This sets your daily calories, protein, carbs, and fat.',
+      options: {
+        lose: { label: 'Lose weight', desc: 'Eat a bit less than you burn' },
+        maintain: { label: 'Maintain weight', desc: 'Stay around where you are' },
+        gain: { label: 'Gain weight', desc: 'Eat a bit more, build muscle' },
+      },
+    },
     calculating: {
       messages: ['Analyzing your profile…', 'Calculating vitamin needs…', 'Personalizing your targets…'],
     },
@@ -119,7 +146,10 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     continueCta: 'המשך',
     welcome: {
       title: 'בואו נגדיר את היעדים שלך',
-      subtitle: 'כמה שאלות קצרות — בלי קרדיו נדרש.',
+      subtitle: 'הגוף שלך צריך יותר מקלוריות',
+      highlightWord: 'יותר',
+      badges: ['התקנה של 2 דקות', 'מותאם אישית לגמרי', 'פרטי ומאובטח'],
+      benefits: ['שינה טובה יותר 😴', 'אימונים טובים יותר 💪', 'יותר אנרגיה ⚡', 'ריכוז חד יותר 🎯'],
     },
     age: {
       title: 'בן/בת כמה את/ה?',
@@ -160,6 +190,15 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
         vegan: { label: 'טבעוני/ת', desc: 'בלי מוצרים מן החי בכלל' },
       },
     },
+    goal: {
+      title: 'מה המטרה שלך?',
+      subtitle: 'זה קובע את הקלוריות, החלבון, הפחמימות והשומן היומיים שלך.',
+      options: {
+        lose: { label: 'לרדת במשקל', desc: 'לאכול קצת פחות ממה שאת/ה שורפ/ת' },
+        maintain: { label: 'לשמור על המשקל', desc: 'להישאר בערך באותו משקל' },
+        gain: { label: 'לעלות במשקל', desc: 'לאכול קצת יותר, לבנות שריר' },
+      },
+    },
     calculating: {
       messages: ['מנתחים את הפרופיל שלך…', 'מחשבים את צרכי הוויטמינים…', 'מתאימים אישית את היעדים שלך…'],
     },
@@ -184,7 +223,10 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     continueCta: 'متابعة',
     welcome: {
       title: 'لنُعِد ضبط أهدافك',
-      subtitle: 'بضعة أسئلة سريعة — بدون تمارين كارديو.',
+      subtitle: 'جسمك يحتاج أكثر من السعرات الحرارية',
+      highlightWord: 'أكثر',
+      badges: ['إعداد خلال دقيقتين', 'مخصص بالكامل', 'خاص وآمن'],
+      benefits: ['نوم أفضل 😴', 'تمارين أفضل 💪', 'طاقة أكبر ⚡', 'تركيز أعلى 🎯'],
     },
     age: {
       title: 'كم عمرك؟',
@@ -223,6 +265,15 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
         pescatarian: { label: 'نباتي مع أسماك', desc: 'أسماك ومنتجات ألبان، بدون لحوم أخرى' },
         vegetarian: { label: 'نباتي', desc: 'منتجات ألبان وبيض، بدون لحم أو سمك' },
         vegan: { label: 'نباتي صِرف', desc: 'بدون أي منتجات حيوانية على الإطلاق' },
+      },
+    },
+    goal: {
+      title: 'ما هو هدفك؟',
+      subtitle: 'هذا يحدد السعرات الحرارية والبروتين والكربوهيدرات والدهون اليومية.',
+      options: {
+        lose: { label: 'إنقاص الوزن', desc: 'تناول أقل قليلًا مما تحرقه' },
+        maintain: { label: 'الحفاظ على الوزن', desc: 'البقاء قريبًا من وزنك الحالي' },
+        gain: { label: 'زيادة الوزن', desc: 'تناول أكثر قليلًا، وبناء العضلات' },
       },
     },
     calculating: {

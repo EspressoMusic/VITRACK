@@ -12,6 +12,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { requireActiveSubscription } from '../_shared/subscription.ts'
 import { getClientIp } from '../_shared/clientIp.ts'
+import { fetchOpenAI } from '../_shared/openaiRetry.ts'
 
 // Keep in sync with frontend/src/lib/nutrients.ts and backend/src/nutrients.js.
 const NUTRIENT_IDS = [
@@ -38,6 +39,15 @@ const nutrientProperties = Object.fromEntries(
     },
   ])
 )
+
+const MACRO_IDS = ['calories', 'carbsG', 'fatG', 'proteinG']
+
+const MACRO_PROPERTIES = {
+  calories: { type: 'number', description: 'Estimated total calories (kcal) provided by the meal.' },
+  carbsG: { type: 'number', description: 'Estimated total carbohydrates in grams provided by the meal.' },
+  fatG: { type: 'number', description: 'Estimated total fat in grams provided by the meal.' },
+  proteinG: { type: 'number', description: 'Estimated total protein in grams provided by the meal.' },
+}
 
 const REPORT_TOOL = {
   type: 'function' as const,
@@ -66,6 +76,12 @@ const REPORT_TOOL = {
           properties: nutrientProperties,
           required: NUTRIENT_IDS,
         },
+        macros: {
+          type: 'object',
+          description: 'Estimated TOTAL calories and macronutrient (carbs/fat/protein) content of the entire meal.',
+          properties: MACRO_PROPERTIES,
+          required: MACRO_IDS,
+        },
         confidence: {
           type: 'string',
           enum: ['low', 'medium', 'high'],
@@ -83,29 +99,31 @@ const REPORT_TOOL = {
           description: 'One short, friendly sentence noting any major assumptions made about hidden ingredients or portion size.',
         },
       },
-      required: ['foods', 'nutrients', 'confidence', 'isJunkFood'],
+      required: ['foods', 'nutrients', 'macros', 'confidence', 'isJunkFood'],
     },
   },
 }
 
 const SYSTEM_PROMPT = `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
 A user uploads a photo of a meal. Identify each distinct food item and its approximate portion size,
-then estimate the TOTAL vitamin and mineral content of the whole meal using standard nutrition-database
-knowledge (e.g. USDA FoodData Central figures) for those portions. Always call the report_nutrition tool
-with your best numeric estimate for every field, even if approximate — never leave a nutrient blank or zero
-unless the food genuinely contains none of it. Be realistic: a single meal rarely supplies 100% of any
-nutrient's daily allowance. Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined
-items, false for whole or minimally-processed foods. If the image does not show food at all, still call the
-tool with an empty foods array, all nutrients at 0, confidence "low", and a note explaining that no food was recognized.`
+then estimate the TOTAL calories, macronutrients (carbs/fat/protein), and vitamin/mineral content of the
+whole meal using standard nutrition-database knowledge (e.g. USDA FoodData Central figures) for those
+portions. Always call the report_nutrition tool with your best numeric estimate for every field, even if
+approximate — never leave a nutrient, macro, or calorie value blank or zero unless the food genuinely
+contains none of it. Be realistic: a single meal rarely supplies 100% of any nutrient's daily allowance.
+Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
+minimally-processed foods. If the image does not show food at all, still call the tool with an empty foods
+array, all nutrients and macros at 0, confidence "low", and a note explaining that no food was recognized.`
 
 const TEXT_SYSTEM_PROMPT = `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
 A user manually logs a food they ate by typing its name and the quantity they consumed, with no photo.
-Estimate the TOTAL vitamin and mineral content of that food and quantity using standard nutrition-database
-knowledge (e.g. USDA FoodData Central figures). Always call the report_nutrition tool with your best numeric
-estimate for every field, even if approximate — never leave a nutrient blank or zero unless the food genuinely
-contains none of it. Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false
-for whole or minimally-processed foods. Report exactly one entry in the foods array, using the given name and
-quantity as its portion.`
+Estimate the TOTAL calories, macronutrients (carbs/fat/protein), and vitamin/mineral content of that food
+and quantity using standard nutrition-database knowledge (e.g. USDA FoodData Central figures). Always call
+the report_nutrition tool with your best numeric estimate for every field, even if approximate — never leave
+a nutrient, macro, or calorie value blank or zero unless the food genuinely contains none of it. Also set
+isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
+minimally-processed foods. Report exactly one entry in the foods array, using the given name and quantity as
+its portion.`
 
 // The model occasionally returns a plain text reply instead of the requested tool call
 // (transient, not tied to any particular input) — one retry clears it almost every time.
@@ -113,7 +131,7 @@ async function requestNutritionReport(messages: unknown[]) {
   const apiKey = Deno.env.get('OPENAI_API_KEY')?.split(/\s/)[0]?.replace(/^['"]|['"]$/g, '')
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiRes = await fetchOpenAI('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -153,13 +171,16 @@ async function analyzeFoodText(foodName: string, quantity: string) {
     },
   ])
 
-  const { foods = [], nutrients = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
+  const { foods = [], nutrients = {}, macros = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
 
   const normalizedNutrients = Object.fromEntries(
     NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
   )
+  const normalizedMacros = Object.fromEntries(
+    MACRO_IDS.map((id) => [id, Math.max(0, Number(macros[id]) || 0)])
+  )
 
-  return { foods, nutrients: normalizedNutrients, confidence, isJunkFood, note }
+  return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
 }
 
 async function analyzeFoodImage(imageDataUrl: string) {
@@ -178,13 +199,16 @@ async function analyzeFoodImage(imageDataUrl: string) {
     },
   ])
 
-  const { foods = [], nutrients = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
+  const { foods = [], nutrients = {}, macros = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
 
   const normalizedNutrients = Object.fromEntries(
     NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
   )
+  const normalizedMacros = Object.fromEntries(
+    MACRO_IDS.map((id) => [id, Math.max(0, Number(macros[id]) || 0)])
+  )
 
-  return { foods, nutrients: normalizedNutrients, confidence, isJunkFood, note }
+  return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
 }
 
 const corsHeaders = {

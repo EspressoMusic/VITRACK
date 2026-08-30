@@ -7,6 +7,7 @@ import { NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
 import { SuperfoodsPanel } from './components/SuperfoodsPanel'
+import { NutritionChatModal } from './components/NutritionChatModal'
 import { SettingsPanel } from './components/SettingsPanel'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
@@ -33,13 +34,14 @@ function AppShell() {
   const t = APP_STRINGS[lang]
   const [tab, setTab] = useState<Tab>('camera')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const bumpRefresh = () => setRefreshSignal((n) => n + 1)
 
   const panelBg = {
     camera: 'background-camera',
     calendar: 'background-calendar',
-    insights: 'background-insights',
+    insights: 'background-progress',
     superfoods: 'background-insights',
   }[tab]
 
@@ -60,14 +62,18 @@ function AppShell() {
         className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-between px-3 pt-1.5"
         style={{ pointerEvents: 'none' }}
       >
-        <button
-          onClick={() => setTab('superfoods')}
-          aria-label={t.openSuperfoodsAriaLabel}
-          className="flex h-11 w-11 items-center justify-center transition"
-          style={{ pointerEvents: 'auto' }}
-        >
-          <img src="/icons/fruits/avocado.png" alt="" className="icon-idle-wiggle h-9 w-9 object-contain" />
-        </button>
+        {tab === 'insights' ? (
+          <button
+            onClick={() => setTab('superfoods')}
+            aria-label={t.openSuperfoodsAriaLabel}
+            className="flex h-11 w-11 items-center justify-center transition"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <img src="/icons/fruits/avocado.png" alt="" className="icon-idle-wiggle h-9 w-9 object-contain" />
+          </button>
+        ) : (
+          <div className="h-11 w-11" />
+        )}
         <button
           onClick={() => setSettingsOpen(true)}
           aria-label={t.openSettingsAriaLabel}
@@ -98,6 +104,8 @@ function AppShell() {
 
       <NavBar active={tab} onChange={setTab} />
 
+      {chatOpen && <NutritionChatModal lang={lang} onClose={() => setChatOpen(false)} />}
+
       {settingsOpen && (
         <SettingsPanel
           onClose={() => setSettingsOpen(false)}
@@ -119,8 +127,15 @@ function shouldDevShowPaywall(): boolean {
   return import.meta.env.DEV && new URLSearchParams(window.location.search).get('paywall') === '1'
 }
 
+/** Dev-only: jump straight to the onboarding questionnaire for local testing, regardless of
+ *  whether it was already completed on this device. Visit `?onboarding=1`. */
+function shouldDevShowOnboarding(): boolean {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get('onboarding') === '1'
+}
+
 export default function App() {
   const [onboarded, setOnboarded] = useState(() => {
+    if (shouldDevShowOnboarding()) return false
     if (shouldDevUnlock() || shouldDevShowPaywall()) {
       devSkipOnboarding()
       return true

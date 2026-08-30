@@ -9,6 +9,8 @@ import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
 import { EMPTY_NUTRIENTS, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget } from '../lib/nutrients'
+import { EMPTY_MACROS, isMacroTrackingEnabled } from '../lib/macros'
+import { MacroSummaryRow } from './MacroSummaryRow'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
 import {
@@ -304,6 +306,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [customName, setCustomName] = useState('')
   const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
+  const [justSaved, setJustSaved] = useState(false)
 
   const resultNutrients = result
     ? getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, result.nutrients[n.id]))
@@ -697,10 +700,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   async function submitCustomEntry() {
     if (!customName.trim()) return
     setPhoto((prev) => prev ?? MANUAL_ENTRY_PHOTO)
-    await saveCustomFood(customName, '1', customValues)
+    await saveCustomFood(customName, '1', customValues, EMPTY_MACROS)
     setResult({
       foods: [{ name: customName.trim(), portion: '1' }],
       nutrients: customValues,
+      macros: EMPTY_MACROS,
       confidence: 'high',
       note: t.customEntryNote,
     })
@@ -724,7 +728,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   }
 
   async function saveEntry() {
-    if (!photo || !result) return
+    if (!photo || !result || justSaved) return
     const entry: MealEntry = {
       id: crypto.randomUUID(),
       date: todayKey(),
@@ -732,12 +736,20 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       imageDataUrl: photo,
       foods: result.foods,
       nutrients: result.nutrients,
+      macros: result.macros ?? EMPTY_MACROS,
       confidence: result.confidence,
       analysisNote: result.note,
     }
     await addMeal(entry)
     onLogged()
-    logAnother()
+    // Keep the result panel (percent bar + vitamin list) on screen for a beat with a "Saved!"
+    // confirmation, instead of instantly dumping the user back at the camera — long enough to
+    // actually read it, not just flash by.
+    setJustSaved(true)
+    setTimeout(() => {
+      logAnother()
+      setJustSaved(false)
+    }, 1800)
   }
 
   function logAnother() {
@@ -1062,6 +1074,8 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             )}
           </div>
 
+          {result.foods.length > 0 && isMacroTrackingEnabled() && <MacroSummaryRow macros={result.macros ?? EMPTY_MACROS} />}
+
           <div
             ref={resultScrollRef}
             className="thin-scroll mx-auto flex max-h-[48vh] min-h-0 w-[88%] flex-1 flex-col gap-1.5 overflow-y-auto rounded-3xl p-2"
@@ -1113,10 +1127,15 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           <div className="mx-auto mb-2 mt-3 flex w-[88%] shrink-0 justify-center">
             <button
               onClick={saveEntry}
+              disabled={justSaved}
               className="rounded-full px-12 py-3 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
-              style={{ backgroundColor: 'var(--accent)', border: '4px solid #1a1a19', boxShadow: '0 4px 0 #1a1a19' }}
+              style={{
+                backgroundColor: justSaved ? 'var(--status-good)' : 'var(--accent)',
+                border: '4px solid #1a1a19',
+                boxShadow: '0 4px 0 #1a1a19',
+              }}
             >
-              {t.result.save}
+              {justSaved ? t.result.saved : t.result.save}
             </button>
           </div>
         </div>

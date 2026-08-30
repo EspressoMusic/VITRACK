@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { NutrientAmounts } from '../types'
+import type { MacroAmounts, NutrientAmounts } from '../types'
 import { NUTRIENTS } from './nutrients'
+import { EMPTY_MACROS, MACROS } from './macros'
 
 /** A food/supplement the user typed in themselves, with nutrients keyed to one base portion. */
 export interface CustomFood {
@@ -11,6 +12,8 @@ export interface CustomFood {
   unitLabel: string
   unitCount: number
   nutrients: NutrientAmounts
+  /** Absent on entries saved before macro tracking existed. */
+  macros?: MacroAmounts
   updatedAt: string
 }
 
@@ -77,7 +80,12 @@ export function searchCustomFoods(query: string, limit = 6): CustomFood[] {
 }
 
 /** Saves (or updates) a custom food definition so it can be found and re-scaled later. */
-export async function saveCustomFood(name: string, portionLabel: string, nutrients: NutrientAmounts): Promise<void> {
+export async function saveCustomFood(
+  name: string,
+  portionLabel: string,
+  nutrients: NutrientAmounts,
+  macros: MacroAmounts = EMPTY_MACROS
+): Promise<void> {
   const key = name.trim().toLowerCase()
   if (!key) return
   const { unitCount, unitLabel } = parsePortion(portionLabel)
@@ -88,6 +96,7 @@ export async function saveCustomFood(name: string, portionLabel: string, nutrien
     unitLabel,
     unitCount: unitCount || 1,
     nutrients,
+    macros,
     updatedAt: new Date().toISOString(),
   }
   const db = await getDb()
@@ -140,7 +149,7 @@ export function scaleCustomFood(
   food: CustomFood,
   quantity: string,
   note: string = 'Calculated from your saved custom entry.'
-): { foods: { name: string; portion: string }[]; nutrients: NutrientAmounts; confidence: 'high'; note: string } | null {
+): { foods: { name: string; portion: string }[]; nutrients: NutrientAmounts; macros: MacroAmounts; confidence: 'high'; note: string } | null {
   const multiplier = quantityMultiplier(quantity, food)
   if (multiplier === null) return null
 
@@ -148,9 +157,15 @@ export function scaleCustomFood(
     NUTRIENTS.map((n) => [n.id, Math.round(food.nutrients[n.id] * multiplier * 100) / 100])
   ) as NutrientAmounts
 
+  const baseMacros = food.macros ?? EMPTY_MACROS
+  const macros = Object.fromEntries(
+    MACROS.map((m) => [m.id, Math.round(baseMacros[m.id] * multiplier * 100) / 100])
+  ) as MacroAmounts
+
   return {
     foods: [{ name: food.name, portion: describeQuantity(quantity, food) }],
     nutrients,
+    macros,
     confidence: 'high',
     note,
   }

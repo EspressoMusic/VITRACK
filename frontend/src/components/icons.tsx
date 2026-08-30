@@ -256,10 +256,36 @@ export function CakeIcon({ className }: IconProps) {
   )
 }
 
+export function SendIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M4.5 19.5 20 12 4.5 4.5l1.8 6.3L15 12l-8.7 1.2-1.8 6.3Z" />
+    </svg>
+  )
+}
+
+export function ChatIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M4 5.5h16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H9l-4.5 4V16H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z" />
+    </svg>
+  )
+}
+
 export function HeartIcon({ className, filled }: IconProps & { filled?: boolean }) {
   return (
     <svg className={className} {...base} fill={filled ? 'currentColor' : 'none'}>
       <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 8 1.6 4.5 5 3.4c2.2-0.7 4.5 0.2 6 2.1 1.5-1.9 3.8-2.8 6-2.1 3.4 1.1 4.7 4.6 3 7.8-2.5 4.7-10 9.3-10 9.3Z" />
+    </svg>
+  )
+}
+
+export function TargetIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="0.5" />
     </svg>
   )
 }

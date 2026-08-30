@@ -9,7 +9,7 @@ export interface LegalPart {
   blocks: LegalBlock[]
 }
 
-export const LEGAL_LAST_UPDATED = '23.08.2026'
+export const LEGAL_LAST_UPDATED = '30.08.2026'
 export const SUPPORT_EMAIL = 'shilohdhd1@gmail.com'
 export const OPERATOR_NAME = 'Shilo'
 export const AI_PROVIDER_NAME = 'OpenAI (ChatGPT / GPT models)'
@@ -43,9 +43,10 @@ export const LEGAL_PARTS: LegalPart[] = [
       {
         heading: '2. Description of the Service',
         paragraphs: [
-          'Vitrack is an application that helps users generally track estimated vitamin and mineral intake, based on meal photos analyzed with artificial intelligence (AI), and a personal questionnaire (age, biological sex, weight, height, activity level, and diet type) used to calculate estimated daily targets.',
+          'Vitrack is an application that helps users generally track estimated vitamin, mineral, calorie, and macronutrient (protein, carbohydrate, and fat) intake, based on meal photos analyzed with artificial intelligence (AI), and a personal questionnaire (age, biological sex, weight, height, activity level, and diet type) used to calculate estimated daily targets.',
           'The results, estimates, and targets shown in the App are only a rough, automated approximation, based on general formulas (such as published RDA values) and imperfect automatic food recognition from images. This is not a laboratory, clinical, or professional assessment.',
-          'The App tracks a broader set of vitamins and minerals than what is shown on screen by default. To keep the main view focused and readable, only a core subset of vitamins is displayed by default; the remaining tracked vitamins and minerals are not shown unless you turn on "Show all vitamins & minerals" in Settings, which reveals the full list. Not every vitamin, mineral, or nutrient that may be relevant to your health is necessarily tracked or displayed by the App, whether or not that setting is enabled.',
+          'The App tracks a broader set of vitamins and minerals than what is shown on screen by default. To keep the main view focused and readable, only a core subset of vitamins is displayed by default; the remaining tracked vitamins and minerals are not shown unless you turn on "Show all vitamins & minerals" in Settings, which reveals the full list. Not every vitamin, mineral, or nutrient that may be relevant to your health is necessarily tracked or displayed by the App, whether or not that setting is enabled. Calorie and macronutrient tracking can likewise be turned off in Settings by users who only want to track vitamins and minerals.',
+          'The App also includes optional motivational features, such as a visual fill-level progress gauge and achievement badges awarded for consistent logging against the App\'s own internal thresholds. These features exist for engagement purposes only; they are not a medical, nutritional, or clinical certification of health, adequacy, or well-being, and unlocking (or not unlocking) a badge says nothing about your actual health status.',
           'The Operator may change, expand, reduce, suspend, or discontinue any part of the Service, temporarily or permanently, at any time and at its discretion, including without prior notice where required for technical or operational reasons. Where possible, reasonable advance notice will be given of material changes.',
         ],
       },
@@ -93,9 +94,10 @@ export const LEGAL_PARTS: LegalPart[] = [
         heading: '8. Important medical, nutritional, and technological disclosure',
         paragraphs: [
           'Vitrack does not provide medical advice, professional nutritional advice, diagnosis, treatment, prevention, or cure of any disease or medical condition, and is not a substitute for a physician, a licensed clinical dietitian, or any other medical professional.',
-          'Food recognition from photos and vitamin/mineral estimates are performed by an automated AI system, and may be incorrect, partial, inaccurate, or misleading — including misidentifying the type of food, the portion size, or failing to identify ingredients at all.',
+          'Food recognition from photos and vitamin, mineral, calorie, and macronutrient estimates are performed by an automated AI system, and may be incorrect, partial, inaccurate, or misleading — including misidentifying the type of food, the portion size, or failing to identify ingredients at all.',
           'The App is not designed and is not able to identify allergens, hazardous ingredients, contamination, spoiled food, food-drug interactions, or any other health risk in a photographed meal. Do not rely on the App to make decisions relating to allergies, sensitivities, diabetes (including carbohydrate counting), pregnancy, breastfeeding, chronic illness, eating disorders, or any other medical condition — without independent verification and approval from a qualified medical professional.',
           'Food and nutrient-source suggestions shown in the App (for example, foods suggested to help close a vitamin or mineral gap) are general and are not filtered for allergens, intolerances, or any personal dietary restriction. If you have a food allergy, intolerance, or sensitivity of any kind, you are solely responsible for checking any food named or suggested by the App against your own medical history before consuming it. The Operator bears no responsibility or liability for any allergic reaction, adverse reaction, or other harm resulting from a food identified, logged, or suggested by the App.',
+          'Some screens in the App display a general phrase associating a shortfall in a specific vitamin or mineral with feelings commonly reported alongside such shortfalls (for example, tiredness or low energy). These phrases reflect generic, population-level associations based solely on your logged food intake for that day — they are not based on any symptom you have actually reported to the App, and are not a diagnosis of the cause of how you currently feel. Do not use these phrases to self-diagnose, rule out, or delay seeking care for any symptom; if a symptom concerns you, consult a qualified medical professional regardless of what the App does or does not show.',
           'The daily targets calculated in the personal questionnaire are based on general, publicly available formulas and are not clinically personalized; do not adjust the dosage of dietary supplements, vitamins, or minerals based solely on data from the App, and in particular not in amounts higher than recommended, without consulting a physician.',
           'In a medical emergency, contact emergency services immediately (for example, Magen David Adom in Israel, phone 101) and do not rely on the App.',
         ],
@@ -155,7 +157,7 @@ export const LEGAL_PARTS: LegalPart[] = [
       {
         heading: '2. What information is collected',
         paragraphs: [
-          '• Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin and mineral targets.',
+          '• Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin, mineral, calorie, and macronutrient targets.',
           '• Meal photos and analysis results: when you photograph a meal, the photo is sent for automatic analysis (see section 3), and the analysis result (list of identified foods, estimated quantities, nutrient estimates, and confidence level) is stored together with the photo: locally on the device (IndexedDB) if you are not signed in, or in a cloud database if you signed in with a Google account.',
           '• Account details: if you sign in with Google, we receive from it (via our authentication provider) your name, email address, and profile picture as provided by Google.',
           '• Subscription and billing status: the plan type selected (monthly/yearly) and active/inactive status, recorded by the App once a purchase is completed through Paddle. We do not collect or store your payment method details (such as card numbers) — these are entered directly into Paddle\'s checkout and handled solely by Paddle, as described in section 5 below.',
@@ -173,7 +175,7 @@ export const LEGAL_PARTS: LegalPart[] = [
       {
         heading: '4. How we use information',
         paragraphs: [
-          '• Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, and tracking daily/weekly vitamin and mineral intake.',
+          '• Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, tracking daily/weekly vitamin, mineral, calorie, and macronutrient intake, and computing progress shown in gauges and achievement badges.',
           '• Managing accounts, sign-in, and syncing across devices for those who choose to sign in.',
           '• Managing subscriptions and payments, processed through Paddle.',
           '• Responding to support requests sent to our email address.',
@@ -238,7 +240,7 @@ export const LEGAL_PARTS: LegalPart[] = [
         heading: '1. What technologies we use',
         paragraphs: [
           'The App does not currently use advertising cookies or third-party ad tracking. We do use browser storage technologies essential to operating the App:',
-          '• Local Storage — to save the state of your personal questionnaire, your calculated nutritional targets, and your subscription status on your device.',
+          '• Local Storage — to save the state of your personal questionnaire, your calculated nutritional targets, your calorie/macro-tracking display preference, and your subscription status on your device.',
           '• IndexedDB — to save your meal log on your device when you are not signed in.',
           '• Sign-in related storage — if you sign in with Google, our authentication provider (Supabase, via Google) may store session tokens in local storage or cookies, to keep you signed in between visits.',
         ],

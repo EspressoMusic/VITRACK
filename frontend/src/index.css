@@ -10,6 +10,44 @@
   font-display: swap;
 }
 
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.letter-reveal {
+  display: inline-block;
+  opacity: 0;
+  animation: letterReveal 0.7s ease-out forwards;
+}
+
+@keyframes goldShineSweep {
+  0%,
+  100% {
+    background-position: -120% 0;
+  }
+  50% {
+    background-position: 220% 0;
+  }
+}
+
+.letter-reveal-gold {
+  display: inline-block;
+  opacity: 0;
+  background-image: linear-gradient(100deg, #8a6a17 0%, #8a6a17 42%, #fff3c4 50%, #8a6a17 58%, #8a6a17 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: letterReveal 0.7s ease-out forwards, goldShineSweep 2.6s ease-in-out infinite;
+}
+
 :root {
   color-scheme: light;
   --surface-0: #fde3a3;
@@ -267,6 +305,25 @@ button:active {
   animation-fill-mode: forwards;
 }
 
+@keyframes mini-confetti-fall {
+  0% {
+    transform: translateY(-16px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(360px) rotate(360deg);
+    opacity: 0.9;
+  }
+}
+.mini-confetti-piece {
+  position: absolute;
+  top: -16px;
+  border-radius: 2px;
+  animation-name: mini-confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
 @keyframes card-shine {
   0% {
     transform: translateX(-150%) skewX(-20deg);
@@ -498,6 +555,160 @@ button:active {
   animation: sparkle-twinkle 1.8s ease-in-out infinite;
 }
 
+@keyframes welcome-cta-glow {
+  0%,
+  100% {
+    box-shadow: 0 2px 0 #000000, 0 0 0 0 rgba(184, 132, 42, 0.45);
+  }
+  50% {
+    box-shadow: 0 2px 0 #000000, 0 0 0 8px rgba(184, 132, 42, 0);
+  }
+}
+.welcome-cta-glow {
+  animation: welcome-cta-glow 2s ease-in-out infinite;
+}
+
+@keyframes mini-button-press {
+  0%,
+  75% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 3px 0 #000000;
+  }
+  85% {
+    transform: scale(0.92) translateY(2px);
+    box-shadow: 0 1px 0 #000000;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 3px 0 #000000;
+  }
+}
+.mini-button-press {
+  animation-name: mini-button-press;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes finger-tap {
+  0%,
+  58% {
+    opacity: 0;
+    transform: translate(10px, 14px) scale(0.9);
+  }
+  66% {
+    opacity: 1;
+    transform: translate(2px, 4px) scale(1);
+  }
+  75%,
+  85% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.88);
+  }
+  95%,
+  100% {
+    opacity: 0;
+    transform: translate(-4px, -10px) scale(0.9);
+  }
+}
+.finger-tap {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  animation-name: finger-tap;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes welcome-jar-fill-h {
+  0% {
+    width: 4%;
+  }
+  100% {
+    width: 82%;
+  }
+}
+.welcome-jar-fill-h {
+  animation: welcome-jar-fill-h 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes welcome-mini-bar-fill {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: var(--bar-target, 70%);
+  }
+}
+.welcome-mini-bar-fill {
+  animation: welcome-mini-bar-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+@keyframes welcome-benefit-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.welcome-benefit-text {
+  animation: welcome-benefit-in 0.35s ease-out both;
+}
+
+@keyframes power-on-flash {
+  0%,
+  61% {
+    opacity: 0;
+  }
+  64% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.power-on-flash {
+  animation: power-on-flash 1050ms ease-out both;
+  background-color: #ffffff;
+}
+
+@keyframes vitamin-chip-drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--chip-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(-14px) rotate(calc(var(--chip-rotate, 0deg) * -1));
+  }
+}
+@keyframes chip-border-level {
+  0%,
+  100% {
+    border-color: #e0554f;
+  }
+  50% {
+    border-color: #4caf6b;
+  }
+}
+.vitamin-chip-drift {
+  animation: vitamin-chip-drift 5s ease-in-out infinite, chip-border-level 5s ease-in-out infinite;
+}
+
+@keyframes chip-level-fill {
+  0%,
+  100% {
+    width: 20%;
+  }
+  50% {
+    width: 92%;
+  }
+}
+.chip-level-fill {
+  animation: chip-level-fill 5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
@@ -510,8 +721,29 @@ button:active {
   .featured-card-glow,
   .superfood-float,
   .food-wiggle-in,
-  .icon-idle-wiggle {
+  .icon-idle-wiggle,
+  .welcome-cta-glow,
+  .status-pulse,
+  .mini-button-press,
+  .welcome-jar-fill-h,
+  .welcome-mini-bar-fill,
+  .welcome-benefit-text,
+  .power-on-flash,
+  .vitamin-chip-drift,
+  .chip-level-fill {
     animation: none;
+  }
+  .welcome-jar-fill-h {
+    width: 82%;
+  }
+  .welcome-mini-bar-fill {
+    width: var(--bar-target, 70%);
+  }
+  .vitamin-chip-drift {
+    border-color: var(--border-strong) !important;
+  }
+  .chip-level-fill {
+    width: 60%;
   }
   .sparkle-dot {
     display: none;
@@ -526,6 +758,12 @@ button:active {
     display: none;
   }
   .confetti-layer {
+    display: none;
+  }
+  .mini-confetti-piece {
+    display: none;
+  }
+  .finger-tap {
     display: none;
   }
   .shine-sweep {

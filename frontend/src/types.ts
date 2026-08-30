@@ -30,6 +30,10 @@ export interface IdentifiedFood {
   portion: string
 }
 
+export type MacroId = 'calories' | 'carbsG' | 'fatG' | 'proteinG'
+
+export type MacroAmounts = Record<MacroId, number>
+
 export interface MealEntry {
   id: string
   /** ISO date string, e.g. 2026-08-14 (local day the meal was logged) */
@@ -39,6 +43,8 @@ export interface MealEntry {
   imageDataUrl: string
   foods: IdentifiedFood[]
   nutrients: NutrientAmounts
+  /** Calories + carbs/fat/protein for this meal. Absent on entries logged before this field existed. */
+  macros?: MacroAmounts
   confidence: 'low' | 'medium' | 'high'
   analysisNote?: string
 }
@@ -51,6 +57,9 @@ export type ActivityLevel = 'sedentary' | 'moderate' | 'active'
 
 export type DietType = 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian'
 
+/** What the user is optimizing for — shifts the calorie target and protein/carb/fat split. */
+export type WeightGoal = 'lose' | 'maintain' | 'gain'
+
 export interface OnboardingProfile {
   age: number
   sex: Sex
@@ -58,6 +67,7 @@ export interface OnboardingProfile {
   heightCm: number
   activityLevel: ActivityLevel
   diet: DietType
+  goal: WeightGoal
 }
 
 export type BillingPlan = 'monthly' | 'yearly'

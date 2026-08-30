@@ -1,12 +1,14 @@
 import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
 import { NUTRIENT_MAP, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, coverageStatus } from '../lib/nutrients'
+import { EMPTY_MACROS, isMacroTrackingEnabled } from '../lib/macros'
 import { isManualEntryPhoto } from '../lib/mealPhoto'
 import { useLanguage } from '../contexts/LanguageContext'
 import { MEAL_DETAIL_MODAL_STRINGS } from '../lib/i18n/mealDetailModal'
 import type { Lang } from '../lib/i18n/lang'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
+import { MacroSummaryRow } from './MacroSummaryRow'
 
 const CONFIDENCE_VAR: Record<MealEntry['confidence'], string> = {
   high: 'var(--status-good)',
@@ -107,6 +109,8 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
                   </div>
                 ))}
               </div>
+
+              {isMacroTrackingEnabled() && <MacroSummaryRow macros={meal.macros ?? EMPTY_MACROS} />}
 
               {meal.analysisNote && (
                 <p className="rounded-lg px-2.5 py-1.5 text-[11px]" style={{ backgroundColor: 'var(--status-warning-soft)', color: 'var(--text-primary)' }}>

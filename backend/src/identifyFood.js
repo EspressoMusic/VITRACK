@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { withOpenAIRetry } from './openaiRetry.js'
 
 // Lightweight companion to analyzeFood.js. This one ONLY answers "what food is this?" from a
 // single camera frame — it does not estimate nutrients. Once the user confirms, the frontend
@@ -63,22 +64,24 @@ export async function identifyFood(imageDataUrl) {
   }
 
   const client = new OpenAI()
-  const response = await client.chat.completions.create({
-    model: MODEL,
-    max_tokens: 300,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'What food is shown in this photo?' },
-          { type: 'image_url', image_url: { url: imageDataUrl } },
-        ],
-      },
-    ],
-    tools: [IDENTIFY_TOOL],
-    tool_choice: { type: 'function', function: { name: 'report_food_identification' } },
-  })
+  const response = await withOpenAIRetry(() =>
+    client.chat.completions.create({
+      model: MODEL,
+      max_tokens: 300,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What food is shown in this photo?' },
+            { type: 'image_url', image_url: { url: imageDataUrl } },
+          ],
+        },
+      ],
+      tools: [IDENTIFY_TOOL],
+      tool_choice: { type: 'function', function: { name: 'report_food_identification' } },
+    })
+  )
 
   const toolCall = response.choices[0]?.message?.tool_calls?.[0]
   if (!toolCall) {

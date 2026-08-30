@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { analyzeFoodImage, analyzeFoodText } from './analyzeFood.js'
 import { identifyFood } from './identifyFood.js'
+import { askNutritionBot } from './nutritionChat.js'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -57,6 +58,31 @@ app.post('/api/identify-food', async (req, res) => {
   } catch (err) {
     console.error('Food identification failed:', err)
     res.status(err.status || 500).json({ error: err.message || 'Food identification failed.' })
+  }
+})
+
+app.post('/api/nutrition-chat', async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({
+      error: 'Server is missing OPENAI_API_KEY. Add it to backend/.env and restart the server.',
+    })
+  }
+
+  const { messages, lang } = req.body || {}
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'Request body must include a non-empty "messages" array.' })
+  }
+
+  const history = messages
+    .filter((m) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string')
+    .slice(-10)
+
+  try {
+    const result = await askNutritionBot(history, lang || 'en')
+    res.json(result)
+  } catch (err) {
+    console.error('Nutrition chat failed:', err)
+    res.status(err.status || 500).json({ error: err.message || 'Nutrition chat failed.' })
   }
 })
 

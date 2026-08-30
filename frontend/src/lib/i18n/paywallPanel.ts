@@ -3,7 +3,7 @@ import type { Lang } from './lang'
 interface PaywallPanelStrings {
   headline: string
   features: [string, string, string, string]
-  yearly: { title: string; note: string; badge: string; period: string }
+  yearly: { title: string; note: string; period: string }
   monthly: { title: string; period: string; note: string }
   agreePrefix: string
   agreeLinkLabel: string
@@ -31,7 +31,7 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'Calendar history & insights',
       'Deficiency alerts & food tips',
     ],
-    yearly: { title: 'Yearly', note: '≈ $7.42/mo', badge: 'Save 55%', period: '/year' },
+    yearly: { title: 'Yearly', note: '≈ $7.42/mo', period: '/year' },
     monthly: { title: 'Monthly', period: '/month', note: '3-day free trial' },
     agreePrefix: 'I agree to the ',
     agreeLinkLabel: 'Terms & Privacy Policy',
@@ -57,7 +57,7 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'היסטוריית לוח שנה ותובנות',
       'התראות על חוסרים וטיפים לתזונה',
     ],
-    yearly: { title: 'שנתי', note: '≈ $7.42/חודש', badge: 'חיסכון של 55%', period: '/שנה' },
+    yearly: { title: 'שנתי', note: '≈ $7.42/חודש', period: '/שנה' },
     monthly: { title: 'חודשי', period: '/חודש', note: 'תקופת ניסיון של 3 ימים בחינם' },
     agreePrefix: 'אני מאשר/ת את ',
     agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
@@ -83,7 +83,7 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'سجل التقويم والرؤى',
       'تنبيهات النقص ونصائح غذائية',
     ],
-    yearly: { title: 'سنوي', note: '≈ $7.42/شهريًا', badge: 'وفّر 55%', period: '/سنويًا' },
+    yearly: { title: 'سنوي', note: '≈ $7.42/شهريًا', period: '/سنويًا' },
     monthly: { title: 'شهري', period: '/شهريًا', note: 'تجربة مجانية لمدة 3 أيام' },
     agreePrefix: 'أوافق على ',
     agreeLinkLabel: 'الشروط وسياسة الخصوصية',
