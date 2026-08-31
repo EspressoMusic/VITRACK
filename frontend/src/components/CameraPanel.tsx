@@ -671,9 +671,13 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setAnalyzeErrorMsg(null)
 
     // A previously-saved custom food already has known nutrients for its own portion, so scale
-    // those directly instead of re-asking the AI estimator every time it's logged again.
+    // those directly instead of re-asking the AI estimator every time it's logged again — but
+    // only when it actually has real macro data. The custom-entry form (for supplements/labels)
+    // never collects calories/macros, so entries saved that way default to all-zero macros; using
+    // that shortcut for those would permanently show 0 kcal for foods that clearly have calories.
     const customFood = findCustomFood(manualName)
-    if (customFood) {
+    const customFoodHasMacros = customFood?.macros && Object.values(customFood.macros).some((v) => v > 0)
+    if (customFood && customFoodHasMacros) {
       const scaled = scaleCustomFood(customFood, manualQuantity, t.scaledFromCustomNote)
       if (scaled) {
         devLog('nutrition', `Scaled from saved custom entry: ${customFood.name}`)

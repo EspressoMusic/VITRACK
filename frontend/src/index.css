@@ -107,7 +107,7 @@
 }
 
 html {
-  font-size: 23px;
+  font-size: clamp(18px, 5.9vw, 23px);
 }
 
 html,

@@ -34,6 +34,9 @@ interface SettingsPanelStrings {
     showAll: string
     showAllDesc: string
   }
+  language: {
+    heading: string
+  }
   app: {
     heading: string
     downloadApp: string
@@ -90,6 +93,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       showAll: 'Show all vitamins & minerals',
       showAllDesc: 'Off focuses the app on the 6 that matter most',
     },
+    language: {
+      heading: 'Language',
+    },
     app: {
       heading: 'App',
       downloadApp: 'Download app',
@@ -144,6 +150,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       showAll: 'הצגת כל הוויטמינים והמינרלים',
       showAllDesc: 'כבוי מתמקד ב-6 הכי חשובים',
     },
+    language: {
+      heading: 'שפה',
+    },
     app: {
       heading: 'אפליקציה',
       downloadApp: 'הורדת האפליקציה',
@@ -197,6 +206,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       heading: 'العناصر الغذائية',
       showAll: 'إظهار كل الفيتامينات والمعادن',
       showAllDesc: 'عند الإيقاف يركّز التطبيق على أهم 6 فقط',
+    },
+    language: {
+      heading: 'اللغة',
     },
     app: {
       heading: 'التطبيق',

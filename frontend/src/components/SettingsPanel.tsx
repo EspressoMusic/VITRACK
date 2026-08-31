@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { LANGUAGES } from '../lib/i18n/lang'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
@@ -30,7 +31,7 @@ export function SettingsPanel({
   onNutrientModeChange: () => void
 }) {
   const { user, signOut, deleteAccount } = useAuth()
-  const { lang } = useLanguage()
+  const { lang, setLang } = useLanguage()
   const t = SETTINGS_PANEL_STRINGS[lang]
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
@@ -324,6 +325,31 @@ export function SettingsPanel({
                   }}
                 />
               </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
+              {t.language.heading}
+            </p>
+            <div
+              className="flex items-center gap-1 rounded-xl p-1"
+              style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+            >
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => setLang(l.id)}
+                  className="flex-1 rounded-lg py-1.5 text-[13px] font-medium transition-colors"
+                  style={{
+                    backgroundColor: l.id === lang ? 'var(--accent-strong)' : 'transparent',
+                    color: l.id === lang ? '#ffffff' : 'var(--text-primary)',
+                  }}
+                >
+                  {l.nativeLabel}
+                </button>
+              ))}
             </div>
           </div>
 
