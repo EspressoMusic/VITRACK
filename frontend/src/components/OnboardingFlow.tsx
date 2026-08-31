@@ -523,12 +523,12 @@ const VITAMIN_CHIPS: {
   duration: string
   delay: string
 }[] = [
-  { id: 'vitaminC', top: '4%', start: '-2%', rotate: -6, duration: '4.8s', delay: '0s' },
-  { id: 'vitaminD', top: '13%', end: '-1%', rotate: 5, duration: '5.6s', delay: '0.6s' },
-  { id: 'vitaminB12', top: '40%', start: '-6%', rotate: -4, duration: '5.2s', delay: '1.1s' },
-  { id: 'vitaminA', top: '46%', end: '-5%', rotate: 6, duration: '4.6s', delay: '0.3s' },
-  { id: 'vitaminB9', bottom: '8%', start: '0%', rotate: 4, duration: '5.9s', delay: '0.9s' },
-  { id: 'vitaminB6', bottom: '3%', end: '-2%', rotate: -5, duration: '5.1s', delay: '1.4s' },
+  { id: 'vitaminC', top: '4%', start: '-10%', rotate: -6, duration: '4.8s', delay: '0s' },
+  { id: 'vitaminD', top: '13%', end: '-9%', rotate: 5, duration: '5.6s', delay: '0.6s' },
+  { id: 'vitaminB12', top: '40%', start: '-14%', rotate: -4, duration: '5.2s', delay: '1.1s' },
+  { id: 'vitaminA', top: '46%', end: '-13%', rotate: 6, duration: '4.6s', delay: '0.3s' },
+  { id: 'vitaminB9', bottom: '8%', start: '-8%', rotate: 4, duration: '5.9s', delay: '0.9s' },
+  { id: 'vitaminB6', bottom: '3%', end: '-10%', rotate: -5, duration: '5.1s', delay: '1.4s' },
 ]
 
 /** Scan-corner bracket — matches the gold focus corners drawn over the real live viewfinder. */
@@ -722,6 +722,8 @@ function TapFinger({ durationMs }: { durationMs: number }) {
   )
 }
 
+const WELCOME_SCAN_SCALE = 0.72
+
 function WelcomeScanAnimation() {
   const { lang } = useLanguage()
   const camera = CAMERA_PANEL_STRINGS[lang]
@@ -757,7 +759,11 @@ function WelcomeScanAnimation() {
   }, [screen])
 
   return (
-    <div className="relative mx-auto flex items-center justify-center" style={{ width: 340, height: 500 }}>
+    <div className="relative mx-auto" style={{ width: 340 * WELCOME_SCAN_SCALE, height: 500 * WELCOME_SCAN_SCALE }}>
+    <div
+      className="absolute left-0 top-0 flex items-center justify-center"
+      style={{ width: 340, height: 500, transform: `scale(${WELCOME_SCAN_SCALE})`, transformOrigin: 'top left' }}
+    >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         {VITAMIN_CHIPS.map((chip) => (
           <span
@@ -935,6 +941,7 @@ function WelcomeScanAnimation() {
       </div>
       )}
       </div>
+      </div>
     </div>
   )
 }
@@ -953,7 +960,7 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
     <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-4 pt-1 text-center">
       <div className="flex flex-col gap-1">
         <p
-          className="mx-auto max-w-[85%] text-4xl"
+          className="mx-auto max-w-[85%] text-3xl"
           style={{
             color: 'var(--accent-strong)',
             fontFamily: "'Caveat', cursive",
