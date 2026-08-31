@@ -455,17 +455,41 @@ function AnimatedLetters({
   letterStyle?: React.CSSProperties
   letterClassName?: string
 }) {
+  // Each letter is its own inline-block span (for the stagger animation), which lets the
+  // browser wrap the line between any two letters — including mid-word. Grouping each word's
+  // letters under a nowrap wrapper keeps line breaks at word boundaries, like normal text.
+  const chunks = text.match(/\S+|\s+/g) ?? []
+  let pos = 0
   return (
     <>
-      {text.split('').map((ch, i) => (
-        <span
-          key={startIndex + i}
-          className={letterClassName}
-          style={{ whiteSpace: 'pre', animationDelay: `${(startIndex + i) * LETTER_STAGGER_MS}ms`, ...letterStyle }}
-        >
-          {ch}
-        </span>
-      ))}
+      {chunks.map((chunk, chunkIndex) => {
+        const start = pos
+        pos += chunk.length
+        if (/^\s/.test(chunk)) {
+          return (
+            <span key={startIndex + start} style={{ whiteSpace: 'pre-wrap' }}>
+              {chunk}
+            </span>
+          )
+        }
+        return (
+          <span key={startIndex + start} style={{ whiteSpace: 'nowrap' }}>
+            {chunk.split('').map((ch, i) => (
+              <span
+                key={startIndex + start + i}
+                className={letterClassName}
+                style={{
+                  whiteSpace: 'pre',
+                  animationDelay: `${(startIndex + start + i) * LETTER_STAGGER_MS}ms`,
+                  ...letterStyle,
+                }}
+              >
+                {ch}
+              </span>
+            ))}
+          </span>
+        )
+      })}
     </>
   )
 }

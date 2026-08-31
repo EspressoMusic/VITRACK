@@ -120,6 +120,12 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   if (meals.length === 0) {
     return (
       <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
+        <p
+          className="text-lg font-extrabold leading-snug tracking-tight"
+          style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
+        >
+          {t.notEatenTodaySentence}
+        </p>
         <div className="mt-3">
           <WeeklyGoalGlass percent={0} />
         </div>
@@ -131,7 +137,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        {todayFeeling && (
+        {todayFeeling ? (
           <button
             type="button"
             onClick={() => setFeelingOpen(true)}
@@ -140,6 +146,13 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           >
             {t.feelingSentence(NUTRIENT_FEELING[lang][todayFeeling.id])}
           </button>
+        ) : (
+          <p
+            className="max-w-[85%] text-lg font-extrabold leading-snug tracking-tight"
+            style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
+          >
+            {t.notEatenTodaySentence}
+          </p>
         )}
         <div className="mt-3">
           <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
