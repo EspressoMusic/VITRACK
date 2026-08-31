@@ -462,7 +462,7 @@ function AnimatedLetters({
   let pos = 0
   return (
     <>
-      {chunks.map((chunk, chunkIndex) => {
+      {chunks.map((chunk) => {
         const start = pos
         pos += chunk.length
         if (/^\s/.test(chunk)) {
