@@ -6,8 +6,7 @@ import { isMacroTrackingEnabled } from '../lib/macros'
 import { ACHIEVEMENT_TIERS, countGoalDays, nextTier, type AchievementTier } from '../lib/achievements'
 import { useLanguage } from '../contexts/LanguageContext'
 import { ACHIEVEMENTS_PANEL_STRINGS } from '../lib/i18n/achievementsPanel'
-import { CloseIcon, LockIcon } from './icons'
-import { AchievementDoll } from './AchievementDoll'
+import { CloseIcon, LockIcon, MedalIcon } from './icons'
 
 /** Explains a single tier: whether it's unlocked, and if not, how many more goal days are needed. */
 export function AchievementDetailModal({
@@ -52,11 +51,14 @@ export function AchievementDetailModal({
               <LockIcon className="h-3 w-3" />
             </span>
           )}
-          <AchievementDoll color={tier.color} locked={!unlocked} className="h-20 w-20" />
+          <MedalIcon className="h-16 w-16" strokeWidth={2} style={{ color: unlocked ? tier.color : 'var(--text-secondary)' }} />
         </div>
         <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-          {t.tierLabel(tier.threshold)}
+          {t.tierName(tier.id)}
         </h2>
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+          {t.tierLabel(tier.threshold)}
+        </p>
         <p className="text-xs font-semibold" style={{ color: unlocked ? 'var(--accent-strong)' : 'var(--text-secondary)' }}>
           {unlocked ? t.tierUnlockedHint : t.tierNeededHint(remaining)}
         </p>
@@ -110,29 +112,20 @@ export function AchievementsPanel({ onClose }: { onClose: () => void }) {
           {next ? t.progress(goalDayCount, next.threshold) : t.allUnlocked}
         </p>
 
-        <div className="grid shrink-0 grid-cols-3 gap-2.5">
+        <div className="thin-scroll grid min-h-0 flex-1 auto-rows-min grid-cols-3 content-start gap-2 overflow-y-auto p-0.5">
           {ACHIEVEMENT_TIERS.map((tier) => {
             const unlocked = goalDayCount >= tier.threshold
             return (
               <div
                 key={tier.id}
-                className="relative flex flex-col items-center gap-1 rounded-lg p-2 pt-2.5"
+                className="relative mx-auto flex aspect-square w-16 flex-col items-center justify-center rounded-lg p-1.5"
                 style={{
                   backgroundColor: 'var(--surface-cream)',
                   border: '2px solid #000000',
-                  boxShadow: '0 4px 0 #000000',
+                  boxShadow: '0 3px 0 #000000',
                   opacity: unlocked ? 1 : 0.8,
                 }}
               >
-                {!unlocked && (
-                  <span
-                    className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-                    style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000', color: 'var(--text-secondary)' }}
-                  >
-                    <LockIcon className="h-2.5 w-2.5" />
-                  </span>
-                )}
-                <AchievementDoll color={tier.color} locked={!unlocked} />
                 <span className="text-center text-[10px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
                   {t.tierLabel(tier.threshold)}
                 </span>

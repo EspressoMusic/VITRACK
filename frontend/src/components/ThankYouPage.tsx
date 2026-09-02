@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { ConfettiBurst } from './ConfettiBurst'
-import { GoogleSignInOverlay } from './GoogleSignInOverlay'
+import { GoogleConsentGate } from './GoogleConsentGate'
 import { SparkleIcon } from './icons'
 import { useLanguage } from '../contexts/LanguageContext'
 import { THANK_YOU_PAGE_STRINGS } from '../lib/i18n/thankYouPage'
@@ -9,7 +9,7 @@ import { THANK_YOU_PAGE_STRINGS } from '../lib/i18n/thankYouPage'
 /** Static post-purchase landing screen at #thank-you — used as the TikTok ad conversion URL. */
 export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
   const { user } = useAuth()
-  const { lang } = useLanguage()
+  const { lang, dir } = useLanguage()
   const t = THANK_YOU_PAGE_STRINGS[lang]
 
   return (
@@ -61,17 +61,18 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
           </>
         ) : isSupabaseConfigured ? (
           <>
-            <div className="relative mt-2 w-full">
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-hidden="true"
-                className="w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
-                style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
-              >
-                {t.signInWithGoogle}
-              </button>
-              <GoogleSignInOverlay />
+            <div className="mt-2 w-full">
+              <GoogleConsentGate t={t} dir={dir}>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className="w-full rounded-full py-2.5 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+                >
+                  {t.signInWithGoogle}
+                </button>
+              </GoogleConsentGate>
             </div>
             <button type="button" onClick={onContinue} className="text-xs underline" style={{ color: 'var(--text-secondary)' }}>
               {t.continueWithoutSaving}

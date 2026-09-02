@@ -9,7 +9,7 @@ export interface LegalPart {
   blocks: LegalBlock[]
 }
 
-export const LEGAL_LAST_UPDATED = '30.08.2026'
+export const LEGAL_LAST_UPDATED = '02.09.2026'
 export const SUPPORT_EMAIL = 'shilohdhd1@gmail.com'
 export const OPERATOR_NAME = 'Shilo'
 export const AI_PROVIDER_NAME = 'OpenAI (ChatGPT / GPT models)'
@@ -46,7 +46,7 @@ export const LEGAL_PARTS: LegalPart[] = [
           'Vitrack is an application that helps users generally track estimated vitamin, mineral, calorie, and macronutrient (protein, carbohydrate, and fat) intake, based on meal photos analyzed with artificial intelligence (AI), and a personal questionnaire (age, biological sex, weight, height, activity level, and diet type) used to calculate estimated daily targets.',
           'The results, estimates, and targets shown in the App are only a rough, automated approximation, based on general formulas (such as published RDA values) and imperfect automatic food recognition from images. This is not a laboratory, clinical, or professional assessment.',
           'The App tracks a broader set of vitamins and minerals than what is shown on screen by default. To keep the main view focused and readable, only a core subset of vitamins is displayed by default; the remaining tracked vitamins and minerals are not shown unless you turn on "Show all vitamins & minerals" in Settings, which reveals the full list. Not every vitamin, mineral, or nutrient that may be relevant to your health is necessarily tracked or displayed by the App, whether or not that setting is enabled. Calorie and macronutrient tracking can likewise be turned off in Settings by users who only want to track vitamins and minerals.',
-          'The App also includes optional motivational features, such as a visual fill-level progress gauge and achievement badges awarded for consistent logging against the App\'s own internal thresholds. These features exist for engagement purposes only; they are not a medical, nutritional, or clinical certification of health, adequacy, or well-being, and unlocking (or not unlocking) a badge says nothing about your actual health status.',
+          'The App also includes optional motivational, game-like features, such as a visual fill-level progress gauge, achievement badges awarded for consistent logging against the App\'s own internal thresholds, and short "superfood" / "food to limit" cards with a one-line hook (for example, a fruit tagged as something that "may help support" a certain body function) and a brief explanation. These features exist for engagement and general education purposes only, in a playful, gamified format. They are not medical, nutritional, or clinical advice, diagnosis, treatment, or certification of health, adequacy, or well-being; a food\'s hook line or badge does not mean that food will treat, cure, or prevent any condition, and unlocking (or not unlocking) a badge says nothing about your actual health status.',
           'The Operator may change, expand, reduce, suspend, or discontinue any part of the Service, temporarily or permanently, at any time and at its discretion, including without prior notice where required for technical or operational reasons. Where possible, reasonable advance notice will be given of material changes.',
         ],
       },

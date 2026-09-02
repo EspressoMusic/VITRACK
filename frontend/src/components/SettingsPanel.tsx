@@ -16,7 +16,7 @@ import {
   requestNotificationPermission,
 } from '../lib/notifications'
 import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
-import { GoogleSignInOverlay } from './GoogleSignInOverlay'
+import { GoogleConsentGate } from './GoogleConsentGate'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
 import { SETTINGS_PANEL_STRINGS } from '../lib/i18n/settingsPanel'
@@ -79,7 +79,7 @@ export function SettingsPanel({
   onNutrientModeChange: () => void
 }) {
   const { user, signOut, deleteAccount } = useAuth()
-  const { lang, setLang } = useLanguage()
+  const { lang, dir, setLang } = useLanguage()
   const t = SETTINGS_PANEL_STRINGS[lang]
   const [confirmingClear, setConfirmingClear] = useState(false)
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false)
@@ -168,7 +168,7 @@ export function SettingsPanel({
       role="dialog"
       aria-modal="true"
     >
-      <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-5 pb-4 pt-5">
+      <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-5 pb-20 pt-12">
           <SettingsSection label={t.account.heading} isOpen={openSection === 'account'} onToggle={() => toggleSection('account')}>
             {user && !user.is_anonymous ? (
               <div className="flex flex-col gap-2">
@@ -230,7 +230,7 @@ export function SettingsPanel({
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <div className="relative w-full">
+                <GoogleConsentGate t={t.account} dir={dir}>
                   <button
                     type="button"
                     tabIndex={-1}
@@ -240,8 +240,7 @@ export function SettingsPanel({
                   >
                     <UserIcon className="h-4 w-4" /> {t.account.signInGoogle}
                   </button>
-                  <GoogleSignInOverlay />
-                </div>
+                </GoogleConsentGate>
                 {!isSupabaseConfigured && (
                   <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
                     {t.account.notConnected}

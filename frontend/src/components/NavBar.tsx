@@ -60,7 +60,7 @@ export function NavBar({
 
   return (
     <nav
-      className="sticky bottom-0 flex shrink-0 justify-center"
+      className="absolute inset-x-0 bottom-0 z-20 flex justify-center"
       style={{ backgroundColor: '#eec978', borderTop: '2px solid #000000' }}
     >
       <div className="relative grid w-full max-w-md grid-cols-5 items-center">

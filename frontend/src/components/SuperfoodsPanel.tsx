@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SUPERFOODS, superfoodOfTheDay, type SuperfoodDef } from '../lib/superfoods'
 import { JUNK_FOODS, junkFoodOfTheDay, type JunkFoodDef } from '../lib/junkFoods'
@@ -18,7 +18,7 @@ import { SUPERFOOD_CONTENT, SUPERFOODS_PANEL_CHROME, type BenefitPart } from '..
 import { JUNK_FOOD_CONTENT, JUNK_FOODS_PANEL_CHROME } from '../lib/i18n/junkFoodsPanel'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import type { NutrientId } from '../types'
-import { CloseIcon, StarIcon } from './icons'
+import { CloseIcon, PlusIcon } from './icons'
 
 function NutrientInfoModal({ id, onClose }: { id: NutrientId; onClose: () => void }) {
   const { lang } = useLanguage()
@@ -340,7 +340,7 @@ function SuperfoodRow({
           onSelect()
         }
       }}
-      className={`relative flex w-28 shrink-0 flex-col items-center justify-start gap-1 rounded-xl px-1 py-2.5 text-center transition-transform active:translate-y-0.5 ${featured ? 'featured-card-glow calendar-day-gold' : ''}`}
+      className={`relative flex w-full shrink-0 flex-col items-center justify-start gap-0.5 rounded-xl px-1 py-2 text-center transition-transform active:translate-y-0.5 ${featured ? 'featured-card-glow calendar-day-gold' : ''}`}
       style={{
         backgroundColor: featured ? undefined : 'var(--surface-cream)',
         border: '2px solid #000000',
@@ -349,15 +349,17 @@ function SuperfoodRow({
         opacity: isDragging ? 0.35 : 1,
         touchAction: 'none',
         cursor: 'grab',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
       {featured && <span className="shine-sweep" aria-hidden />}
-      <SuperfoodImage food={food} className={`h-14 w-14 shrink-0 ${featured ? 'superfood-float' : ''}`} emojiSize="2.5em" />
-      <span className="w-full truncate text-[12px] font-semibold" style={{ color: featured ? '#3a2a06' : 'var(--text-primary)' }}>
+      <SuperfoodImage food={food} className={`h-11 w-11 shrink-0 ${featured ? 'superfood-float' : ''}`} emojiSize="2em" />
+      <span className="w-full truncate text-[11px] font-semibold" style={{ color: featured ? '#3a2a06' : 'var(--text-primary)' }}>
         {content.name}
       </span>
       <span
-        className="flex min-h-[2.5em] w-full items-center justify-center text-[10px] font-bold leading-tight"
+        className="line-clamp-2 flex min-h-[2.2em] w-full items-center justify-center text-[9px] font-bold leading-tight"
         style={{ color: featured ? '#3a2a06' : 'var(--accent-strong)' }}
       >
         {content.power}
@@ -395,7 +397,7 @@ function SuperfoodList({
   }
 
   return (
-    <div className="thin-scroll grid h-full auto-rows-min grid-cols-2 justify-items-center gap-x-1.5 gap-y-3 overflow-y-auto content-start pb-1 pt-3">
+    <div className="thin-scroll grid h-full auto-rows-min grid-cols-3 justify-items-stretch gap-x-1.5 gap-y-3 overflow-y-auto content-start pb-2 pt-3">
       {items.map((food) => (
         <SuperfoodRow
           key={food.id}
@@ -492,7 +494,7 @@ function JunkFoodRow({
           onSelect()
         }
       }}
-      className={`relative flex w-28 shrink-0 flex-col items-center justify-start gap-1 rounded-xl px-1 py-2.5 text-center transition-transform active:translate-y-0.5 ${featured ? 'featured-card-glow calendar-day-gold' : ''}`}
+      className={`relative flex w-full shrink-0 flex-col items-center justify-start gap-0.5 rounded-xl px-1 py-2 text-center transition-transform active:translate-y-0.5 ${featured ? 'featured-card-glow calendar-day-gold' : ''}`}
       style={{
         backgroundColor: featured ? undefined : 'var(--surface-cream)',
         border: '2px solid #000000',
@@ -501,17 +503,19 @@ function JunkFoodRow({
         opacity: isDragging ? 0.35 : 1,
         touchAction: 'none',
         cursor: 'grab',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
       {featured && <span className="shine-sweep" aria-hidden />}
-      <span className={`flex h-14 w-14 shrink-0 items-center justify-center ${featured ? 'superfood-float' : ''}`} style={{ fontSize: '2.5em' }} aria-hidden>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center ${featured ? 'superfood-float' : ''}`} style={{ fontSize: '2em' }} aria-hidden>
         {food.emoji}
       </span>
-      <span className="w-full truncate text-[12px] font-semibold" style={{ color: featured ? '#3a2a06' : 'var(--text-primary)' }}>
+      <span className="w-full truncate text-[11px] font-semibold" style={{ color: featured ? '#3a2a06' : 'var(--text-primary)' }}>
         {content.name}
       </span>
       <span
-        className="flex min-h-[2.5em] w-full items-center justify-center text-[10px] font-bold leading-tight"
+        className="line-clamp-2 flex min-h-[2.2em] w-full items-center justify-center text-[9px] font-bold leading-tight"
         style={{ color: featured ? '#3a2a06' : 'var(--status-critical)' }}
       >
         {content.power}
@@ -539,7 +543,7 @@ function JunkFoodList({
   onDragEnd: (x: number, y: number) => void
 }) {
   return (
-    <div className="thin-scroll grid h-full auto-rows-min grid-cols-2 justify-items-center gap-x-1.5 gap-y-3 overflow-y-auto content-start pb-1 pt-3">
+    <div className="thin-scroll grid h-full auto-rows-min grid-cols-3 justify-items-stretch gap-x-1.5 gap-y-3 overflow-y-auto content-start pb-2 pt-3">
       {items.map((food) => (
         <JunkFoodRow
           key={food.id}
@@ -556,69 +560,122 @@ function JunkFoodList({
   )
 }
 
+const FOCUS_SLOT_LONG_PRESS_MS = 450
+const FOCUS_SLOT_MOVE_TOLERANCE = 10
+
 function FocusSlot({
   food,
-  lang,
   isJunk,
   removeLabel,
+  editMode,
   onSelect,
   onRemove,
+  onLongPress,
 }: {
   food: SuperfoodDef | JunkFoodDef | null
-  lang: Lang
   isJunk: boolean
   removeLabel: string
+  editMode: boolean
   onSelect: () => void
   onRemove: () => void
+  onLongPress: () => void
 }) {
+  const timerRef = useRef<number | null>(null)
+  const movedRef = useRef(false)
+  const startRef = useRef({ x: 0, y: 0 })
+
   if (!food) {
     return (
       <div
         className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg"
         style={{ backgroundColor: 'rgba(255,255,255,0.3)', border: '2px solid #000000', boxShadow: '0 4px 0 rgba(0,0,0,0.35)' }}
       >
-        <StarIcon className="h-4 w-4" style={{ color: 'rgba(0,0,0,0.25)' } as React.CSSProperties} />
+        <PlusIcon className="h-4 w-4" style={{ color: 'rgba(0,0,0,0.25)' } as React.CSSProperties} />
       </div>
     )
   }
 
-  const name = isJunk ? JUNK_FOOD_CONTENT[lang][food.id].name : SUPERFOOD_CONTENT[lang][food.id].name
+  const clearPressTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.pointerType !== 'mouse') e.preventDefault()
+    movedRef.current = false
+    startRef.current = { x: e.clientX, y: e.clientY }
+    clearPressTimer()
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null
+      onLongPress()
+    }, FOCUS_SLOT_LONG_PRESS_MS)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const dx = e.clientX - startRef.current.x
+    const dy = e.clientY - startRef.current.y
+    if (Math.hypot(dx, dy) > FOCUS_SLOT_MOVE_TOLERANCE) {
+      movedRef.current = true
+      clearPressTimer()
+    }
+  }
+
+  const handlePointerUp = () => {
+    const wasPending = timerRef.current !== null
+    clearPressTimer()
+    if (wasPending && !movedRef.current) onSelect()
+  }
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={onSelect}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={clearPressTimer}
+      onContextMenu={(e) => e.preventDefault()}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onSelect()
         }
       }}
-      className="relative flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 4px 0 #000000' }}
+      className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-lg"
+      style={{
+        backgroundColor: 'var(--surface-cream)',
+        border: '2px solid #000000',
+        boxShadow: '0 4px 0 #000000',
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+      }}
     >
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onRemove()
-        }}
-        aria-label={removeLabel}
-        className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-        style={{ backgroundColor: 'var(--status-critical)', color: '#ffffff', border: '1.5px solid #000000' }}
-      >
-        <CloseIcon className="h-2.5 w-2.5" />
-      </button>
+      {editMode && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove()
+          }}
+          aria-label={removeLabel}
+          className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--status-critical)', color: '#ffffff', border: '1.5px solid #000000' }}
+        >
+          <CloseIcon className="h-2.5 w-2.5" />
+        </button>
+      )}
       {isJunk ? (
-        <span style={{ fontSize: '1.4em' }} aria-hidden>
+        <span style={{ fontSize: '2em' }} aria-hidden>
           {(food as JunkFoodDef).emoji}
         </span>
       ) : (
-        <SuperfoodImage food={food as SuperfoodDef} className="h-6 w-6" emojiSize="1.2em" />
+        <SuperfoodImage food={food as SuperfoodDef} className="h-10 w-10" emojiSize="2em" />
       )}
-      <span className="w-full truncate text-[9px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-        {name}
-      </span>
     </div>
   )
 }
@@ -630,6 +687,7 @@ export function SuperfoodsPanel() {
   const [selectedJunk, setSelectedJunk] = useState<JunkFoodDef | null>(null)
   const [focusedSuperfoodIds, setFocusedSuperfoodIds] = useState<string[]>(getFocusedSuperfoodIds)
   const [focusedJunkFoodIds, setFocusedJunkFoodIds] = useState<string[]>(getFocusedJunkFoodIds)
+  const [focusEditMode, setFocusEditMode] = useState(false)
   const [dragPreview, setDragPreview] = useState<
     { kind: 'superfood'; food: SuperfoodDef; x: number; y: number } | { kind: 'junk'; food: JunkFoodDef; x: number; y: number } | null
   >(null)
@@ -654,6 +712,17 @@ export function SuperfoodsPanel() {
   function handleToggleJunkFoodFocus(id: string) {
     setFocusedJunkFoodIds(toggleFocusedJunkFood(id))
   }
+
+  useEffect(() => {
+    if (!focusEditMode) return
+    function handlePointerDown(e: PointerEvent) {
+      if (focusZoneRef.current && !focusZoneRef.current.contains(e.target as Node)) {
+        setFocusEditMode(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [focusEditMode])
 
   function isOverFocusZone(x: number, y: number) {
     const zone = focusZoneRef.current
@@ -690,13 +759,16 @@ export function SuperfoodsPanel() {
     return view === 'superfoods' ? (SUPERFOODS.find((f) => f.id === id) ?? null) : (JUNK_FOODS.find((f) => f.id === id) ?? null)
   })
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pt-5">
+    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pb-20 pt-5">
       <div
         className="mx-auto flex shrink-0 gap-1 rounded-full p-1"
         style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000', boxShadow: '0 6px 14px rgba(11,11,11,0.2), 0 3px 0 #000000' }}
       >
         <button
-          onClick={() => setView('superfoods')}
+          onClick={() => {
+            setView('superfoods')
+            setFocusEditMode(false)
+          }}
           className="rounded-full px-3 py-1 text-[11px] font-bold"
           style={{
             backgroundColor: view === 'superfoods' ? '#5fc9f3' : 'transparent',
@@ -706,7 +778,10 @@ export function SuperfoodsPanel() {
           {tabs.superfoodsTab}
         </button>
         <button
-          onClick={() => setView('junkFoods')}
+          onClick={() => {
+            setView('junkFoods')
+            setFocusEditMode(false)
+          }}
           className="rounded-full px-3 py-1 text-[11px] font-bold"
           style={{
             backgroundColor: view === 'junkFoods' ? 'var(--status-critical)' : 'transparent',
@@ -720,16 +795,17 @@ export function SuperfoodsPanel() {
       <div className="mt-1 flex shrink-0 flex-col gap-1">
         <div
           ref={focusZoneRef}
-          className="flex justify-between rounded-xl transition-shadow"
+          className="flex justify-center gap-2 rounded-xl transition-shadow"
           style={dragPreview ? { boxShadow: '0 0 0 3px #eab308', borderRadius: '0.9rem' } : undefined}
         >
           {focusSlots.map((food, i) => (
             <FocusSlot
               key={i}
               food={food}
-              lang={lang}
               isJunk={view === 'junkFoods'}
               removeLabel={tabs.removeAriaLabel}
+              editMode={focusEditMode}
+              onLongPress={() => setFocusEditMode(true)}
               onSelect={() => {
                 if (!food) return
                 if (view === 'superfoods') setSelected(food as SuperfoodDef)
@@ -781,10 +857,12 @@ export function SuperfoodsPanel() {
       {dragPreview &&
         createPortal(
           <div
-            className="pointer-events-none fixed z-[100] flex w-28 flex-col items-center justify-start gap-1 rounded-xl px-1 py-2.5 text-center"
+            className="pointer-events-none fixed z-[100] flex items-center justify-center rounded-xl"
             style={{
               left: dragPreview.x,
               top: dragPreview.y,
+              width: 88,
+              height: 88,
               transform: 'translate(-50%, -50%) scale(1.08)',
               backgroundColor: 'var(--surface-cream)',
               border: '2px solid #000000',
@@ -792,17 +870,12 @@ export function SuperfoodsPanel() {
             }}
           >
             {dragPreview.kind === 'superfood' ? (
-              <SuperfoodImage food={dragPreview.food} className="h-14 w-14 shrink-0" emojiSize="2.5em" />
+              <SuperfoodImage food={dragPreview.food} className="h-16 w-16 shrink-0" emojiSize="3em" />
             ) : (
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center" style={{ fontSize: '2.5em' }} aria-hidden>
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center" style={{ fontSize: '3em' }} aria-hidden>
                 {dragPreview.food.emoji}
               </span>
             )}
-            <span className="w-full truncate text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {dragPreview.kind === 'superfood'
-                ? SUPERFOOD_CONTENT[lang][dragPreview.food.id].name
-                : JUNK_FOOD_CONTENT[lang][dragPreview.food.id].name}
-            </span>
           </div>,
           document.body
         )}

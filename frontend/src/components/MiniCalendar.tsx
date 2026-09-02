@@ -1,29 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { MealEntry, NutrientId } from '../types'
+import type { MealEntry } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
-import { getVisibleNutrients, percentOfRda } from '../lib/nutrients'
+import { EMPTY_MACROS, isMacroTrackingEnabled, macroTargetFor, sumMacros } from '../lib/macros'
 import { useLanguage } from '../contexts/LanguageContext'
-import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
 import { MealDetailModal } from './MealDetailModal'
-import { CloseIcon } from './icons'
+import { AppleIcon, CloseIcon } from './icons'
 
 const GRID_COLS = 'grid-cols-7'
-
-function topNutrient(nutrients: MealEntry['nutrients']): NutrientId | null {
-  let best: { id: NutrientId; percent: number } | null = null
-  for (const n of getVisibleNutrients()) {
-    const percent = percentOfRda(n.id, nutrients[n.id])
-    if (percent > 0 && (!best || percent > best.percent)) best = { id: n.id, percent }
-  }
-  return best ? best.id : null
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-}
 
 /** Compact month calendar meant to sit alongside other content (e.g. the superfoods list).
  *  Tapping a day opens that day's logged meals in a small overlay instead of taking over the screen. */
@@ -73,6 +59,8 @@ export function MiniCalendar() {
       ? `${t.todayPrefix} · ${formatFriendlyDate(selectedDate)}`
       : formatFriendlyDate(selectedDate)
     : ''
+  const trackNutrition = isMacroTrackingEnabled()
+  const dayCalories = useMemo(() => sumMacros(selectedMeals.map((m) => m.macros ?? EMPTY_MACROS)).calories, [selectedMeals])
 
   return (
     <div className="flex h-full w-[124px] shrink-0 flex-col rounded-2xl p-1.5" style={{ backgroundColor: '#e5c184', border: '3px solid #000000', boxShadow: '0 4px 0 #000000' }}>
@@ -160,41 +148,34 @@ export function MiniCalendar() {
                 {selectedLabel}
               </h2>
 
+              {trackNutrition && selectedMeals.length > 0 && (
+                <div className="flex shrink-0 items-center justify-center">
+                  <span
+                    className="text-xl font-extrabold"
+                    style={{ color: dayCalories > macroTargetFor('calories') ? 'var(--status-critical)' : 'var(--status-good)' }}
+                  >
+                    {Math.round(dayCalories).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
               {selectedMeals.length === 0 ? (
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {t.noMealsLoggedThisDay}
                 </p>
               ) : (
-                <div className="thin-scroll flex min-h-0 flex-col gap-1.5 overflow-y-auto">
-                  {selectedMeals.map((meal) => {
-                    const topId = topNutrient(meal.nutrients)
-                    return (
-                      <button
-                        key={meal.id}
-                        onClick={() => setSelectedMeal(meal)}
-                        className="flex items-center gap-1.5 rounded-lg p-1 text-start transition-transform active:translate-y-1 active:shadow-none"
-                        style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
-                      >
-                        <img
-                          src={meal.imageDataUrl}
-                          alt=""
-                          className="h-6 w-6 shrink-0 rounded-md object-cover"
-                          style={{ border: '1px solid var(--border)' }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                            {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : t.mealFallbackName}
-                          </p>
-                          <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
-                            {topId ? t.richIn(NUTRIENT_CONTENT[lang][topId].name) : t.noStandoutNutrients}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                          {formatTime(meal.createdAt)}
-                        </span>
-                      </button>
-                    )
-                  })}
+                <div className="thin-scroll flex min-h-0 flex-1 flex-wrap content-start justify-center gap-1.5 overflow-y-auto pb-1">
+                  {selectedMeals.map((meal) => (
+                    <button
+                      key={meal.id}
+                      onClick={() => setSelectedMeal(meal)}
+                      aria-label={meal.foods.length > 0 ? meal.foods[0].name : t.mealFallbackName}
+                      className="relative flex aspect-square w-[30%] shrink-0 items-center justify-center rounded-lg transition-transform active:translate-y-1 active:shadow-none"
+                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
+                    >
+                      <AppleIcon className="h-8 w-8" style={{ color: 'var(--text-secondary)' }} />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

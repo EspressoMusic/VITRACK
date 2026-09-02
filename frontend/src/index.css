@@ -10,6 +10,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Secular One';
+  src: url('/fonts/SecularOne-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @keyframes letterReveal {
   from {
     opacity: 0;
@@ -123,6 +131,10 @@ body {
   font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
+}
+
+html[lang='he'] body {
+  font-family: 'Secular One', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .app-shell {

@@ -1,38 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { MealEntry, NutrientId } from '../types'
+import type { MealEntry } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
-import { getVisibleNutrients, percentOfRda } from '../lib/nutrients'
-import { isMacroTrackingEnabled } from '../lib/macros'
+import { EMPTY_MACROS, isMacroTrackingEnabled, sumMacros } from '../lib/macros'
 import { ACHIEVEMENT_TIERS, countGoalDays, type AchievementTier } from '../lib/achievements'
 import { useLanguage } from '../contexts/LanguageContext'
-import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
-import { ACHIEVEMENTS_PANEL_STRINGS } from '../lib/i18n/achievementsPanel'
 import { MealDetailModal } from './MealDetailModal'
 import { AchievementDetailModal } from './AchievementsPanel'
-import { AchievementDoll } from './AchievementDoll'
-import { LockIcon } from './icons'
+import { PlusIcon } from './icons'
+import { resolveFoodEmoji } from '../lib/foodEmoji'
 
 const GRID_COLS = 'grid-cols-7'
-
-function topNutrient(nutrients: MealEntry['nutrients']): NutrientId | null {
-  let best: { id: NutrientId; percent: number } | null = null
-  for (const n of getVisibleNutrients()) {
-    const percent = percentOfRda(n.id, nutrients[n.id])
-    if (percent > 0 && (!best || percent > best.percent)) best = { id: n.id, percent }
-  }
-  return best ? best.id : null
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-}
 
 export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang, dir } = useLanguage()
   const t = CALENDAR_PANEL_STRINGS[lang]
-  const tAch = ACHIEVEMENTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [cursor, setCursor] = useState(() => {
     const now = new Date()
@@ -66,7 +49,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const today = todayKey()
 
   const selectedMeals = mealsByDate.get(selectedDate) ?? []
-  const goalDayCount = useMemo(() => countGoalDays(meals, isMacroTrackingEnabled()), [meals])
+  const trackNutrition = isMacroTrackingEnabled()
+  const goalDayCount = useMemo(() => countGoalDays(meals, trackNutrition), [meals, trackNutrition])
+  const dayCalories = useMemo(() => sumMacros(selectedMeals.map((m) => m.macros ?? EMPTY_MACROS)).calories, [selectedMeals])
 
   function changeMonth(delta: number) {
     setCursor((c) => {
@@ -75,8 +60,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     })
   }
 
-  const selectedLabel =
-    selectedDate === today ? `${t.todayPrefix} · ${formatFriendlyDate(selectedDate)}` : formatFriendlyDate(selectedDate)
+  const selectedLabel = selectedDate === today ? t.todayPrefix : formatFriendlyDate(selectedDate)
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 pt-5 text-center">
@@ -185,7 +169,15 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
               <span className="h-6 w-6" />
             </div>
 
-            <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
+            {trackNutrition && (
+              <div className="mb-1.5 flex shrink-0 items-center justify-center">
+                <span className="text-3xl font-extrabold" style={{ color: '#000000' }}>
+                  {Math.round(dayCalories).toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            <div className="thin-scroll flex min-h-0 flex-1 flex-wrap content-start justify-center gap-1.5 overflow-y-auto pe-1 pb-1">
               {selectedMeals.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center">
                   <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
@@ -193,35 +185,17 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
                   </p>
                 </div>
               ) : (
-                selectedMeals.map((meal) => {
-                  const topId = topNutrient(meal.nutrients)
-                  return (
-                    <button
-                      key={meal.id}
-                      onClick={() => setSelectedMeal(meal)}
-                      className="flex items-center gap-1.5 rounded-lg p-1 text-start transition-transform active:translate-y-1 active:shadow-none"
-                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
-                    >
-                      <img
-                        src={meal.imageDataUrl}
-                        alt=""
-                        className="h-6 w-6 shrink-0 rounded-md object-cover"
-                        style={{ border: '1px solid var(--border)' }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : t.mealFallbackName}
-                        </p>
-                        <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
-                          {topId ? t.richIn(NUTRIENT_CONTENT[lang][topId].name) : t.noStandoutNutrients}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                        {formatTime(meal.createdAt)}
-                      </span>
-                    </button>
-                  )
-                })
+                selectedMeals.map((meal) => (
+                  <button
+                    key={meal.id}
+                    onClick={() => setSelectedMeal(meal)}
+                    aria-label={meal.foods.length > 0 ? meal.foods[0].name : t.mealFallbackName}
+                    className="relative flex aspect-square w-[30%] shrink-0 items-center justify-center rounded-lg transition-transform active:translate-y-1 active:shadow-none"
+                    style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
+                  >
+                    <span className="text-3xl leading-none">{resolveFoodEmoji(meal.foods[0]?.name)}</span>
+                  </button>
+                ))
               )}
             </div>
           </div>
@@ -229,33 +203,22 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
       </div>
 
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="thin-scroll flex min-h-0 flex-1 flex-wrap content-start justify-center gap-x-3 gap-y-1.5 overflow-y-auto px-0.5 pb-20 pt-0.5">
           {ACHIEVEMENT_TIERS.map((tier) => {
             const unlocked = goalDayCount >= tier.threshold
             return (
               <button
                 key={tier.id}
                 onClick={() => setSelectedTier(tier)}
-                className="relative flex flex-col items-center gap-1 rounded-lg p-2"
+                className="relative flex aspect-square w-16 flex-col items-center justify-center rounded-lg p-1.5"
                 style={{
                   backgroundColor: 'var(--surface-cream)',
                   border: '2px solid #000000',
-                  boxShadow: '0 4px 0 #000000',
+                  boxShadow: '0 3px 0 #000000',
                   opacity: unlocked ? 1 : 0.55,
                 }}
               >
-                {!unlocked && (
-                  <span
-                    className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-                    style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000', color: 'var(--text-secondary)' }}
-                  >
-                    <LockIcon className="h-2.5 w-2.5" />
-                  </span>
-                )}
-                <AchievementDoll color={tier.color} locked={!unlocked} />
-                <span className="text-center text-[9px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  {tAch.tierLabel(tier.threshold)}
-                </span>
+                <PlusIcon className="h-6 w-6" style={{ color: unlocked ? tier.color : 'var(--text-secondary)' }} strokeWidth={3} />
               </button>
             )
           })}

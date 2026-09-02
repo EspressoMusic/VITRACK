@@ -13,6 +13,9 @@ interface SettingsPanelStrings {
     signInGoogle: string
     notConnected: string
     deleteAccountError: string
+    agreePrefix: string
+    agreeLinkLabel: string
+    agreeErrorToast: string
   }
   subscription: {
     heading: string
@@ -72,6 +75,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       signInGoogle: 'Sign in with Google',
       notConnected: 'Not connected yet.',
       deleteAccountError: 'Could not delete account.',
+      agreePrefix: 'I agree to the ',
+      agreeLinkLabel: 'Terms & Privacy Policy',
+      agreeErrorToast: 'Please agree to the Terms of Use first',
     },
     subscription: {
       heading: 'Subscription',
@@ -129,6 +135,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       signInGoogle: 'התחברות עם Google',
       notConnected: 'עדיין לא מחובר.',
       deleteAccountError: 'לא הצלחנו למחוק את החשבון.',
+      agreePrefix: 'אני מאשר/ת את ',
+      agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
+      agreeErrorToast: 'יש לאשר קודם את תנאי השימוש',
     },
     subscription: {
       heading: 'מנוי',
@@ -186,6 +195,9 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
       signInGoogle: 'تسجيل الدخول عبر Google',
       notConnected: 'غير متصل بعد.',
       deleteAccountError: 'تعذّر حذف الحساب.',
+      agreePrefix: 'أوافق على ',
+      agreeLinkLabel: 'الشروط وسياسة الخصوصية',
+      agreeErrorToast: 'يرجى الموافقة على شروط الاستخدام أولاً',
     },
     subscription: {
       heading: 'الاشتراك',

@@ -4,18 +4,25 @@ import { computeNutrientGoals } from '../lib/goals'
 import { completeOnboarding } from '../lib/profile'
 import { NUTRIENT_MAP, NUTRIENTS, coverageStatus } from '../lib/nutrients'
 import { CORE_NUTRIENT_COLOR } from '../lib/nutrientColors'
-import { playConfirmSound, playTapSound } from '../lib/sound'
+import { playConfirmSound } from '../lib/sound'
+import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { ONBOARDING_STRINGS } from '../lib/i18n/onboarding'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CAMERA_PANEL_STRINGS } from '../lib/i18n/cameraPanel'
 import { ActivityIcon, CakeIcon, CameraIcon, LeafIcon, LockIcon, RulerIcon, ScaleIcon, SparkleIcon, TargetIcon, UserIcon } from './icons'
+import { GoogleConsentGate } from './GoogleConsentGate'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 
-type Step = 'welcome' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'goal' | 'calculating' | 'summary'
+type Step = 'welcome' | 'signin' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'goal' | 'calculating' | 'summary'
 type OnboardingStrings = (typeof ONBOARDING_STRINGS)['en']
 
-const STEP_ORDER: Step[] = ['welcome', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'goal', 'calculating', 'summary']
+// Google sign-in only makes sense when there's a cloud account to attach data to — skip the
+// step entirely on a self-hosted/unconfigured build where there's nothing to sign in to.
+const STEP_ORDER: Step[] = isSupabaseConfigured
+  ? ['welcome', 'signin', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'goal', 'calculating', 'summary']
+  : ['welcome', 'age', 'sex', 'weight', 'height', 'activity', 'diet', 'goal', 'calculating', 'summary']
 const PROGRESS_STEPS: Step[] = ['age', 'sex', 'weight', 'height', 'activity', 'diet', 'goal']
 
 const ACTIVITY_IDS: ActivityLevel[] = ['sedentary', 'moderate', 'active']
@@ -81,12 +88,14 @@ function draftToProfile(d: DraftProfile): OnboardingProfile | null {
 
 export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
   const { lang, dir } = useLanguage()
+  const { user } = useAuth()
   const t = ONBOARDING_STRINGS[lang]
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState<DraftProfile>(EMPTY_DRAFT)
   const [continuePulse, setContinuePulse] = useState(0)
   const step = STEP_ORDER[stepIndex]
-  const canContinue = isValid(step, draft)
+  const signedIn = !!user && !user.is_anonymous
+  const canContinue = step === 'signin' ? signedIn : isValid(step, draft)
 
   const previewProfile = step === 'calculating' || step === 'summary' ? draftToProfile(draft) : null
   const previewGoals = previewProfile ? computeNutrientGoals(previewProfile) : null
@@ -114,6 +123,13 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
     return () => clearTimeout(t)
   }, [step])
 
+  // Registration must happen before the questionnaire — as soon as Google sign-in completes,
+  // move on automatically rather than making the user tap Continue a second time.
+  useEffect(() => {
+    if (step !== 'signin' || !signedIn) return
+    setStepIndex((i) => Math.min(i + 1, STEP_ORDER.length - 1))
+  }, [step, signedIn])
+
   return (
     <div
       dir={dir}
@@ -127,7 +143,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       }}
     >
       <div className="flex items-center gap-3 px-5 pt-3">
-        {step !== 'welcome' && step !== 'calculating' && step !== 'summary' ? (
+        {step !== 'welcome' && step !== 'signin' && step !== 'calculating' && step !== 'summary' ? (
           <button
             onClick={goBack}
             aria-label={t.backAriaLabel}
@@ -157,6 +173,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-2 pb-24">
         <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
           {step === 'welcome' && <WelcomeStep t={t} />}
+          {step === 'signin' && <SignInStep t={t} />}
           {step === 'age' && <AgeStep t={t} value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
           {step === 'sex' && <SexStep t={t} value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
           {step === 'weight' && (
@@ -183,10 +200,11 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
         </div>
       </main>
 
-      {step !== 'calculating' && (
+      {step !== 'calculating' && step !== 'signin' && (
         <div className="absolute inset-x-0 bottom-0 px-6 pb-9 pt-8">
           <button
             key={continuePulse}
+            data-sound="off"
             onClick={() => {
               if (!canContinue) return
               playConfirmSound()
@@ -360,7 +378,6 @@ function ChoiceButton({
     <button
       key={pulse}
       onClick={() => {
-        playTapSound()
         setPulse((p) => p + 1)
         onClick()
       }}
@@ -960,6 +977,27 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
       </div>
 
       <WelcomeScanAnimation />
+    </div>
+  )
+}
+
+function SignInStep({ t }: { t: OnboardingStrings }) {
+  const { dir } = useLanguage()
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+      <StepCard icon={<UserIcon className="h-5 w-5" />} title={t.signIn.title} subtitle={t.signIn.subtitle}>
+        <GoogleConsentGate t={t.signIn} dir={dir}>
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white"
+            style={{ backgroundColor: 'var(--accent-strong)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
+          >
+            <UserIcon className="h-4 w-4" /> {t.signIn.buttonLabel}
+          </button>
+        </GoogleConsentGate>
+      </StepCard>
     </div>
   )
 }

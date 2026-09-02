@@ -31,7 +31,7 @@ export function NutrientRow({
     >
       <span className="flex w-28 shrink-0 items-center justify-between text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
         <span className="truncate">{content.name}</span>
-        <span aria-hidden className="shrink-0">{icon}</span>
+        <span aria-hidden className="relative top-[3px] shrink-0">{icon}</span>
       </span>
       <span className="block h-2 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: STATUS_SOFT_VAR[status] }}>
         <span

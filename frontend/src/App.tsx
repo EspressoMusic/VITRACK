@@ -23,6 +23,7 @@ import { getAllMeals } from './lib/db'
 import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
 import { maybeNotifyVitaminStatus } from './lib/notifications'
+import { installButtonClickSounds } from './lib/sound'
 
 // Lazy-loaded so the food-detection model (TensorFlow.js + COCO-SSD, several MB) ships in its
 // own chunk instead of blocking the initial app bundle for users who haven't reached this tab yet.
@@ -133,6 +134,8 @@ export default function App() {
   useEffect(() => {
     loadPersistedGoals()
   }, [])
+
+  useEffect(() => installButtonClickSounds(), [])
 
   return (
     <LanguageProvider>

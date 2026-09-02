@@ -13,6 +13,14 @@ interface OnboardingStrings {
     badges: [string, string, string]
     benefits: [string, string, string, string]
   }
+  signIn: {
+    title: string
+    subtitle: string
+    buttonLabel: string
+    agreePrefix: string
+    agreeLinkLabel: string
+    agreeErrorToast: string
+  }
   age: { title: string; subtitle: string; unit: string }
   sex: {
     title: string
@@ -72,6 +80,14 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       highlightWord: 'more',
       badges: ['2-minute setup', 'Fully personalized', 'Private & secure'],
       benefits: ['Better sleep 😴', 'Better workouts 💪', 'More energy ⚡', 'Sharper focus 🎯'],
+    },
+    signIn: {
+      title: 'Save your progress',
+      subtitle: "Sign in with Google so your goals and data are never lost.",
+      buttonLabel: 'Sign in with Google',
+      agreePrefix: 'I agree to the ',
+      agreeLinkLabel: 'Terms & Privacy Policy',
+      agreeErrorToast: 'Please agree to the Terms of Use first',
     },
     age: {
       title: 'How old are you?',
@@ -149,6 +165,14 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       badges: ['התקנה של 2 דקות', 'מותאם אישית לגמרי', 'פרטי ומאובטח'],
       benefits: ['שינה טובה יותר 😴', 'אימונים טובים יותר 💪', 'יותר אנרגיה ⚡', 'ריכוז חד יותר 🎯'],
     },
+    signIn: {
+      title: 'שומרים את ההתקדמות שלך',
+      subtitle: 'התחברו עם Google כדי שהיעדים והנתונים שלכם לא יאבדו לעולם',
+      buttonLabel: 'התחברות עם Google',
+      agreePrefix: 'אני מאשר/ת את ',
+      agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
+      agreeErrorToast: 'יש לאשר קודם את תנאי השימוש',
+    },
     age: {
       title: 'בן/בת כמה את/ה?',
       subtitle: 'גם לצרכי הוויטמינים שלך יש גיל, רק פחות בחן.',
@@ -224,6 +248,14 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       highlightWord: 'أكثر',
       badges: ['إعداد خلال دقيقتين', 'مخصص بالكامل', 'خاص وآمن'],
       benefits: ['نوم أفضل 😴', 'تمارين أفضل 💪', 'طاقة أكبر ⚡', 'تركيز أعلى 🎯'],
+    },
+    signIn: {
+      title: 'احفظ تقدّمك',
+      subtitle: 'سجّل الدخول عبر Google حتى لا تفقد أهدافك وبياناتك أبدًا',
+      buttonLabel: 'تسجيل الدخول عبر Google',
+      agreePrefix: 'أوافق على ',
+      agreeLinkLabel: 'الشروط وسياسة الخصوصية',
+      agreeErrorToast: 'يرجى الموافقة على شروط الاستخدام أولاً',
     },
     age: {
       title: 'كم عمرك؟',

@@ -7,6 +7,9 @@ interface ThankYouPageStrings {
   savedTo: (email: string) => string
   signInWithGoogle: string
   continueWithoutSaving: string
+  agreePrefix: string
+  agreeLinkLabel: string
+  agreeErrorToast: string
 }
 
 export const THANK_YOU_PAGE_STRINGS: Record<Lang, ThankYouPageStrings> = {
@@ -17,6 +20,9 @@ export const THANK_YOU_PAGE_STRINGS: Record<Lang, ThankYouPageStrings> = {
     savedTo: (email) => `Saved to ${email}`,
     signInWithGoogle: 'Sign in with Google',
     continueWithoutSaving: 'Continue without saving',
+    agreePrefix: 'I agree to the ',
+    agreeLinkLabel: 'Terms & Privacy Policy',
+    agreeErrorToast: 'Please agree to the Terms of Use first',
   },
   he: {
     title: 'את/ה בפנים!',
@@ -25,6 +31,9 @@ export const THANK_YOU_PAGE_STRINGS: Record<Lang, ThankYouPageStrings> = {
     savedTo: (email) => `נשמר עבור ${email}`,
     signInWithGoogle: 'התחברות עם Google',
     continueWithoutSaving: 'המשך בלי לשמור',
+    agreePrefix: 'אני מאשר/ת את ',
+    agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
+    agreeErrorToast: 'יש לאשר קודם את תנאי השימוש',
   },
   ar: {
     title: 'مبروك الانضمام!',
@@ -33,5 +42,8 @@ export const THANK_YOU_PAGE_STRINGS: Record<Lang, ThankYouPageStrings> = {
     savedTo: (email) => `تم الحفظ في ${email}`,
     signInWithGoogle: 'تسجيل الدخول عبر Google',
     continueWithoutSaving: 'المتابعة بدون حفظ',
+    agreePrefix: 'أوافق على ',
+    agreeLinkLabel: 'الشروط وسياسة الخصوصية',
+    agreeErrorToast: 'يرجى الموافقة على شروط الاستخدام أولاً',
   },
 }

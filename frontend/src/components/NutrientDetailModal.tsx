@@ -4,8 +4,9 @@ import { NUTRIENT_MAP, coverageStatus, percentOfRda, percentOfMealTarget, target
 import { useLanguage } from '../contexts/LanguageContext'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { NUTRIENT_DETAIL_MODAL_STRINGS } from '../lib/i18n/nutrientDetailModal'
-import { StatusDot, STATUS_VAR } from './StatusDot'
+import { STATUS_VAR } from './StatusDot'
 import { CloseIcon } from './icons'
+import { resolveFoodEmoji } from '../lib/foodEmoji'
 
 export function NutrientDetailModal({
   id,
@@ -23,10 +24,10 @@ export function NutrientDetailModal({
   const t = NUTRIENT_DETAIL_MODAL_STRINGS[lang]
   const def = NUTRIENT_MAP[id]
   const content = NUTRIENT_CONTENT[lang][id]
+  const englishFoodSources = NUTRIENT_CONTENT.en[id].foodSources
   const percent = perMeal ? percentOfMealTarget(id, amount) : percentOfRda(id, amount)
   const status = coverageStatus(percent)
   const target = perMeal ? mealTargetFor(id) : targetFor(id)
-  const remaining = Math.max(0, target - amount)
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
@@ -55,15 +56,8 @@ export function NutrientDetailModal({
 
         <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-3.5 pb-3">
           <div className="flex flex-col gap-1.5 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
-            <div className="flex items-center justify-between">
-              <StatusDot status={status} showLabel />
-              <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {percent}%
-              </span>
-            </div>
-
             <div
-              className="h-3 w-full overflow-hidden rounded-full"
+              className="relative h-7 w-full overflow-hidden rounded-full"
               style={{ backgroundColor: 'var(--surface-2)' }}
               role="progressbar"
               aria-valuenow={percent}
@@ -74,31 +68,13 @@ export function NutrientDetailModal({
                 className="h-full rounded-full"
                 style={{ width: `${Math.min(100, percent)}%`, backgroundColor: STATUS_VAR[status] }}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  {t.consumed}
-                </div>
-                <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {amount.toFixed(amount < 10 ? 1 : 0)}
-                  {def.unit}
-                  <span className="font-normal" style={{ color: 'var(--text-muted)' }}>
-                    {' '}
-                    / {target.toFixed(target < 10 ? 1 : 0)}
-                    {def.unit}
-                  </span>
-                </div>
-              </div>
-              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  {remaining > 0 ? t.remaining : t.status}
-                </div>
-                <div className="text-xs font-semibold" style={{ color: remaining > 0 ? STATUS_VAR[status] : 'var(--status-good)' }}>
-                  {remaining > 0 ? t.toGo(`${remaining.toFixed(remaining < 10 ? 1 : 0)}${def.unit}`) : t.goalMet}
-                </div>
-              </div>
+              <span
+                className="absolute inset-0 flex items-center justify-center text-xs font-bold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {amount.toFixed(amount < 10 ? 1 : 0)} / {target.toFixed(target < 10 ? 1 : 0)}
+                {def.unit}
+              </span>
             </div>
           </div>
 
@@ -117,15 +93,16 @@ export function NutrientDetailModal({
             <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
               {status === 'good' ? t.youAreCovered : t.foodsToCloseTheGap}
             </p>
-            <div className="flex flex-wrap gap-1 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
-              {content.foodSources.map((food) => (
+            <div className="flex flex-wrap justify-center gap-1.5 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
+              {content.foodSources.map((food, i) => (
                 <span
                   key={food}
-                  className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium"
-                  style={{ backgroundColor: 'var(--surface-1)', color: 'var(--text-primary)', border: '1.5px solid #1a1a19' }}
+                  title={food}
+                  aria-label={food}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
+                  style={{ backgroundColor: 'var(--surface-1)', border: '1.5px solid #1a1a19' }}
                 >
-                  <span className="h-1 w-1 shrink-0 rounded-full" style={{ backgroundColor: 'var(--accent-strong)' }} />
-                  {food}
+                  {resolveFoodEmoji(englishFoodSources[i])}
                 </span>
               ))}
             </div>

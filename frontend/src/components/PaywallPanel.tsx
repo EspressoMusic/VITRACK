@@ -254,7 +254,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
                   <button type="button" tabIndex={-1} aria-hidden="true" className="underline">
                     {t.alreadyPurchased}
                   </button>
-                  <GoogleSignInOverlay />
+                  <GoogleSignInOverlay disabled={!agreed} onBlockedClick={() => setShowAgreeError(true)} />
                 </span>
               </>
             )}

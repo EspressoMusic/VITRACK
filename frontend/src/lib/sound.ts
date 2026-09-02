@@ -36,3 +36,22 @@ export function playConfirmSound(): void {
   tone(560, 0, 0.09, 0.05)
   tone(840, 0.06, 0.14, 0.05)
 }
+
+/**
+ * Plays a tap sound on every button press app-wide, without each component wiring it up
+ * individually. Uses the capture phase so it still fires even when a handler calls
+ * stopPropagation() (e.g. a remove button nested inside a card). Elements marked
+ * `data-sound="off"` are skipped — for buttons that already trigger their own distinct sound.
+ */
+export function installButtonClickSounds(): () => void {
+  const handler = (e: MouseEvent) => {
+    const target = e.target as HTMLElement | null
+    const el = target?.closest('button, [role="button"]') as HTMLElement | null
+    if (!el) return
+    if (el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true') return
+    if (el.dataset.sound === 'off') return
+    playTapSound()
+  }
+  document.addEventListener('click', handler, true)
+  return () => document.removeEventListener('click', handler, true)
+}

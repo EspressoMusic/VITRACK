@@ -771,7 +771,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   }
 
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pb-3 pt-5">
+    <div className="relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pb-16 pt-5">
       {stage === 'camera' && scanErrorMsg && (
         <p
           className="absolute inset-x-4 top-3 z-20 rounded-lg px-3 py-2 text-center text-xs font-medium"
@@ -1008,7 +1008,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
               </button>
             </div>
           </div>
-          <div className="flex justify-center pb-1">
+          <div className="flex justify-center pb-20">
             <button
               onClick={() => setStage('custom')}
               className="rounded-full px-4 py-2 text-xs font-semibold transition-transform active:translate-y-1 active:shadow-none"
@@ -1021,7 +1021,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       )}
 
       {stage === 'custom' && (
-        <div className="flex min-h-0 flex-1 flex-col gap-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 pb-20">
           <CustomNutritionForm
             name={customName}
             onNameChange={setCustomName}
@@ -1079,7 +1079,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             )}
           </div>
 
-          {result.foods.length > 0 && isMacroTrackingEnabled() && <MacroSummaryRow macros={result.macros ?? EMPTY_MACROS} />}
+          {result.foods.length > 0 && isMacroTrackingEnabled() && (
+            <div className="mx-auto w-[88%] shrink-0">
+              <MacroSummaryRow macros={result.macros ?? EMPTY_MACROS} />
+            </div>
+          )}
 
           <div
             ref={resultScrollRef}

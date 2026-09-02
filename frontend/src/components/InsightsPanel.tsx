@@ -27,7 +27,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const [noDeficienciesOpen, setNoDeficienciesOpen] = useState(false)
   const confettiFired = useRef(false)
   const noDeficienciesFired = useRef(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getAllMeals().then((m) => {
@@ -40,79 +39,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
-
-  // Auto-scrolls the nutrient list downward so the user can see everything without manually
-  // scrolling. Each stop reveals one more row at the bottom with its full pill flush against
-  // the container edge — never paused with a row sliced in half, which is what made it look
-  // broken against the floating camera button/artwork right below this panel. A partial row
-  // is only ever left at the *top* (against the harmless space below the goal gauge above),
-  // never at the bottom.
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-
-    const STEP_MS = 500
-    const PAUSE_MS = 1400
-    let frameId: number
-    let timeoutId: ReturnType<typeof setTimeout>
-    let cancelled = false
-
-    function easeInOutQuad(t: number): number {
-      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-    }
-
-    function animateTo(target: number, onDone: () => void) {
-      const start = el!.scrollTop
-      const distance = target - start
-      const startTime = performance.now()
-      function frame(now: number) {
-        if (cancelled) return
-        const t = Math.min(1, (now - startTime) / STEP_MS)
-        el!.scrollTop = start + distance * easeInOutQuad(t)
-        if (t < 1) {
-          frameId = requestAnimationFrame(frame)
-        } else {
-          onDone()
-        }
-      }
-      frameId = requestAnimationFrame(frame)
-    }
-
-    /** Scroll targets that each land with some row's bottom edge flush against the container's
-     *  bottom — i.e. reveal rows strictly by whole rows, ending with the true max scroll. */
-    function buildStops(): number[] {
-      const rows = Array.from(el!.querySelectorAll<HTMLElement>('button'))
-      const maxScroll = el!.scrollHeight - el!.clientHeight
-      if (rows.length === 0 || maxScroll <= 0) return []
-
-      const stops = [0]
-      for (const row of rows) {
-        const bottomFlush = row.offsetTop + row.offsetHeight - el!.clientHeight
-        if (bottomFlush > stops[stops.length - 1] + 0.5 && bottomFlush < maxScroll - 0.5) {
-          stops.push(bottomFlush)
-        }
-      }
-      stops.push(maxScroll)
-      return stops
-    }
-
-    function goTo(stops: number[], index: number) {
-      animateTo(stops[index], () => {
-        timeoutId = setTimeout(() => {
-          goTo(stops, index + 1 >= stops.length ? 0 : index + 1)
-        }, PAUSE_MS)
-      })
-    }
-
-    const stops = buildStops()
-    if (stops.length > 0) goTo(stops, 0)
-
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(frameId)
-      clearTimeout(timeoutId)
-    }
-  }, [ranked])
 
   useEffect(() => {
     if (!confettiFired.current && meals.length > 0 && weeklyCompletion === 100) {
@@ -155,10 +81,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
       </div>
 
       <div className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col">
-        <div
-          ref={scrollRef}
-          className="thin-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5"
-        >
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1.5 pb-20 pt-1.5">
           {deficient.length > 0 && (
             <div className="flex flex-col">
               <div className="flex flex-col gap-1">

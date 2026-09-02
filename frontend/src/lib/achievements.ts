@@ -18,6 +18,9 @@ export const ACHIEVEMENT_TIERS: AchievementTier[] = [
   { id: 'two-weeks', threshold: 14, color: '#7bc9e0' },
   { id: 'month', threshold: 30, color: '#8fd694' },
   { id: 'two-months', threshold: 60, color: '#c792ea' },
+  { id: 'three-months', threshold: 90, color: '#9fd0d6' },
+  { id: 'six-months', threshold: 180, color: '#c65146' },
+  { id: 'year', threshold: 365, color: '#e8863a' },
 ]
 
 /** A day counts as "goal met" when every core vitamin — and, if calorie/macro tracking is on,
