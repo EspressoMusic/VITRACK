@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { LANGUAGES } from '../lib/i18n/lang'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { clearAllMeals } from '../lib/db'
+import { seedDemoMeals } from '../lib/demoData'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
 import { isAdvancedMode, setAdvancedMode } from '../lib/nutrients'
 import { isInstallable, isStandalone, isIOS, onInstallabilityChange, promptInstall } from '../lib/pwa'
@@ -14,7 +15,7 @@ import {
   setNotificationPref,
   requestNotificationPermission,
 } from '../lib/notifications'
-import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon, ChevronDownIcon } from './icons'
+import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
@@ -39,7 +40,7 @@ function SettingsSection({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-transform active:translate-y-1 active:shadow-none"
+        className="flex w-full items-center justify-center rounded-xl px-3 py-2.5 text-center text-[13px] font-semibold transition-transform active:translate-y-1 active:shadow-none"
         style={{
           backgroundColor: 'var(--surface-cream)',
           border: '2px solid #000000',
@@ -47,11 +48,7 @@ function SettingsSection({
           color: 'var(--text-primary)',
         }}
       >
-        <span>{label}</span>
-        <ChevronDownIcon
-          className="h-4 w-4 shrink-0 transition-transform"
-          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-        />
+        {label}
       </button>
       {isOpen && <div className="flex flex-col gap-2">{children}</div>}
     </div>
@@ -82,6 +79,7 @@ export function SettingsPanel({
   const [notifPermission, setNotifPermission] = useState(getNotificationPermission)
   const [advancedNutrients, setAdvancedNutrients] = useState(isAdvancedMode)
   const [openSection, setOpenSection] = useState<SectionId | null>(null)
+  const [seedingDemo, setSeedingDemo] = useState(false)
   const isPro = isSubscribed()
   const plan = getBillingPlan()
 
@@ -128,6 +126,17 @@ export function SettingsPanel({
     setConfirmingClear(false)
     onDataCleared()
     onClose()
+  }
+
+  async function handleSeedDemo() {
+    setSeedingDemo(true)
+    try {
+      await seedDemoMeals()
+      onDataCleared()
+      onClose()
+    } finally {
+      setSeedingDemo(false)
+    }
   }
 
   async function handleDeleteAccount() {
@@ -322,7 +331,7 @@ export function SettingsPanel({
                 role="switch"
                 aria-checked={advancedNutrients}
                 onClick={handleToggleAdvancedNutrients}
-                className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                className="relative flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors"
                 style={{
                   backgroundColor: advancedNutrients ? 'var(--accent-strong)' : 'var(--surface-1)',
                   border: '2px solid #000000',
@@ -332,7 +341,7 @@ export function SettingsPanel({
                   className="h-5 w-5 rounded-full bg-white shadow transition-transform"
                   style={{
                     border: '2px solid #000000',
-                    transform: advancedNutrients ? 'translateX(calc(1.75rem - 4px))' : 'translateX(0px)',
+                    transform: advancedNutrients ? 'translateX(1.25rem)' : 'translateX(0px)',
                   }}
                 />
               </button>
@@ -407,7 +416,7 @@ export function SettingsPanel({
                     aria-checked={notifPref}
                     onClick={handleToggleNotifications}
                     disabled={notifPermission === 'denied'}
-                    className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                    className="relative flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors"
                     style={{
                       backgroundColor: notifPref ? 'var(--accent-strong)' : 'var(--surface-1)',
                       border: '2px solid #000000',
@@ -418,7 +427,7 @@ export function SettingsPanel({
                       className="h-5 w-5 rounded-full bg-white shadow transition-transform"
                       style={{
                         border: '2px solid #000000',
-                        transform: notifPref ? 'translateX(calc(1.75rem - 4px))' : 'translateX(0px)',
+                        transform: notifPref ? 'translateX(1.25rem)' : 'translateX(0px)',
                       }}
                     />
                   </button>
@@ -429,6 +438,17 @@ export function SettingsPanel({
 
           <SettingsSection label={t.data.heading} isOpen={openSection === 'data'} onToggle={() => toggleSection('data')}>
             <div className="flex flex-col gap-2">
+              {import.meta.env.DEV && (
+                <button
+                  type="button"
+                  onClick={handleSeedDemo}
+                  disabled={seedingDemo}
+                  className="w-full rounded-full py-1 text-[10px] font-semibold disabled:opacity-50"
+                  style={{ color: 'var(--text-secondary)', border: '1px dashed var(--text-secondary)' }}
+                >
+                  {seedingDemo ? 'Dev: seeding…' : 'Dev: load demo data'}
+                </button>
+              )}
               {!confirmingClear ? (
                 <button
                   onClick={() => setConfirmingClear(true)}

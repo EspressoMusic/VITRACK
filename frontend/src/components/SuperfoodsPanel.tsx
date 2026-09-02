@@ -134,9 +134,13 @@ function XpText({ xp, size = 'sm' }: { xp: number; size?: 'sm' | 'lg' }) {
 }
 
 const LONG_PRESS_MS = 300
-const DRAG_CANCEL_DISTANCE = 10
+const DRAG_START_DISTANCE = 10
 
-/** Press-and-hold a card, then drag it over the focus row to pin it — a quick tap still opens the detail modal. */
+/**
+ * Mouse: drag activates as soon as the pointer moves past the threshold, like normal desktop
+ * drag-and-drop. Touch/pen: requires a brief press-and-hold first, so a normal scroll swipe
+ * through the grid doesn't get hijacked as a drag. A quick tap (no activation) opens the modal.
+ */
 function useLongPressDrag({
   disabled,
   onTap,
@@ -151,9 +155,11 @@ function useLongPressDrag({
   onDragEnd: (x: number, y: number) => void
 }) {
   const [isDragging, setIsDragging] = useState(false)
+  const armedRef = useRef(false)
   const draggingRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const startRef = useRef({ x: 0, y: 0 })
+  const pointerTypeRef = useRef('mouse')
 
   const clearTimer = () => {
     if (timerRef.current !== null) {
@@ -162,20 +168,28 @@ function useLongPressDrag({
     }
   }
 
+  const activate = (targetEl: Element, pointerId: number, x: number, y: number) => {
+    draggingRef.current = true
+    setIsDragging(true)
+    targetEl.setPointerCapture?.(pointerId)
+    onDragStart(x, y)
+  }
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (disabled) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
+    pointerTypeRef.current = e.pointerType
+    armedRef.current = true
     const pointerId = e.pointerId
     const targetEl = e.currentTarget
     startRef.current = { x: e.clientX, y: e.clientY }
     clearTimer()
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null
-      draggingRef.current = true
-      setIsDragging(true)
-      targetEl.setPointerCapture?.(pointerId)
-      onDragStart(startRef.current.x, startRef.current.y)
-    }, LONG_PRESS_MS)
+    if (e.pointerType !== 'mouse') {
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null
+        activate(targetEl, pointerId, startRef.current.x, startRef.current.y)
+      }, LONG_PRESS_MS)
+    }
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -184,12 +198,23 @@ function useLongPressDrag({
       onDragMove(e.clientX, e.clientY)
       return
     }
+    if (!armedRef.current) return
     const dx = e.clientX - startRef.current.x
     const dy = e.clientY - startRef.current.y
-    if (Math.hypot(dx, dy) > DRAG_CANCEL_DISTANCE) clearTimer()
+    const dist = Math.hypot(dx, dy)
+    if (pointerTypeRef.current === 'mouse') {
+      if (dist > DRAG_START_DISTANCE) {
+        activate(e.currentTarget, e.pointerId, startRef.current.x, startRef.current.y)
+        e.preventDefault()
+        onDragMove(e.clientX, e.clientY)
+      }
+      return
+    }
+    if (dist > DRAG_START_DISTANCE) clearTimer()
   }
 
   const finish = (e: React.PointerEvent, cancelled: boolean) => {
+    armedRef.current = false
     clearTimer()
     if (draggingRef.current) {
       draggingRef.current = false
@@ -200,7 +225,7 @@ function useLongPressDrag({
     if (!cancelled) {
       const dx = e.clientX - startRef.current.x
       const dy = e.clientY - startRef.current.y
-      if (Math.hypot(dx, dy) < DRAG_CANCEL_DISTANCE) onTap()
+      if (Math.hypot(dx, dy) < DRAG_START_DISTANCE) onTap()
     }
   }
 
@@ -250,7 +275,9 @@ export function SuperfoodDetailModal({ food, onClose }: { food: SuperfoodDef; on
         >
           <CloseIcon className="h-3.5 w-3.5" />
         </button>
-        <SuperfoodImage food={food} className="food-wiggle-in h-28 w-28" emojiSize="4em" />
+        <div className="icon-glow-wrap h-28 w-28">
+          <SuperfoodImage food={food} className="food-wiggle-in h-28 w-28" emojiSize="4em" />
+        </div>
         <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
           {content.name}
         </h2>

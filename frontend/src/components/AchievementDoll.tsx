@@ -1,11 +1,11 @@
 /** A small collectible plush-doll figure, filled with a tier color when unlocked or a flat gray
  *  silhouette when locked. Matches the app's thick-black-outline, flat-color cartoon style
  *  (see BodyFillGauge's bust silhouette). */
-export function AchievementDoll({ color, locked }: { color: string; locked: boolean }) {
+export function AchievementDoll({ color, locked, className = 'h-11 w-11' }: { color: string; locked: boolean; className?: string }) {
   const fill = locked ? '#d9d3c4' : color
 
   return (
-    <svg viewBox="0 0 64 76" className="h-11 w-11" role="img" aria-hidden>
+    <svg viewBox="0 0 64 76" className={className} role="img" aria-hidden>
       <path
         d="M14 74 C14 52 20 40 32 40 C44 40 50 52 50 74 Z"
         fill={fill}

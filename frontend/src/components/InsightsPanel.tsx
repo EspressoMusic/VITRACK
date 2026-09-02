@@ -112,8 +112,8 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   if (meals.length === 0) {
     return (
-      <div className="mx-auto flex h-full max-w-[75%] flex-col items-center justify-center gap-2 text-center">
-        <WeeklyGoalGlass percent={0} size={160} />
+      <div className="mx-auto flex h-full max-w-[75%] flex-col items-center gap-2 pt-12 text-center">
+        <WeeklyGoalGlass percent={0} size={200} />
       </div>
     )
   }

@@ -39,7 +39,7 @@ function AppShell() {
   const panelBg = {
     camera: 'background-camera',
     calendar: 'background-plain',
-    insights: 'background-plain',
+    insights: 'background-insights',
     superfoods: 'background-plain',
   }[tab]
 

@@ -26,8 +26,10 @@ function NavIcon({
       <span
         className="nav-tab-transition flex h-11 w-11 items-center justify-center rounded-full"
         style={{
-          backgroundColor: active ? '#6b4423' : '#eec978',
-          color: active ? '#2b1810' : 'var(--accent-strong)',
+          backgroundColor: active ? '#6b4423' : 'transparent',
+          color: active ? '#f5deb3' : '#6b4423',
+          border: active ? '2px solid #000000' : '2px solid transparent',
+          boxShadow: active ? '0 2px 0 #000000' : 'none',
         }}
       >
         <span
@@ -59,7 +61,7 @@ export function NavBar({
   return (
     <nav
       className="sticky bottom-0 flex shrink-0 justify-center"
-      style={{ backgroundColor: '#eec978', borderTop: '4px solid #d9a441' }}
+      style={{ backgroundColor: '#eec978', borderTop: '2px solid #000000' }}
     >
       <div className="relative grid w-full max-w-md grid-cols-5 items-center">
         <NavIcon
@@ -90,30 +92,29 @@ export function NavBar({
           icon={<GearIcon className="h-full w-full" strokeWidth={1.7} />}
         />
 
-        <button
-          onClick={() => onChange('camera')}
-          className="nav-tab-transition absolute flex h-14 w-14 items-center justify-center rounded-full"
-          style={{
-            top: '-8px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: cameraActive ? '#6b4423' : '#eec978',
-            border: '3px solid #d9a441',
-            boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
-          }}
-          aria-current={cameraActive ? 'page' : undefined}
-          aria-label={t.camera}
-        >
-          <span
-            className="nav-tab-transition flex h-7 w-7 items-center justify-center"
+        <div className="absolute" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
+          <button
+            onClick={() => onChange('camera')}
+            className="nav-tab-transition flex h-14 w-14 items-center justify-center rounded-full active:translate-y-0.5 active:shadow-none"
             style={{
-              color: cameraActive ? '#2b1810' : 'var(--accent-strong)',
-              transform: cameraActive ? 'scale(1.15)' : 'scale(1)',
+              backgroundColor: cameraActive ? '#6b4423' : 'var(--surface-cream)',
+              border: '2px solid #000000',
+              boxShadow: '0 3px 0 #000000',
             }}
+            aria-current={cameraActive ? 'page' : undefined}
+            aria-label={t.camera}
           >
-            <CameraIcon className="h-full w-full" strokeWidth={1.7} />
-          </span>
-        </button>
+            <span
+              className="nav-tab-transition flex h-7 w-7 items-center justify-center"
+              style={{
+                color: cameraActive ? '#f5deb3' : '#6b4423',
+                transform: cameraActive ? 'scale(1.15)' : 'scale(1)',
+              }}
+            >
+              <CameraIcon className="h-full w-full" strokeWidth={1.7} />
+            </span>
+          </button>
+        </div>
       </div>
     </nav>
   )

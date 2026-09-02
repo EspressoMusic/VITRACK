@@ -3,10 +3,16 @@ import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
 import { getVisibleNutrients, percentOfRda } from '../lib/nutrients'
+import { isMacroTrackingEnabled } from '../lib/macros'
+import { ACHIEVEMENT_TIERS, countGoalDays, type AchievementTier } from '../lib/achievements'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
+import { ACHIEVEMENTS_PANEL_STRINGS } from '../lib/i18n/achievementsPanel'
 import { MealDetailModal } from './MealDetailModal'
+import { AchievementDetailModal } from './AchievementsPanel'
+import { AchievementDoll } from './AchievementDoll'
+import { LockIcon } from './icons'
 
 const GRID_COLS = 'grid-cols-7'
 
@@ -26,6 +32,7 @@ function formatTime(iso: string): string {
 export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang, dir } = useLanguage()
   const t = CALENDAR_PANEL_STRINGS[lang]
+  const tAch = ACHIEVEMENTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [cursor, setCursor] = useState(() => {
     const now = new Date()
@@ -34,6 +41,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const [selectedDate, setSelectedDate] = useState(todayKey())
   const [view, setView] = useState<'month' | 'day'>('month')
   const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
+  const [selectedTier, setSelectedTier] = useState<AchievementTier | null>(null)
 
   useEffect(() => {
     getAllMeals().then(setMeals)
@@ -58,6 +66,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const today = todayKey()
 
   const selectedMeals = mealsByDate.get(selectedDate) ?? []
+  const goalDayCount = useMemo(() => countGoalDays(meals, isMacroTrackingEnabled()), [meals])
 
   function changeMonth(delta: number) {
     setCursor((c) => {
@@ -75,46 +84,37 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         className="mx-auto w-[92%] shrink-0 rounded-3xl p-2.5"
         style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 7px 0 #c9a463, 0 10px 26px rgba(11,11,11,0.16)' }}
       >
-        <div className="mb-1.5 flex items-center justify-between">
-          {view === 'day' ? (
-            <button
-              onClick={() => setView('month')}
-              aria-label={t.backAriaLabel}
-              className="flex items-center gap-0.5 text-sm font-semibold"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              <span>{dir === 'rtl' ? '›' : '‹'}</span>
-              <span>{t.backLabel}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => changeMonth(-1)}
-              aria-label={t.prevMonthAriaLabel}
-              className="flex h-6 w-6 items-center justify-center text-sm"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {dir === 'rtl' ? '›' : '‹'}
-            </button>
-          )}
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {view === 'day' ? selectedLabel : shortMonthLabel(cursor.year, cursor.month)}
-          </span>
-          {view === 'day' ? (
-            <span className="h-6 w-6" />
-          ) : (
-            <button
-              onClick={() => changeMonth(1)}
-              aria-label={t.nextMonthAriaLabel}
-              className="flex h-6 w-6 items-center justify-center text-sm"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {dir === 'rtl' ? '‹' : '›'}
-            </button>
-          )}
-        </div>
+        <div className="relative overflow-hidden">
+          <div
+            aria-hidden={view !== 'month'}
+            style={{
+              transform: `translateX(${view === 'day' ? (dir === 'rtl' ? '101%' : '-101%') : '0%'})`,
+              transition: 'transform 0.36s cubic-bezier(0.22, 1, 0.36, 1)',
+              pointerEvents: view === 'month' ? 'auto' : 'none',
+            }}
+          >
+            <div className="mb-1.5 flex items-center justify-between">
+              <button
+                onClick={() => changeMonth(-1)}
+                aria-label={t.prevMonthAriaLabel}
+                className="flex h-6 w-6 items-center justify-center text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {dir === 'rtl' ? '›' : '‹'}
+              </button>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {shortMonthLabel(cursor.year, cursor.month)}
+              </span>
+              <button
+                onClick={() => changeMonth(1)}
+                aria-label={t.nextMonthAriaLabel}
+                className="flex h-6 w-6 items-center justify-center text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {dir === 'rtl' ? '‹' : '›'}
+              </button>
+            </div>
 
-        {view === 'month' ? (
-          <div key="month" className="step-enter">
             <div className={`mb-1 grid ${GRID_COLS} gap-0.5 text-center text-[10px] font-medium`}>
               {WEEKDAY_NAMES.map((w) => (
                 <span key={w} style={{ color: '#000000' }}>
@@ -160,48 +160,115 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
               ))}
             </div>
           </div>
-        ) : (
-          <div key="day" className="step-enter thin-scroll flex max-h-64 min-h-56 flex-col gap-1.5 overflow-y-auto pe-1">
-            {selectedMeals.length === 0 ? (
-              <p className="py-6 text-center text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {t.noMealsLoggedThisDay}
-              </p>
-            ) : (
-              selectedMeals.map((meal) => {
-                const topId = topNutrient(meal.nutrients)
-                return (
-                  <button
-                    key={meal.id}
-                    onClick={() => setSelectedMeal(meal)}
-                    className="flex items-center gap-1.5 rounded-lg p-1 text-start transition-transform active:translate-y-1 active:shadow-none"
-                    style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
-                  >
-                    <img
-                      src={meal.imageDataUrl}
-                      alt=""
-                      className="h-6 w-6 shrink-0 rounded-md object-cover"
-                      style={{ border: '1px solid var(--border)' }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : t.mealFallbackName}
-                      </p>
-                      <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
-                        {topId ? t.richIn(NUTRIENT_CONTENT[lang][topId].name) : t.noStandoutNutrients}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                      {formatTime(meal.createdAt)}
-                    </span>
-                  </button>
-                )
-              })
-            )}
+
+          <div
+            className="absolute inset-0 flex flex-col"
+            aria-hidden={view !== 'day'}
+            style={{
+              transform: `translateX(${view === 'day' ? '0%' : dir === 'rtl' ? '-101%' : '101%'})`,
+              transition: 'transform 0.36s cubic-bezier(0.22, 1, 0.36, 1)',
+              pointerEvents: view === 'day' ? 'auto' : 'none',
+            }}
+          >
+            <div className="mb-1.5 flex shrink-0 items-center justify-between">
+              <button
+                onClick={() => setView('month')}
+                aria-label={t.backAriaLabel}
+                className="flex h-6 w-6 items-center justify-center text-sm"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {dir === 'rtl' ? '›' : '‹'}
+              </button>
+              <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {selectedLabel}
+              </span>
+              <span className="h-6 w-6" />
+            </div>
+
+            <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
+              {selectedMeals.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center">
+                  <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    {t.noMealsLoggedThisDay}
+                  </p>
+                </div>
+              ) : (
+                selectedMeals.map((meal) => {
+                  const topId = topNutrient(meal.nutrients)
+                  return (
+                    <button
+                      key={meal.id}
+                      onClick={() => setSelectedMeal(meal)}
+                      className="flex items-center gap-1.5 rounded-lg p-1 text-start transition-transform active:translate-y-1 active:shadow-none"
+                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
+                    >
+                      <img
+                        src={meal.imageDataUrl}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded-md object-cover"
+                        style={{ border: '1px solid var(--border)' }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {meal.foods.length > 0 ? meal.foods[0].name.split(' ').slice(0, 3).join(' ') : t.mealFallbackName}
+                        </p>
+                        <p className="truncate text-[9px]" style={{ color: 'var(--text-secondary)' }}>
+                          {topId ? t.richIn(NUTRIENT_CONTENT[lang][topId].name) : t.noStandoutNutrients}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[9px]" style={{ color: 'var(--text-muted)' }}>
+                        {formatTime(meal.createdAt)}
+                      </span>
+                    </button>
+                  )
+                })
+              )}
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex min-h-0 flex-1 flex-col">
+        <span className="mb-1.5 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+          {tAch.title}
+        </span>
+        <div className="grid grid-cols-3 gap-2">
+          {ACHIEVEMENT_TIERS.map((tier) => {
+            const unlocked = goalDayCount >= tier.threshold
+            return (
+              <button
+                key={tier.id}
+                onClick={() => setSelectedTier(tier)}
+                className="relative flex flex-col items-center gap-1 rounded-2xl p-2"
+                style={{
+                  backgroundColor: 'var(--surface-cream)',
+                  border: '2px solid #000000',
+                  boxShadow: unlocked ? '0 2px 0 #000000' : 'none',
+                  opacity: unlocked ? 1 : 0.55,
+                }}
+              >
+                {!unlocked && (
+                  <span
+                    className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                    style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000', color: 'var(--text-secondary)' }}
+                  >
+                    <LockIcon className="h-2.5 w-2.5" />
+                  </span>
+                )}
+                <AchievementDoll color={tier.color} locked={!unlocked} />
+                <span className="text-center text-[9px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                  {tAch.tierLabel(tier.threshold)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
+      {selectedTier && (
+        <AchievementDetailModal tier={selectedTier} goalDayCount={goalDayCount} onClose={() => setSelectedTier(null)} />
+      )}
     </div>
   )
 }

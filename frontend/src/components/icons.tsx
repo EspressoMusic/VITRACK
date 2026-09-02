@@ -310,11 +310,3 @@ export function TargetIcon({ className }: IconProps) {
     </svg>
   )
 }
-
-export function ChevronDownIcon({ className, style, strokeWidth }: IconProps) {
-  return (
-    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
-      <path d="M5.5 9l6.5 6.5L18.5 9" />
-    </svg>
-  )
-}

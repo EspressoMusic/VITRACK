@@ -204,14 +204,14 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
               role="switch"
               aria-checked={agreed}
               onClick={() => setAgreed((a) => !a)}
-              className="relative flex h-5 w-9 shrink-0 items-center rounded-full transition-colors"
+              className="relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors"
               style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '2px solid #222' }}
             >
               <span
                 className="h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
                 style={{
                   transform: agreed
-                    ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * (1.375rem - 4px)))`
+                    ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * 0.875rem))`
                     : 'translateX(0px)',
                   border: '1px solid #222',
                 }}

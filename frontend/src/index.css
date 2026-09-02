@@ -514,6 +514,42 @@ button:active {
   animation: superfood-bob 2.4s ease-in-out infinite;
 }
 
+@keyframes icon-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+.icon-glow-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-glow-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 135%;
+  height: 135%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 205, 70, 0.85) 0%, rgba(255, 205, 70, 0) 72%);
+  filter: blur(3px);
+  transform: translate(-50%, -50%);
+  animation: icon-glow-pulse 2.6s ease-in-out infinite;
+  z-index: 0;
+}
+.icon-glow-wrap > * {
+  position: relative;
+  z-index: 1;
+}
+
 /** Sits still most of the loop and only wiggles briefly near the end, so it reads as an
  *  occasional idle nudge rather than a continuous animation. */
 @keyframes icon-idle-wiggle {
@@ -721,6 +757,7 @@ button:active {
   .featured-card-glow,
   .superfood-float,
   .food-wiggle-in,
+  .icon-glow-wrap::before,
   .icon-idle-wiggle,
   .welcome-cta-glow,
   .status-pulse,
