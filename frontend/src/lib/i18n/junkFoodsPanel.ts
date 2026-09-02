@@ -61,8 +61,8 @@ export interface JunkFoodsPanelChrome {
 
 export const JUNK_FOODS_PANEL_CHROME: Record<Lang, JunkFoodsPanelChrome> = {
   en: {
-    superfoodsTab: 'Superfoods',
-    junkFoodTab: 'Junk Food',
+    superfoodsTab: 'HERO FOOD',
+    junkFoodTab: 'VILLAIN FOOD',
     removeAriaLabel: 'Remove',
   },
   he: {

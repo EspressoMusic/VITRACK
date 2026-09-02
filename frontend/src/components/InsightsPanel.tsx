@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { coverageStatus } from '../lib/nutrients'
@@ -10,19 +11,26 @@ import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
+import { CheckIcon, CloseIcon } from './icons'
 
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang } = useLanguage()
   const t = INSIGHTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [missingOpen, setMissingOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [noDeficienciesOpen, setNoDeficienciesOpen] = useState(false)
   const confettiFired = useRef(false)
+  const noDeficienciesFired = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    getAllMeals().then(setMeals)
+    getAllMeals().then((m) => {
+      setMeals(m)
+      setLoaded(true)
+    })
   }, [refreshSignal])
 
   const { ranked, weeklyCompletion } = useMemo(() => computeWeeklyInsights(meals), [meals])
@@ -110,6 +118,15 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     }
   }, [meals, weeklyCompletion])
 
+  useEffect(() => {
+    if (!noDeficienciesFired.current && meals.length > 0 && deficient.length === 0) {
+      noDeficienciesFired.current = true
+      setNoDeficienciesOpen(true)
+    }
+  }, [meals, deficient.length])
+
+  if (!loaded) return null
+
   if (meals.length === 0) {
     return (
       <div className="mx-auto flex h-full max-w-[75%] flex-col items-center gap-2 pt-12 text-center">
@@ -132,14 +149,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           ref={scrollRef}
           className="thin-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-1.5"
         >
-          {deficient.length === 0 ? (
-            <p
-              className="flex items-center justify-center whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-semibold"
-              style={{ backgroundColor: '#f6e4bb', color: '#8a6414', border: '1px solid #d9a441' }}
-            >
-              {t.niceWorkNoDeficiencies}
-            </p>
-          ) : (
+          {deficient.length > 0 && (
             <div className="flex flex-col">
               <div className="flex flex-col gap-1">
                 {deficient.map((d) => (
@@ -189,6 +199,47 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           }}
         />
       )}
+
+      {noDeficienciesOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+              onClick={() => setNoDeficienciesOpen(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl px-6 py-7 text-center"
+              style={{
+                backgroundColor: 'var(--surface-cream)',
+                border: '2px solid #000000',
+                boxShadow: '0 14px 30px rgba(11,11,11,0.22), 0 4px 0 #000000',
+              }}
+            >
+              <button
+                onClick={() => setNoDeficienciesOpen(false)}
+                aria-label={t.closeAriaLabel}
+                className="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <CloseIcon className="h-5 w-5" />
+              </button>
+              <span
+                className="flex h-14 w-14 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'var(--accent-strong)', color: '#fff' }}
+              >
+                <CheckIcon className="h-7 w-7" />
+              </span>
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                {t.niceWorkNoDeficiencies}
+              </h2>
+              <p className="text-sm leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                {t.noDeficienciesNote}
+              </p>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

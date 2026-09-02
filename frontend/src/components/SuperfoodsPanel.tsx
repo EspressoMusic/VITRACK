@@ -566,7 +566,7 @@ function FocusSlot({
   if (!food) {
     return (
       <div
-        className="flex h-20 flex-1 items-center justify-center rounded-lg"
+        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg"
         style={{ backgroundColor: 'rgba(255,255,255,0.3)', border: '2px solid #000000', boxShadow: '0 4px 0 rgba(0,0,0,0.35)' }}
       >
         <StarIcon className="h-4 w-4" style={{ color: 'rgba(0,0,0,0.25)' } as React.CSSProperties} />
@@ -587,7 +587,7 @@ function FocusSlot({
           onSelect()
         }
       }}
-      className="relative flex h-20 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1"
+      className="relative flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1"
       style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 4px 0 #000000' }}
     >
       <button
@@ -712,7 +712,7 @@ export function SuperfoodsPanel() {
       <div className="flex shrink-0 flex-col gap-1">
         <div
           ref={focusZoneRef}
-          className="flex gap-2 rounded-xl transition-shadow"
+          className="flex justify-center gap-2 rounded-xl transition-shadow"
           style={dragPreview ? { boxShadow: '0 0 0 3px #eab308', borderRadius: '0.9rem' } : undefined}
         >
           {focusSlots.map((food, i) => (

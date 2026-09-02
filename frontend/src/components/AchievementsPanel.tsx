@@ -116,11 +116,11 @@ export function AchievementsPanel({ onClose }: { onClose: () => void }) {
             return (
               <div
                 key={tier.id}
-                className="relative flex flex-col items-center gap-1 rounded-2xl p-2 pt-2.5"
+                className="relative flex flex-col items-center gap-1 rounded-lg p-2 pt-2.5"
                 style={{
                   backgroundColor: 'var(--surface-cream)',
                   border: '2px solid #000000',
-                  boxShadow: unlocked ? '0 2px 0 #000000' : 'none',
+                  boxShadow: '0 4px 0 #000000',
                   opacity: unlocked ? 1 : 0.8,
                 }}
               >

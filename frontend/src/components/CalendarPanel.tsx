@@ -229,9 +229,6 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
       </div>
 
       <div className="mt-3 flex min-h-0 flex-1 flex-col">
-        <span className="mb-1.5 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {tAch.title}
-        </span>
         <div className="grid grid-cols-3 gap-2">
           {ACHIEVEMENT_TIERS.map((tier) => {
             const unlocked = goalDayCount >= tier.threshold
@@ -239,11 +236,11 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
               <button
                 key={tier.id}
                 onClick={() => setSelectedTier(tier)}
-                className="relative flex flex-col items-center gap-1 rounded-2xl p-2"
+                className="relative flex flex-col items-center gap-1 rounded-lg p-2"
                 style={{
                   backgroundColor: 'var(--surface-cream)',
                   border: '2px solid #000000',
-                  boxShadow: unlocked ? '0 2px 0 #000000' : 'none',
+                  boxShadow: '0 4px 0 #000000',
                   opacity: unlocked ? 1 : 0.55,
                 }}
               >
