@@ -159,6 +159,8 @@ function useLongPressDrag({
   const draggingRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const startRef = useRef({ x: 0, y: 0 })
+  const lastPosRef = useRef({ x: 0, y: 0 })
+  const scrollElRef = useRef<HTMLElement | null>(null)
   const pointerTypeRef = useRef('mouse')
 
   const clearTimer = () => {
@@ -183,6 +185,8 @@ function useLongPressDrag({
     const pointerId = e.pointerId
     const targetEl = e.currentTarget
     startRef.current = { x: e.clientX, y: e.clientY }
+    lastPosRef.current = { x: e.clientX, y: e.clientY }
+    scrollElRef.current = e.pointerType !== 'mouse' ? (targetEl.closest('.thin-scroll') as HTMLElement | null) : null
     clearTimer()
     if (e.pointerType !== 'mouse') {
       timerRef.current = window.setTimeout(() => {
@@ -209,6 +213,10 @@ function useLongPressDrag({
         onDragMove(e.clientX, e.clientY)
       }
       return
+    }
+    if (scrollElRef.current) {
+      scrollElRef.current.scrollTop -= e.clientY - lastPosRef.current.y
+      lastPosRef.current = { x: e.clientX, y: e.clientY }
     }
     if (dist > DRAG_START_DISTANCE) clearTimer()
   }
@@ -339,7 +347,7 @@ function SuperfoodRow({
         boxShadow: '0 12px 22px rgba(11,11,11,0.3), 0 5px 0 #000000',
         scrollSnapAlign: 'start',
         opacity: isDragging ? 0.35 : 1,
-        touchAction: isDragging ? 'none' : undefined,
+        touchAction: 'none',
         cursor: 'grab',
       }}
     >
@@ -491,7 +499,7 @@ function JunkFoodRow({
         boxShadow: '0 12px 22px rgba(11,11,11,0.3), 0 5px 0 #000000',
         scrollSnapAlign: 'start',
         opacity: isDragging ? 0.35 : 1,
-        touchAction: isDragging ? 'none' : undefined,
+        touchAction: 'none',
         cursor: 'grab',
       }}
     >

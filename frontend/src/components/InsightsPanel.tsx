@@ -122,6 +122,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     if (!noDeficienciesFired.current && meals.length > 0 && deficient.length === 0) {
       noDeficienciesFired.current = true
       setNoDeficienciesOpen(true)
+      setShowConfetti(true)
     }
   }, [meals, deficient.length])
 
@@ -139,8 +140,8 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        <div className="mt-3">
-          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
+        <div className="mt-8">
+          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} size={130} />
         </div>
       </div>
 
@@ -209,7 +210,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
               onClick={() => setNoDeficienciesOpen(false)}
             />
             <div
-              className="modal-card-enter relative z-10 flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl px-6 py-7 text-center"
+              className="modal-card-enter relative z-10 flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl px-6 py-8 text-center"
               style={{
                 backgroundColor: 'var(--surface-cream)',
                 border: '2px solid #000000',
@@ -224,18 +225,33 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
               >
                 <CloseIcon className="h-5 w-5" />
               </button>
-              <span
-                className="flex h-14 w-14 items-center justify-center rounded-full"
-                style={{ backgroundColor: 'var(--accent-strong)', color: '#fff' }}
-              >
-                <CheckIcon className="h-7 w-7" />
-              </span>
+              <div className="icon-glow-wrap food-wiggle-in h-16 w-16">
+                <span
+                  className="flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: 'var(--accent-strong)',
+                    color: '#fff',
+                    border: '2px solid #000000',
+                    boxShadow: '0 3px 0 #000000',
+                  }}
+                >
+                  <CheckIcon className="h-7 w-7" />
+                </span>
+              </div>
               <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                 {t.niceWorkNoDeficiencies}
               </h2>
               <p className="text-sm leading-snug" style={{ color: 'var(--text-secondary)' }}>
                 {t.noDeficienciesNote}
               </p>
+              <button
+                type="button"
+                onClick={() => setNoDeficienciesOpen(false)}
+                className="mt-1 w-full rounded-full py-2.5 text-sm font-bold text-white transition-transform active:translate-y-1 active:shadow-none"
+                style={{ backgroundColor: 'var(--accent)', border: '3px solid #000000', boxShadow: '0 3px 0 #000000' }}
+              >
+                {t.claimReward}
+              </button>
             </div>
           </div>,
           document.body
