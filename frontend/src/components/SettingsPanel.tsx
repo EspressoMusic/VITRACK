@@ -168,7 +168,7 @@ export function SettingsPanel({
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-5 pb-4 pt-5">
+      <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-5 pb-4 pt-5">
           <SettingsSection label={t.account.heading} isOpen={openSection === 'account'} onToggle={() => toggleSection('account')}>
             {user && !user.is_anonymous ? (
               <div className="flex flex-col gap-2">

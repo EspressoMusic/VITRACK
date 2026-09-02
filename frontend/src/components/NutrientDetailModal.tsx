@@ -77,7 +77,7 @@ export function NutrientDetailModal({
             </div>
 
             <div className="grid grid-cols-2 gap-1.5">
-              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}>
+              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                 <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                   {t.consumed}
                 </div>
@@ -91,7 +91,7 @@ export function NutrientDetailModal({
                   </span>
                 </div>
               </div>
-              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}>
+              <div className="rounded-xl p-1.5" style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)' }}>
                 <div className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                   {remaining > 0 ? t.remaining : t.status}
                 </div>

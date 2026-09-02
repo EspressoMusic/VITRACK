@@ -51,18 +51,34 @@ export function WeeklyGoalGlass({
         </div>
       </div>
 
+      {/* soft ambient highlight, like light diffusing across curved glass */}
       <div
         aria-hidden
         className="pointer-events-none absolute rounded-full"
         style={{
-          insetInlineStart: -10 * scale,
-          top: 16 * scale,
-          height: 80 * scale,
-          width: 36 * scale,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.85), transparent 70%)',
-          transform: 'rotate(15deg)',
+          insetInlineStart: -4 * scale,
+          top: 2 * scale,
+          height: 58 * scale,
+          width: 46 * scale,
+          background: 'radial-gradient(ellipse at 42% 32%, rgba(255,255,255,0.85), rgba(255,255,255,0.22) 55%, transparent 78%)',
+          transform: 'rotate(-10deg)',
+          filter: `blur(${1.5 * scale}px)`,
         }}
       />
+      {/* sharp specular hotspot, the direct reflection of a light source */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          insetInlineStart: 15 * scale,
+          top: 11 * scale,
+          height: 11 * scale,
+          width: 11 * scale,
+          background: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%)',
+        }}
+      />
+      {/* periodic glint sweeping across the glass for a living, realistic feel */}
+      <div aria-hidden className="orb-glint pointer-events-none absolute inset-0" />
 
       <span
         className="relative z-10 font-bold"

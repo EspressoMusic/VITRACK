@@ -11,6 +11,8 @@ export interface NutrientDef {
   foodSources: string[]
   /** Short, plain-language explanation of why this nutrient matters for the body. */
   benefit: string
+  /** One emoji standing in for this nutrient's main benefit, shown next to its name as a tiny at-a-glance cue. Language-independent. */
+  icon: string
   /** One of the handful of highest-impact nutrients shown by default outside advanced mode. */
   core?: boolean
 }
@@ -19,6 +21,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminA',
     name: 'Vitamin A',
+    icon: '👁️',
     shortLabel: 'Vit A',
     unit: 'mcg',
     rda: 900,
@@ -32,6 +35,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminC',
     name: 'Vitamin C',
+    icon: '🛡️',
     shortLabel: 'Vit C',
     unit: 'mg',
     rda: 90,
@@ -45,6 +49,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminD',
     name: 'Vitamin D',
+    icon: '🦴',
     shortLabel: 'Vit D',
     unit: 'mcg',
     rda: 20,
@@ -58,6 +63,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminE',
     name: 'Vitamin E',
+    icon: '✨',
     shortLabel: 'Vit E',
     unit: 'mg',
     rda: 15,
@@ -70,6 +76,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminK',
     name: 'Vitamin K',
+    icon: '🩸',
     shortLabel: 'Vit K',
     unit: 'mcg',
     rda: 120,
@@ -82,6 +89,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB1',
     name: 'Vitamin B1',
+    icon: '⚡',
     shortLabel: 'B1',
     unit: 'mg',
     rda: 1.2,
@@ -94,6 +102,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB2',
     name: 'Vitamin B2',
+    icon: '⚡',
     shortLabel: 'B2',
     unit: 'mg',
     rda: 1.3,
@@ -106,6 +115,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB3',
     name: 'Vitamin B3',
+    icon: '⚡',
     shortLabel: 'B3',
     unit: 'mg',
     rda: 16,
@@ -118,6 +128,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB5',
     name: 'Vitamin B5',
+    icon: '⚡',
     shortLabel: 'B5',
     unit: 'mg',
     rda: 5,
@@ -130,6 +141,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB6',
     name: 'Vitamin B6',
+    icon: '🧠',
     shortLabel: 'B6',
     unit: 'mg',
     rda: 1.7,
@@ -143,6 +155,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB7',
     name: 'Vitamin B7',
+    icon: '💇',
     shortLabel: 'B7',
     unit: 'mcg',
     rda: 30,
@@ -155,6 +168,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB9',
     name: 'Vitamin B9',
+    icon: '🌱',
     shortLabel: 'B9',
     unit: 'mcg',
     rda: 400,
@@ -168,6 +182,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'vitaminB12',
     name: 'Vitamin B12',
+    icon: '🩸',
     shortLabel: 'B12',
     unit: 'mcg',
     rda: 2.4,
@@ -181,6 +196,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'calcium',
     name: 'Calcium',
+    icon: '🦴',
     shortLabel: 'Ca',
     unit: 'mg',
     rda: 1000,
@@ -193,6 +209,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'iron',
     name: 'Iron',
+    icon: '⚡',
     shortLabel: 'Fe',
     unit: 'mg',
     rda: 18,
@@ -206,6 +223,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'magnesium',
     name: 'Magnesium',
+    icon: '💪',
     shortLabel: 'Mg',
     unit: 'mg',
     rda: 400,
@@ -218,6 +236,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'zinc',
     name: 'Zinc',
+    icon: '🛡️',
     shortLabel: 'Zn',
     unit: 'mg',
     rda: 11,
@@ -230,6 +249,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'potassium',
     name: 'Potassium',
+    icon: '❤️',
     shortLabel: 'K',
     unit: 'mg',
     rda: 4700,
@@ -242,6 +262,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'phosphorus',
     name: 'Phosphorus',
+    icon: '🦴',
     shortLabel: 'P',
     unit: 'mg',
     rda: 700,
@@ -254,6 +275,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'copper',
     name: 'Copper',
+    icon: '🩸',
     shortLabel: 'Cu',
     unit: 'mg',
     rda: 0.9,
@@ -266,6 +288,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'manganese',
     name: 'Manganese',
+    icon: '🦴',
     shortLabel: 'Mn',
     unit: 'mg',
     rda: 2.3,
@@ -278,6 +301,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'selenium',
     name: 'Selenium',
+    icon: '✨',
     shortLabel: 'Se',
     unit: 'mcg',
     rda: 55,
@@ -290,6 +314,7 @@ export const NUTRIENTS: NutrientDef[] = [
   {
     id: 'iodine',
     name: 'Iodine',
+    icon: '⚡',
     shortLabel: 'I',
     unit: 'mcg',
     rda: 150,

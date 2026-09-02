@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
+import { todayKey } from '../lib/date'
 import { coverageStatus } from '../lib/nutrients'
 import { computeWeeklyInsights } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -12,6 +13,8 @@ import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CheckIcon, CloseIcon } from './icons'
+
+const LAST_NO_DEFICIENCIES_REWARD_KEY = 'vitrack:lastNoDeficienciesReward'
 
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang } = useLanguage()
@@ -119,8 +122,14 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   }, [meals, weeklyCompletion])
 
   useEffect(() => {
-    if (!noDeficienciesFired.current && meals.length > 0 && deficient.length === 0) {
+    if (
+      !noDeficienciesFired.current &&
+      meals.length > 0 &&
+      deficient.length === 0 &&
+      localStorage.getItem(LAST_NO_DEFICIENCIES_REWARD_KEY) !== todayKey()
+    ) {
       noDeficienciesFired.current = true
+      localStorage.setItem(LAST_NO_DEFICIENCIES_REWARD_KEY, todayKey())
       setNoDeficienciesOpen(true)
       setShowConfetti(true)
     }

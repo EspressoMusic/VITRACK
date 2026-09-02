@@ -574,7 +574,7 @@ function FocusSlot({
   if (!food) {
     return (
       <div
-        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg"
+        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg"
         style={{ backgroundColor: 'rgba(255,255,255,0.3)', border: '2px solid #000000', boxShadow: '0 4px 0 rgba(0,0,0,0.35)' }}
       >
         <StarIcon className="h-4 w-4" style={{ color: 'rgba(0,0,0,0.25)' } as React.CSSProperties} />
@@ -595,7 +595,7 @@ function FocusSlot({
           onSelect()
         }
       }}
-      className="relative flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1"
+      className="relative flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1"
       style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 4px 0 #000000' }}
     >
       <button
@@ -614,7 +614,7 @@ function FocusSlot({
           {(food as JunkFoodDef).emoji}
         </span>
       ) : (
-        <SuperfoodImage food={food as SuperfoodDef} className="h-7 w-7" emojiSize="1.4em" />
+        <SuperfoodImage food={food as SuperfoodDef} className="h-6 w-6" emojiSize="1.2em" />
       )}
       <span className="w-full truncate text-[9px] font-semibold" style={{ color: 'var(--text-primary)' }}>
         {name}
@@ -717,10 +717,10 @@ export function SuperfoodsPanel() {
         </button>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-1">
+      <div className="mt-1 flex shrink-0 flex-col gap-1">
         <div
           ref={focusZoneRef}
-          className="flex justify-center gap-2 rounded-xl transition-shadow"
+          className="flex justify-between rounded-xl transition-shadow"
           style={dragPreview ? { boxShadow: '0 0 0 3px #eab308', borderRadius: '0.9rem' } : undefined}
         >
           {focusSlots.map((food, i) => (

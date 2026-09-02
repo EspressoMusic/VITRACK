@@ -390,6 +390,29 @@ button:active {
   animation-direction: reverse;
 }
 
+@keyframes orb-glint-sweep {
+  0%,
+  55% {
+    background-position: -60% -60%;
+    opacity: 0;
+  }
+  65% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    background-position: 140% 140%;
+    opacity: 0;
+  }
+}
+.orb-glint {
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.75) 46%, transparent 60%);
+  background-size: 300% 300%;
+  animation: orb-glint-sweep 5.5s ease-in-out infinite;
+}
+
 .shine-sweep {
   position: absolute;
   top: 0;
