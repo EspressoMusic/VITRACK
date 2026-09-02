@@ -52,7 +52,6 @@ interface OnboardingStrings {
   calculating: { messages: [string, string, string] }
   summary: {
     title: string
-    subtitle: string
     nutrientNames: { vitaminD: string; iron: string; vitaminB12: string }
     nutrientBenefits: { vitaminD: string; iron: string; vitaminB12: string }
     lockedMore: (count: number) => string
@@ -127,7 +126,6 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     },
     summary: {
       title: 'Your daily targets are ready',
-      subtitle: "Based on your answers — here's what your body needs each day, and why it matters.",
       nutrientNames: { vitaminD: 'Vitamin D', iron: 'Iron', vitaminB12: 'Vitamin B12' },
       nutrientBenefits: {
         vitaminD: 'Bones, mood & immunity',
@@ -204,7 +202,6 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     },
     summary: {
       title: 'היעדים היומיים שלך מוכנים',
-      subtitle: 'בהתבסס על התשובות שלך — הנה מה שהגוף שלך צריך כל יום, ולמה זה חשוב.',
       nutrientNames: { vitaminD: 'ויטמין D', iron: 'ברזל', vitaminB12: 'ויטמין B12' },
       nutrientBenefits: {
         vitaminD: 'עצמות, מצב רוח וחיסון',
@@ -281,7 +278,6 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
     },
     summary: {
       title: 'أهدافك اليومية جاهزة',
-      subtitle: 'بناءً على إجاباتك — إليك ما يحتاجه جسمك كل يوم، ولماذا يهم.',
       nutrientNames: { vitaminD: 'فيتامين D', iron: 'الحديد', vitaminB12: 'فيتامين B12' },
       nutrientBenefits: {
         vitaminD: 'العظام والمزاج والمناعة',

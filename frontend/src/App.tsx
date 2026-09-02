@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
-import { APP_STRINGS } from './lib/i18n/app'
 import { NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
@@ -31,7 +30,6 @@ const CameraPanel = lazy(() => import('./components/CameraPanel').then((m) => ({
 
 function AppShell() {
   const { lang } = useLanguage()
-  const t = APP_STRINGS[lang]
   const [tab, setTab] = useState<Tab>('camera')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
@@ -40,9 +38,9 @@ function AppShell() {
 
   const panelBg = {
     camera: 'background-camera',
-    calendar: 'background-calendar',
-    insights: 'background-progress',
-    superfoods: 'background-insights',
+    calendar: 'background-plain',
+    insights: 'background-plain',
+    superfoods: 'background-plain',
   }[tab]
 
   useEffect(() => {
@@ -56,40 +54,9 @@ function AppShell() {
   return (
     <div
       className="app-shell relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
-      style={{ '--panel-bg': `url('/${panelBg}.png')` } as React.CSSProperties}
+      style={{ '--panel-bg': `url('/${panelBg}.png?v=3')` } as React.CSSProperties}
     >
-      <div
-        className="sticky top-0 z-20 mx-auto flex w-full max-w-md justify-between px-3 pt-1.5"
-        style={{ pointerEvents: 'none' }}
-      >
-        {tab === 'insights' ? (
-          <button
-            onClick={() => setTab('superfoods')}
-            aria-label={t.openSuperfoodsAriaLabel}
-            className="flex h-11 w-11 items-center justify-center transition"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <img src="/icons/fruits/avocado.png" alt="" className="icon-idle-wiggle h-9 w-9 object-contain" />
-          </button>
-        ) : (
-          <div className="h-11 w-11" />
-        )}
-        <button
-          onClick={() => setSettingsOpen(true)}
-          aria-label={t.openSettingsAriaLabel}
-          className="flex h-11 w-11 items-center justify-center transition"
-          style={{ pointerEvents: 'auto' }}
-        >
-          <img
-            src="/icons/settings.png"
-            alt=""
-            className="icon-idle-wiggle h-9 w-9 object-contain"
-            style={{ animationDelay: '3s' }}
-          />
-        </button>
-      </div>
-
-      <main className="min-h-0 flex-1 overflow-hidden">
+      <main className="relative min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
           {tab === 'camera' && (
             <Suspense fallback={null}>
@@ -100,19 +67,27 @@ function AppShell() {
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
           {tab === 'superfoods' && <SuperfoodsPanel />}
         </div>
+
+        {settingsOpen && (
+          <SettingsPanel
+            onClose={() => setSettingsOpen(false)}
+            onDataCleared={bumpRefresh}
+            onNutrientModeChange={bumpRefresh}
+          />
+        )}
       </main>
 
-      <NavBar active={tab} onChange={setTab} />
+      <NavBar
+        active={tab}
+        onChange={(next) => {
+          setTab(next)
+          setSettingsOpen(false)
+        }}
+        onOpenSettings={() => setSettingsOpen((open) => !open)}
+        settingsActive={settingsOpen}
+      />
 
       {chatOpen && <NutritionChatModal lang={lang} onClose={() => setChatOpen(false)} />}
-
-      {settingsOpen && (
-        <SettingsPanel
-          onClose={() => setSettingsOpen(false)}
-          onDataCleared={bumpRefresh}
-          onNutrientModeChange={bumpRefresh}
-        />
-      )}
     </div>
   )
 }

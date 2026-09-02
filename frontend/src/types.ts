@@ -47,6 +47,8 @@ export interface MealEntry {
   macros?: MacroAmounts
   confidence: 'low' | 'medium' | 'high'
   analysisNote?: string
+  /** AI-judged: ultra-processed/fried/sugary/refined. Drives the weekly-completion XP penalty. */
+  isJunkFood?: boolean
 }
 
 export type ThemeMode = 'light' | 'dark'

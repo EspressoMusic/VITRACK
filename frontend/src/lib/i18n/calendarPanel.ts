@@ -8,6 +8,8 @@ export interface CalendarPanelStrings {
   mealFallbackName: string
   richIn: (nutrientName: string) => string
   noStandoutNutrients: string
+  backAriaLabel: string
+  backLabel: string
 }
 
 export const CALENDAR_PANEL_STRINGS: Record<Lang, CalendarPanelStrings> = {
@@ -19,6 +21,8 @@ export const CALENDAR_PANEL_STRINGS: Record<Lang, CalendarPanelStrings> = {
     mealFallbackName: 'Meal',
     richIn: (name) => `Rich in ${name}`,
     noStandoutNutrients: 'No standout nutrients',
+    backAriaLabel: 'Back to month view',
+    backLabel: 'Back',
   },
   he: {
     prevMonthAriaLabel: 'חודש קודם',
@@ -28,6 +32,8 @@ export const CALENDAR_PANEL_STRINGS: Record<Lang, CalendarPanelStrings> = {
     mealFallbackName: 'ארוחה',
     richIn: (name) => `עשיר ב${name}`,
     noStandoutNutrients: 'אין נוטריינטים בולטים',
+    backAriaLabel: 'חזרה לתצוגת החודש',
+    backLabel: 'חזרה',
   },
   ar: {
     prevMonthAriaLabel: 'الشهر السابق',
@@ -37,5 +43,7 @@ export const CALENDAR_PANEL_STRINGS: Record<Lang, CalendarPanelStrings> = {
     mealFallbackName: 'وجبة',
     richIn: (name) => `غني بـ${name}`,
     noStandoutNutrients: 'لا توجد عناصر غذائية بارزة',
+    backAriaLabel: 'العودة إلى عرض الشهر',
+    backLabel: 'رجوع',
   },
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { MealEntry, NutrientAmounts, NutrientId } from '../types'
-import { analyzeFoodText, identifyFood, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
+import { analyzeFoodImage, analyzeFoodText, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
 import { addMeal } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
@@ -446,7 +446,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         }
 
         devLog('barcode', 'No product match — falling back to AI identification.')
-        await identifyCapturedPhoto(dataUrl)
+        await analyzeCapturedPhoto(dataUrl)
       } catch (err) {
         devLog('barcode', 'Detection or lookup failed.')
       } finally {
@@ -560,17 +560,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setStage('camera')
   }
 
-  async function identifyCapturedPhoto(dataUrl: string) {
+  /** Identifies every distinct food in a captured/uploaded photo and estimates their combined
+   *  nutrition in one call, skipping straight to the results screen — no per-item confirm step. */
+  async function analyzeCapturedPhoto(dataUrl: string) {
     setPhoto(dataUrl)
     setScanErrorMsg(null)
     setStage('identifying')
 
     try {
-      const id = await identifyFood(dataUrl)
-      devLog('vision-api', `Identified: ${id.food || '(none)'}`)
-      devLog('vision-api', `Confidence: ${id.confidence}`)
+      const res = await analyzeFoodImage(dataUrl)
+      devLog('vision-api', `Identified ${res.foods.length} food item(s).`)
 
-      if (!id.food) {
+      if (res.foods.length === 0) {
         devLog('vision-api', 'No food detected — falling back to manual entry.')
         resetManualFields()
         setAnalyzeErrorMsg(t.identify.notRecognized)
@@ -578,11 +579,10 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         return
       }
 
-      setIdentification(id)
-      setConfirmQuantity('')
-      setStage('confirm')
+      setResult(res)
+      setStage('result')
     } catch (err) {
-      devLog('vision-api', 'Identification failed.')
+      devLog('vision-api', 'Photo analysis failed.')
       setScanErrorMsg(
         err instanceof AnalyzeError
           ? err.message
@@ -610,7 +610,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     }
 
     devLog('capture', 'Frame captured for scanning.')
-    await identifyCapturedPhoto(dataUrl)
+    await analyzeCapturedPhoto(dataUrl)
   }
 
   function handleUploadClick() {
@@ -635,7 +635,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         return
       }
       devLog('capture', 'Uploaded photo ready for scanning.')
-      identifyCapturedPhoto(dataUrl)
+      analyzeCapturedPhoto(dataUrl)
     }
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl)
@@ -743,6 +743,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       macros: result.macros ?? EMPTY_MACROS,
       confidence: result.confidence,
       analysisNote: result.note,
+      isJunkFood: result.isJunkFood,
     }
     await addMeal(entry)
     onLogged()
@@ -770,7 +771,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   }
 
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col gap-3 px-4 pb-3 pt-3">
+    <div className="relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pb-3 pt-5">
       {stage === 'camera' && scanErrorMsg && (
         <p
           className="absolute inset-x-4 top-3 z-20 rounded-lg px-3 py-2 text-center text-xs font-medium"

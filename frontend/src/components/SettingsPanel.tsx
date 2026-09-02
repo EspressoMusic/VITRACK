@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { LANGUAGES } from '../lib/i18n/lang'
@@ -14,11 +14,49 @@ import {
   setNotificationPref,
   requestNotificationPermission,
 } from '../lib/notifications'
-import { CloseIcon, DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
+import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon, ChevronDownIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
 import { SETTINGS_PANEL_STRINGS } from '../lib/i18n/settingsPanel'
+
+type SectionId = 'account' | 'subscription' | 'healthProfile' | 'nutrients' | 'language' | 'app' | 'data' | 'support'
+
+function SettingsSection({
+  label,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  label: string
+  isOpen: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-transform active:translate-y-1 active:shadow-none"
+        style={{
+          backgroundColor: 'var(--surface-cream)',
+          border: '2px solid #000000',
+          boxShadow: '0 2px 0 #000000',
+          color: 'var(--text-primary)',
+        }}
+      >
+        <span>{label}</span>
+        <ChevronDownIcon
+          className="h-4 w-4 shrink-0 transition-transform"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      {isOpen && <div className="flex flex-col gap-2">{children}</div>}
+    </div>
+  )
+}
 
 export function SettingsPanel({
   onClose,
@@ -43,8 +81,13 @@ export function SettingsPanel({
   const [notifPref, setNotifPref] = useState(getNotificationPref)
   const [notifPermission, setNotifPermission] = useState(getNotificationPermission)
   const [advancedNutrients, setAdvancedNutrients] = useState(isAdvancedMode)
+  const [openSection, setOpenSection] = useState<SectionId | null>(null)
   const isPro = isSubscribed()
   const plan = getBillingPlan()
+
+  function toggleSection(id: SectionId) {
+    setOpenSection((cur) => (cur === id ? null : id))
+  }
 
   function handleToggleAdvancedNutrients() {
     const next = !advancedNutrients
@@ -98,36 +141,13 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-      <div
-        className="modal-backdrop-enter absolute inset-0"
-        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onClick={onClose}
-      />
-      <div
-        className="modal-card-enter relative z-10 flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-3.5"
-        style={{ backgroundColor: '#e5c184', border: '1px solid #1a1a19' }}
-      >
-        <div className="relative mb-2 flex shrink-0 items-center justify-center">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {t.title}
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label={t.closeAriaLabel}
-            className="absolute end-0 flex h-6 w-6 items-center justify-center rounded-full"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            <CloseIcon className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-1 pe-1">
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.account.heading}
-            </p>
-
+    <div
+      className="app-shell panel-enter absolute inset-0 mx-auto flex w-full max-w-md flex-col"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-5 pb-4 pt-5">
+          <SettingsSection label={t.account.heading} isOpen={openSection === 'account'} onToggle={() => toggleSection('account')}>
             {user && !user.is_anonymous ? (
               <div className="flex flex-col gap-2">
                 <div
@@ -212,12 +232,9 @@ export function SettingsPanel({
                 {authError}
               </p>
             )}
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.subscription.heading}
-            </p>
+          <SettingsSection label={t.subscription.heading} isOpen={openSection === 'subscription'} onToggle={() => toggleSection('subscription')}>
             {isPro ? (
               <button
                 onClick={() => setManageSubOpen(true)}
@@ -251,12 +268,9 @@ export function SettingsPanel({
                 </div>
               </div>
             )}
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.healthProfile.heading}
-            </p>
+          <SettingsSection label={t.healthProfile.heading} isOpen={openSection === 'healthProfile'} onToggle={() => toggleSection('healthProfile')}>
             {!confirmingRetake ? (
               <button
                 onClick={() => setConfirmingRetake(true)}
@@ -288,12 +302,9 @@ export function SettingsPanel({
                 </div>
               </div>
             )}
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.nutrients.heading}
-            </p>
+          <SettingsSection label={t.nutrients.heading} isOpen={openSection === 'nutrients'} onToggle={() => toggleSection('nutrients')}>
             <div
               className="flex items-center justify-between rounded-xl p-2"
               style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
@@ -326,12 +337,9 @@ export function SettingsPanel({
                 />
               </button>
             </div>
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.language.heading}
-            </p>
+          <SettingsSection label={t.language.heading} isOpen={openSection === 'language'} onToggle={() => toggleSection('language')}>
             <div
               className="flex items-center gap-1 rounded-xl p-1"
               style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 2px 0 #000000' }}
@@ -351,12 +359,9 @@ export function SettingsPanel({
                 </button>
               ))}
             </div>
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.app.heading}
-            </p>
+          <SettingsSection label={t.app.heading} isOpen={openSection === 'app'} onToggle={() => toggleSection('app')}>
             <div className="flex flex-col gap-2">
               {installable && (
                 <button
@@ -420,12 +425,9 @@ export function SettingsPanel({
                 </div>
               )}
             </div>
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.data.heading}
-            </p>
+          <SettingsSection label={t.data.heading} isOpen={openSection === 'data'} onToggle={() => toggleSection('data')}>
             <div className="flex flex-col gap-2">
               {!confirmingClear ? (
                 <button
@@ -459,12 +461,9 @@ export function SettingsPanel({
                 </div>
               )}
             </div>
-          </div>
+          </SettingsSection>
 
-          <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>
-              {t.support.heading}
-            </p>
+          <SettingsSection label={t.support.heading} isOpen={openSection === 'support'} onToggle={() => toggleSection('support')}>
             <div className="flex flex-col gap-2">
               <a
                 href="mailto:shilohdhd1@gmail.com"
@@ -481,11 +480,11 @@ export function SettingsPanel({
                 <DocumentIcon className="h-4 w-4" /> {t.support.termsAndPrivacy}
               </button>
             </div>
-          </div>
-        </div>
+          </SettingsSection>
       </div>
 
       {legalOpen && <LegalPanel onClose={() => setLegalOpen(false)} />}
+
       {manageSubOpen && <SubscriptionManagePanel onClose={() => setManageSubOpen(false)} onChanged={() => {}} />}
     </div>
   )

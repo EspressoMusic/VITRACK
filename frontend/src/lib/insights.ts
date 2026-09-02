@@ -1,8 +1,11 @@
 import type { MealEntry, NutrientId } from '../types'
-import { daysAgoKey, todayKey } from './date'
-import { coverageStatus, getVisibleNutrients, sumNutrients, percentOfRda } from './nutrients'
+import { daysAgoKey } from './date'
+import { getVisibleNutrients, sumNutrients, percentOfRda } from './nutrients'
 
 export const INSIGHTS_WINDOW_DAYS = 7
+
+/** XP lost from the weekly-completion circle per junk-food meal (high sugar/fried/ultra-processed) logged in the window. */
+const JUNK_FOOD_XP_PENALTY = 6
 
 export interface RankedNutrient {
   id: NutrientId
@@ -34,30 +37,9 @@ export function computeWeeklyInsights(meals: MealEntry[]): WeeklyInsights {
     return { id: n.id, avgAmount, percent: percentOfRda(n.id, avgAmount) }
   }).sort((a, b) => a.percent - b.percent)
 
-  const weeklyCompletion = Math.round(ranked.reduce((sum, r) => sum + Math.min(100, r.percent), 0) / ranked.length)
+  const rawCompletion = Math.round(ranked.reduce((sum, r) => sum + Math.min(100, r.percent), 0) / ranked.length)
+  const junkFoodCount = inWindow.filter((m) => m.isJunkFood).length
+  const weeklyCompletion = Math.max(0, rawCompletion - junkFoodCount * JUNK_FOOD_XP_PENALTY)
 
   return { loggedDayCount: loggedDays.size, ranked, weeklyCompletion }
-}
-
-export interface TodayFeeling {
-  id: NutrientId
-  amount: number
-  percent: number
-}
-
-/** Today's worst-covered nutrient, judged against today's meals only (not the week's rolling
- *  average) — so the "why might I feel this way" callout stays grounded in what was actually
- *  eaten today. Returns null before anything has been logged today, since a totally empty day
- *  would otherwise flag every nutrient as deficient. */
-export function computeTodayFeeling(meals: MealEntry[]): TodayFeeling | null {
-  const todayMeals = meals.filter((m) => m.date === todayKey())
-  if (todayMeals.length === 0) return null
-
-  const total = sumNutrients(todayMeals.map((m) => m.nutrients))
-  const deficient = getVisibleNutrients()
-    .map((n) => ({ id: n.id, amount: total[n.id], percent: percentOfRda(n.id, total[n.id]) }))
-    .filter((r) => coverageStatus(r.percent) !== 'good')
-    .sort((a, b) => a.percent - b.percent)
-
-  return deficient[0] ?? null
 }

@@ -10,6 +10,8 @@ export const CORE_NUTRIENT_COLOR: Partial<Record<NutrientId, string>> = {
   vitaminB6: '#7bc9e0',
   vitaminB9: '#8fd694',
   vitaminB12: '#c792ea',
+  calcium: '#9fd0d6',
+  iron: '#c65146',
 }
 
 export const MACRO_COLOR: Record<Exclude<MacroId, 'calories'>, string> = {

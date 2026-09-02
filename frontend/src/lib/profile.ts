@@ -15,12 +15,22 @@ export function hasOnboarded(): boolean {
 
 export function getStoredProfile(): OnboardingProfile | null {
   const raw = localStorage.getItem(PROFILE_KEY)
-  return raw ? (JSON.parse(raw) as OnboardingProfile) : null
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as OnboardingProfile
+  } catch {
+    return null
+  }
 }
 
 export function getStoredGoals(): NutrientAmounts | null {
   const raw = localStorage.getItem(GOALS_KEY)
-  return raw ? (JSON.parse(raw) as NutrientAmounts) : null
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as NutrientAmounts
+  } catch {
+    return null
+  }
 }
 
 /** Loads any previously-computed goals into lib/nutrients.ts and lib/macros.ts. Call once on app start. */

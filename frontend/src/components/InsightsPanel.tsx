@@ -2,13 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MealEntry, NutrientId } from '../types'
 import { getAllMeals } from '../lib/db'
 import { coverageStatus } from '../lib/nutrients'
-import { computeWeeklyInsights, computeTodayFeeling } from '../lib/insights'
+import { computeWeeklyInsights } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
-import { NUTRIENT_FEELING } from '../lib/i18n/nutrientFeelings'
 import { NutrientRow } from './NutrientRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
-import { FeelingExplainerModal } from './FeelingExplainerModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -18,7 +16,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const t = INSIGHTS_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
-  const [feelingOpen, setFeelingOpen] = useState(false)
   const [missingOpen, setMissingOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiFired = useRef(false)
@@ -32,10 +29,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
   const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
-
-  // Grounded in today's meals only (not the week's rolling average) so the "why might I feel
-  // this way" callout tracks what was actually eaten today.
-  const todayFeeling = useMemo(() => computeTodayFeeling(meals), [meals])
 
   // Auto-scrolls the nutrient list downward so the user can see everything without manually
   // scrolling. Each stop reveals one more row at the bottom with its full pill flush against
@@ -119,16 +112,8 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   if (meals.length === 0) {
     return (
-      <div className="mx-auto flex max-w-[75%] flex-col items-center gap-2 pb-16 text-center">
-        <p
-          className="text-lg font-extrabold leading-snug tracking-tight"
-          style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
-        >
-          {t.notEatenTodaySentence}
-        </p>
-        <div className="mt-3">
-          <WeeklyGoalGlass percent={0} />
-        </div>
+      <div className="mx-auto flex h-full max-w-[75%] flex-col items-center justify-center gap-2 text-center">
+        <WeeklyGoalGlass percent={0} size={160} />
       </div>
     )
   }
@@ -137,23 +122,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        {todayFeeling ? (
-          <button
-            type="button"
-            onClick={() => setFeelingOpen(true)}
-            className="max-w-[85%] text-lg font-extrabold leading-snug tracking-tight"
-            style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
-          >
-            {t.feelingSentence(NUTRIENT_FEELING[lang][todayFeeling.id])}
-          </button>
-        ) : (
-          <p
-            className="max-w-[85%] text-lg font-extrabold leading-snug tracking-tight"
-            style={{ color: 'var(--accent-strong)', textShadow: '0 1.5px 0 rgba(255,255,255,0.55)' }}
-          >
-            {t.notEatenTodaySentence}
-          </p>
-        )}
         <div className="mt-3">
           <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} />
         </div>
@@ -209,10 +177,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           amount={ranked.find((r) => r.id === selectedNutrient)?.avgAmount ?? 0}
           onClose={() => setSelectedNutrient(null)}
         />
-      )}
-
-      {feelingOpen && todayFeeling && (
-        <FeelingExplainerModal id={todayFeeling.id} onClose={() => setFeelingOpen(false)} />
       )}
 
       {missingOpen && (

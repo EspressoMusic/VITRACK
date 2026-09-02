@@ -1,4 +1,4 @@
-type IconProps = { className?: string; style?: React.CSSProperties }
+type IconProps = { className?: string; style?: React.CSSProperties; strokeWidth?: number }
 
 const base = {
   fill: 'none',
@@ -9,11 +9,11 @@ const base = {
   viewBox: '0 0 24 24',
 }
 
-export function CameraIcon({ className }: IconProps) {
+export function CameraIcon({ className, style, strokeWidth }: IconProps) {
   return (
-    <svg className={className} {...base}>
-      <path d="M4 8a1 1 0 0 1 1-1h2.2l1-1.6A1 1 0 0 1 9.05 5h5.9a1 1 0 0 1 .85.4L16.8 7H19a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z" />
-      <circle cx="12" cy="13" r="3.3" />
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M4 8.2a1.2 1.2 0 0 1 1.2-1.2h2.1l1.15-1.75A1.2 1.2 0 0 1 9.45 4.7h5.1a1.2 1.2 0 0 1 1 .55L16.7 7h2.1A1.2 1.2 0 0 1 20 8.2v9.6A1.2 1.2 0 0 1 18.8 19H5.2A1.2 1.2 0 0 1 4 17.8Z" />
+      <circle cx="12" cy="13" r="3.1" />
     </svg>
   )
 }
@@ -28,10 +28,17 @@ export function GlobeIcon({ className }: IconProps) {
   )
 }
 
-export function CalendarIcon({ className }: IconProps) {
+export function CalendarIcon({ className, style, strokeWidth }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 122.88 122.88" fill="currentColor">
-      <path d="M81.61,4.73c0-2.61,2.58-4.73,5.77-4.73s5.77,2.12,5.77,4.73v20.72c0,2.61-2.58,4.73-5.77,4.73 s-5.77-2.12-5.77-4.73V4.73L81.61,4.73z M29.61,4.73c0-2.61,2.58-4.73,5.77-4.73s5.77,2.12,5.77,4.73v20.72 c0,2.61-2.58,4.73-5.77,4.73s-5.77-2.12-5.77-4.73V4.73L29.61,4.73z M40.99,84.56c-1.27-1.22-1.31-3.24-0.09-4.51 c1.22-1.27,3.24-1.31,4.51-0.09l9.9,9.57l22.02-23.58c1.2-1.29,3.22-1.36,4.51-0.16c1.29,1.2,1.36,3.22,0.16,4.51L57.77,96.26l0,0 l-0.04,0.04c-1.22,1.27-3.24,1.31-4.51,0.09L40.99,84.56L40.99,84.56z M6.4,45.32h110.08V21.47c0-0.8-0.33-1.53-0.86-2.07 c-0.53-0.53-1.26-0.86-2.07-0.86H103c-1.77,0-3.2-1.43-3.2-3.2c0-1.77,1.43-3.2,3.2-3.2h10.55c2.57,0,4.9,1.05,6.59,2.74 c1.69,1.69,2.74,4.02,2.74,6.59v27.06v65.03c0,2.57-1.05,4.9-2.74,6.59c-1.69,1.69-4.02,2.74-6.59,2.74H9.33 c-2.57,0-4.9-1.05-6.59-2.74C1.05,118.45,0,116.12,0,113.55V48.53V21.47c0-2.57,1.05-4.9,2.74-6.59c1.69-1.69,4.02-2.74,6.59-2.74 H20.6c1.77,0,3.2,1.43,3.2,3.2c0,1.77-1.43,3.2-3.2,3.2H9.33c-0.8,0-1.53,0.33-2.07,0.86c-0.53,0.53-0.86,1.26-0.86,2.07V45.32 L6.4,45.32z M116.48,51.73H6.4v61.82c0,0.8,0.33,1.53,0.86,2.07c0.53,0.53,1.26,0.86,2.07,0.86h104.22c0.8,0,1.53-0.33,2.07-0.86 c0.53-0.53,0.86-1.26,0.86-2.07V51.73L116.48,51.73z M50.43,18.54c-1.77,0-3.2-1.43-3.2-3.2c0-1.77,1.43-3.2,3.2-3.2h21.49 c1.77,0,3.2,1.43,3.2,3.2c0,1.77-1.43,3.2-3.2,3.2H50.43L50.43,18.54z" />
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2.4" />
+      <path d="M4 9.7h16" />
+      <path d="M8.4 3.3v3.6M15.6 3.3v3.6" />
+      <circle cx="8.4" cy="13.6" r="0.35" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="13.6" r="0.35" fill="currentColor" stroke="none" />
+      <circle cx="15.6" cy="13.6" r="0.35" fill="currentColor" stroke="none" />
+      <circle cx="8.4" cy="16.8" r="0.35" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="16.8" r="0.35" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -45,14 +52,11 @@ export function InsightsIcon({ className }: IconProps) {
   )
 }
 
-export function GearIcon({ className, style }: IconProps) {
+export function GearIcon({ className, style, strokeWidth }: IconProps) {
   return (
-    <svg className={className} style={style} viewBox="0 0 122.88 122.878" fill="currentColor">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M101.589,14.7l8.818,8.819c2.321,2.321,2.321,6.118,0,8.439l-7.101,7.101 c1.959,3.658,3.454,7.601,4.405,11.752h9.199c3.283,0,5.969,2.686,5.969,5.968V69.25c0,3.283-2.686,5.969-5.969,5.969h-10.039 c-1.231,4.063-2.992,7.896-5.204,11.418l6.512,6.51c2.321,2.323,2.321,6.12,0,8.44l-8.818,8.819c-2.321,2.32-6.119,2.32-8.439,0 l-7.102-7.102c-3.657,1.96-7.601,3.456-11.753,4.406v9.199c0,3.282-2.685,5.968-5.968,5.968H53.629 c-3.283,0-5.969-2.686-5.969-5.968v-10.039c-4.063-1.232-7.896-2.993-11.417-5.205l-6.511,6.512c-2.323,2.321-6.12,2.321-8.441,0 l-8.818-8.818c-2.321-2.321-2.321-6.118,0-8.439l7.102-7.102c-1.96-3.657-3.456-7.6-4.405-11.751H5.968 C2.686,72.067,0,69.382,0,66.099V53.628c0-3.283,2.686-5.968,5.968-5.968h10.039c1.232-4.063,2.993-7.896,5.204-11.418l-6.511-6.51 c-2.321-2.322-2.321-6.12,0-8.44l8.819-8.819c2.321-2.321,6.118-2.321,8.439,0l7.101,7.101c3.658-1.96,7.601-3.456,11.753-4.406 V5.969C50.812,2.686,53.498,0,56.78,0h12.471c3.282,0,5.968,2.686,5.968,5.969v10.036c4.064,1.231,7.898,2.992,11.422,5.204 l6.507-6.509C95.471,12.379,99.268,12.379,101.589,14.7L101.589,14.7z M61.44,36.92c13.54,0,24.519,10.98,24.519,24.519 c0,13.538-10.979,24.519-24.519,24.519c-13.539,0-24.519-10.98-24.519-24.519C36.921,47.9,47.901,36.92,61.44,36.92L61.44,36.92z"
-      />
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   )
 }
@@ -272,10 +276,27 @@ export function ChatIcon({ className }: IconProps) {
   )
 }
 
-export function HeartIcon({ className, filled }: IconProps & { filled?: boolean }) {
+export function HeartIcon({ className, style, strokeWidth, filled }: IconProps & { filled?: boolean }) {
   return (
-    <svg className={className} {...base} fill={filled ? 'currentColor' : 'none'}>
-      <path d="M12 20.5s-7.5-4.6-10-9.3C0.3 8 1.6 4.5 5 3.4c2.2-0.7 4.5 0.2 6 2.1 1.5-1.9 3.8-2.8 6-2.1 3.4 1.1 4.7 4.6 3 7.8-2.5 4.7-10 9.3-10 9.3Z" />
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M12 20.2s-7.3-4.5-9.7-9C0.6 7.9 1.8 4.6 5 3.5c2.2-0.7 4.4 0.1 5.9 2 .4.5.7 1 1.1 1.6.4-.6.7-1.1 1.1-1.6 1.5-1.9 3.7-2.7 5.9-2 3.2 1.1 4.4 4.4 2.7 7.7-2.4 4.5-9.7 9-9.7 9Z" />
+    </svg>
+  )
+}
+
+export function AppleIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M12.3 8.7c-3.2-2.7-7.7-.7-7.7 4.3 0 4.4 3.1 8.3 5.8 8.3.8 0 1.3-.4 1.8-.4s1 .4 1.8.4c2.7 0 5.8-3.9 5.8-8.3 0-5-4.5-7-7.7-4.3Z" />
+      <path d="M12.3 8.7c-.15-1.9.7-3.5 2.3-4.4" />
+    </svg>
+  )
+}
+
+export function PlusIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M12 4.5v15M4.5 12h15" />
     </svg>
   )
 }
@@ -286,6 +307,14 @@ export function TargetIcon({ className }: IconProps) {
       <circle cx="12" cy="12" r="8.5" />
       <circle cx="12" cy="12" r="4.5" />
       <circle cx="12" cy="12" r="0.5" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M5.5 9l6.5 6.5L18.5 9" />
     </svg>
   )
 }

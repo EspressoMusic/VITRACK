@@ -10,8 +10,12 @@ create table if not exists meals (
   foods jsonb not null,
   nutrients jsonb not null,
   confidence text not null,
-  analysis_note text
+  analysis_note text,
+  is_junk_food boolean
 );
+
+-- Safe to re-run against an existing table (schema.sql above only applies on first create).
+alter table meals add column if not exists is_junk_food boolean;
 
 create index if not exists meals_user_id_idx on meals (user_id);
 create index if not exists meals_date_idx on meals (date);

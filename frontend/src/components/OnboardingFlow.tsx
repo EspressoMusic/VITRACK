@@ -6,7 +6,6 @@ import { NUTRIENT_MAP, NUTRIENTS, coverageStatus } from '../lib/nutrients'
 import { CORE_NUTRIENT_COLOR } from '../lib/nutrientColors'
 import { playConfirmSound, playTapSound } from '../lib/sound'
 import { useLanguage } from '../contexts/LanguageContext'
-import { LANGUAGES } from '../lib/i18n/lang'
 import { ONBOARDING_STRINGS } from '../lib/i18n/onboarding'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CAMERA_PANEL_STRINGS } from '../lib/i18n/cameraPanel'
@@ -118,10 +117,10 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
   return (
     <div
       dir={dir}
-      className="mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
+      className="relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
       style={{
         backgroundColor: 'var(--surface-0)',
-        backgroundImage: "url('/background-onboarding.png')",
+        backgroundImage: "url('/background-onboarding.png?v=3')",
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
@@ -152,10 +151,10 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
             />
           ))}
         </div>
-        {step === 'welcome' ? <LanguageSwitcher /> : <div className="h-9 w-9" />}
+        <div className="h-9 w-9" />
       </div>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-2">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-2 pb-24">
         <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
           {step === 'welcome' && <WelcomeStep t={t} />}
           {step === 'age' && <AgeStep t={t} value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
@@ -185,7 +184,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       </main>
 
       {step !== 'calculating' && (
-        <div className="px-6 pb-10 pt-2">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-9 pt-8">
           <button
             key={continuePulse}
             onClick={() => {
@@ -195,7 +194,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
               goNext()
             }}
             disabled={!canContinue}
-            className={`${step === 'welcome' ? 'block mx-auto w-56' : 'w-full'} rounded-full py-3.5 text-base font-semibold text-white transition ${continuePulse > 0 ? 'tap-effect' : ''} ${step === 'welcome' ? 'welcome-cta-glow' : ''}`}
+            className={`block mx-auto w-40 rounded-full py-3.5 text-base font-semibold text-white transition ${continuePulse > 0 ? 'tap-effect' : ''} ${step === 'welcome' ? 'welcome-cta-glow' : ''}`}
             style={{
               backgroundColor: canContinue ? 'var(--accent-strong)' : '#e8d9a6',
               border: '2px solid #000000', boxShadow: '0 2px 0 #000000',
@@ -203,62 +202,6 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
           >
             {step === 'welcome' ? t.welcomeCta : step === 'summary' ? t.summaryCta : t.continueCta}
           </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function LanguageSwitcher() {
-  const { lang, setLang } = useLanguage()
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handlePointerDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handlePointerDown)
-    return () => document.removeEventListener('mousedown', handlePointerDown)
-  }, [open])
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label={ONBOARDING_STRINGS[lang].languageButtonLabel}
-        className="flex h-9 w-9 items-center justify-center rounded-full"
-        style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: 'var(--text-primary)' }}
-      >
-        <img src="/icons/translate.png" alt="" className="h-5 w-5 object-contain" />
-      </button>
-      {open && (
-        <div
-          className="absolute end-0 top-11 z-30 flex flex-col overflow-hidden rounded-2xl py-1"
-          style={{
-            backgroundColor: 'var(--surface-cream)',
-            border: '1.5px solid var(--accent-strong)',
-            boxShadow: '0 8px 20px rgba(11,11,11,0.18)',
-            minWidth: 132,
-          }}
-        >
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.id}
-              onClick={() => {
-                setLang(l.id)
-                setOpen(false)
-              }}
-              className="px-4 py-2 text-start text-sm font-medium transition"
-              style={{
-                backgroundColor: l.id === lang ? 'var(--accent-soft)' : 'transparent',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {l.nativeLabel}
-            </button>
-          ))}
         </div>
       )}
     </div>
@@ -295,7 +238,7 @@ function StepCard({
         {title}
       </h2>
       {subtitle && (
-        <p className="text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs leading-snug" style={{ color: 'var(--text-primary)' }}>
           {subtitle}
         </p>
       )}
@@ -392,7 +335,7 @@ function WheelPicker({
           <div style={{ height: WHEEL_ITEM_H }} />
         </div>
       </div>
-      <span className="text-base font-medium" style={{ color: 'var(--text-muted)' }}>
+      <span className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
         {unit}
       </span>
     </div>
@@ -428,13 +371,13 @@ function ChoiceButton({
       }}
     >
       <span
-        className={`font-semibold leading-tight ${compact ? 'text-[13px]' : 'text-sm'}`}
+        className={`font-semibold leading-tight ${compact ? 'text-[14px]' : 'text-sm'}`}
         style={{ color: 'var(--text-primary)' }}
       >
         {label}
       </span>
       {description && (
-        <span className={`leading-tight ${compact ? 'text-[11px]' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
+        <span className={`leading-tight ${compact ? 'text-[12px]' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
           {description}
         </span>
       )}
@@ -512,7 +455,7 @@ const MINI_INSIGHTS_ROWS: { id: 'vitaminD' | 'vitaminC' | 'iron'; percent: numbe
 ]
 const WEEKLY_GOAL_PERCENT = 74
 
-type ChipNutrientId = 'vitaminA' | 'vitaminC' | 'vitaminD' | 'vitaminB6' | 'vitaminB9' | 'vitaminB12'
+type ChipNutrientId = 'vitaminA' | 'vitaminC' | 'vitaminD' | 'vitaminB6' | 'vitaminB9' | 'vitaminB12' | 'calcium' | 'iron'
 const VITAMIN_CHIPS: {
   id: ChipNutrientId
   top?: string
@@ -523,12 +466,14 @@ const VITAMIN_CHIPS: {
   duration: string
   delay: string
 }[] = [
-  { id: 'vitaminC', top: '4%', start: '-10%', rotate: -6, duration: '4.8s', delay: '0s' },
-  { id: 'vitaminD', top: '13%', end: '-9%', rotate: 5, duration: '5.6s', delay: '0.6s' },
-  { id: 'vitaminB12', top: '40%', start: '-14%', rotate: -4, duration: '5.2s', delay: '1.1s' },
-  { id: 'vitaminA', top: '46%', end: '-13%', rotate: 6, duration: '4.6s', delay: '0.3s' },
-  { id: 'vitaminB9', bottom: '8%', start: '-8%', rotate: 4, duration: '5.9s', delay: '0.9s' },
-  { id: 'vitaminB6', bottom: '3%', end: '-10%', rotate: -5, duration: '5.1s', delay: '1.4s' },
+  { id: 'vitaminC', top: '2%', start: '-10%', rotate: -6, duration: '4.8s', delay: '0s' },
+  { id: 'vitaminD', top: '2%', end: '-9%', rotate: 5, duration: '5.6s', delay: '0.6s' },
+  { id: 'calcium', top: '31%', start: '-12%', rotate: 3, duration: '5.3s', delay: '0.7s' },
+  { id: 'vitaminA', top: '31%', end: '-13%', rotate: 6, duration: '4.6s', delay: '0.3s' },
+  { id: 'vitaminB12', top: '61%', start: '-14%', rotate: -4, duration: '5.2s', delay: '1.1s' },
+  { id: 'iron', top: '61%', end: '-11%', rotate: -3, duration: '5.4s', delay: '1.0s' },
+  { id: 'vitaminB9', top: '90%', start: '-8%', rotate: 4, duration: '5.9s', delay: '0.9s' },
+  { id: 'vitaminB6', top: '90%', end: '-10%', rotate: -5, duration: '5.1s', delay: '1.4s' },
 ]
 
 /** Scan-corner bracket — matches the gold focus corners drawn over the real live viewfinder. */
@@ -556,7 +501,7 @@ function ScanCorner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
 function MiniFillBar({ percent }: { percent: number }) {
   return (
     <div
-      className="relative h-9 w-full shrink-0 overflow-hidden rounded-full"
+      className="relative h-[36px] w-full shrink-0 overflow-hidden rounded-full"
       style={{
         border: '3px solid #000000',
         backgroundColor: 'rgba(255,255,255,0.18)',
@@ -592,8 +537,8 @@ function MiniFillBar({ percent }: { percent: number }) {
 function MiniNutrientRow({ id, percent }: { id: 'vitaminC' | 'vitaminD'; percent: number }) {
   const { lang } = useLanguage()
   return (
-    <div className="w-full rounded-xl px-2.5 py-1.5" style={{ backgroundColor: '#fdf6e8', boxShadow: '0 2px 6px rgba(26,26,25,0.14)' }}>
-      <div className="mb-1 flex items-baseline justify-between gap-2">
+    <div className="w-full rounded-xl px-[10px] py-[6px]" style={{ backgroundColor: '#fdf6e8', boxShadow: '0 2px 6px rgba(26,26,25,0.14)' }}>
+      <div className="mb-[4px] flex items-baseline justify-between gap-[8px]">
         <span className="text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
           {NUTRIENT_CONTENT[lang][id].name}
         </span>
@@ -601,7 +546,7 @@ function MiniNutrientRow({ id, percent }: { id: 'vitaminC' | 'vitaminD'; percent
           {percent}%
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
+      <div className="h-[6px] w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
         <span
           className="welcome-mini-bar-fill block h-full rounded-full"
           style={{ backgroundColor: CORE_NUTRIENT_COLOR[id], '--bar-target': `${percent}%` } as React.CSSProperties}
@@ -722,12 +667,38 @@ function TapFinger({ durationMs }: { durationMs: number }) {
   )
 }
 
-const WELCOME_SCAN_SCALE = 0.72
+const WELCOME_SCAN_SCALE = 0.56
+const MOCKUP_WIDTH = 340
+const MOCKUP_HEIGHT = 500
+// The floating vitamin chips bleed past the phone frame via negative insets (see VITAMIN_CHIPS)
+// — this is how far left/right that bleed reaches at its most extreme, so we know the true
+// on-screen footprint to fit within the viewport, not just the frame itself.
+const MOCKUP_BLEED_LEFT = 0.14
+const MOCKUP_BLEED_RIGHT = 0.13
+const MOCKUP_FULL_BLEED_WIDTH = MOCKUP_WIDTH * (1 + MOCKUP_BLEED_LEFT + MOCKUP_BLEED_RIGHT)
 
 function WelcomeScanAnimation() {
   const { lang } = useLanguage()
   const camera = CAMERA_PANEL_STRINGS[lang]
   const [screen, setScreen] = useState<MiniScreen>('off')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(WELCOME_SCAN_SCALE)
+
+  // Real phones are often narrower than whatever desktop window this got designed against, and
+  // the mockup's fixed-pixel size doesn't shrink with the root font-size the way the rest of the
+  // layout does — so on narrow viewports the bleeding vitamin chips were getting clipped by the
+  // page's overflow:hidden. Measuring the actual available width keeps the whole thing on-screen.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      setScale(Math.min(WELCOME_SCAN_SCALE, el.clientWidth / MOCKUP_FULL_BLEED_WIDTH))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     const delay =
@@ -759,10 +730,11 @@ function WelcomeScanAnimation() {
   }, [screen])
 
   return (
-    <div className="relative mx-auto" style={{ width: 340 * WELCOME_SCAN_SCALE, height: 500 * WELCOME_SCAN_SCALE }}>
+    <div ref={containerRef} className="w-full">
+    <div className="relative mx-auto mt-4" style={{ width: MOCKUP_WIDTH * scale, height: MOCKUP_HEIGHT * scale }}>
     <div
       className="absolute left-0 top-0 flex items-center justify-center"
-      style={{ width: 340, height: 500, transform: `scale(${WELCOME_SCAN_SCALE})`, transformOrigin: 'top left' }}
+      style={{ width: MOCKUP_WIDTH, height: MOCKUP_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         {VITAMIN_CHIPS.map((chip) => (
@@ -849,7 +821,7 @@ function WelcomeScanAnimation() {
             className="relative flex h-full w-full flex-col items-center gap-2 overflow-hidden rounded-[29px] px-3 pt-6"
             style={{
               backgroundColor: 'var(--surface-0)',
-              backgroundImage: "url('/background-progress.png')",
+              backgroundImage: "url('/background-progress.png?v=3')",
               backgroundSize: 'cover',
               backgroundPosition: 'center top',
               backgroundRepeat: 'no-repeat',
@@ -867,7 +839,7 @@ function WelcomeScanAnimation() {
         className="relative h-full w-full overflow-hidden rounded-[29px]"
         style={{
           backgroundColor: 'var(--surface-0)',
-          backgroundImage: "url('/background-camera.png')",
+          backgroundImage: "url('/background-camera.png?v=3')",
           backgroundSize: 'cover',
           backgroundPosition: 'center top',
           backgroundRepeat: 'no-repeat',
@@ -911,19 +883,19 @@ function WelcomeScanAnimation() {
             </div>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center gap-2 px-4 pt-5">
-            <img src="/icons/fruits/avocado.png" alt="" className="h-10 w-10 object-contain" />
+          <div className="flex h-full w-full flex-col items-center gap-[8px] px-[16px] pt-[20px]">
+            <img src="/icons/fruits/avocado.png" alt="" className="h-[40px] w-[40px] object-contain" />
             <div className="w-full">
               <MiniFillBar percent={78} />
             </div>
-            <div className="mt-1 flex w-full flex-col gap-1.5">
+            <div className="mt-[4px] flex w-full flex-col gap-[6px]">
               {MINI_NUTRIENTS.map(({ id, percent }) => (
                 <MiniNutrientRow key={id} id={id} percent={percent} />
               ))}
             </div>
-            <div className="relative mt-auto mb-4 w-[70%]">
+            <div className="relative mt-auto mb-[16px] w-[70%]">
               <span
-                className="mini-button-press flex w-full items-center justify-center rounded-full py-2 text-[11px] font-semibold text-white"
+                className="mini-button-press flex w-full items-center justify-center rounded-full py-[8px] text-[11px] font-semibold text-white"
                 style={{
                   backgroundColor: 'var(--accent)',
                   border: '3px solid #000000',
@@ -943,6 +915,7 @@ function WelcomeScanAnimation() {
       </div>
       </div>
     </div>
+    </div>
   )
 }
 
@@ -957,17 +930,14 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
   const after = hlEnd >= 0 ? subtitle.slice(hlEnd) : ''
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-4 pt-1 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 pt-1 text-center">
       <div className="flex flex-col gap-1">
         <p
-          className="mx-auto max-w-[85%] text-3xl"
+          className="mx-auto max-w-[85%] text-2xl"
           style={{
-            color: 'var(--accent-strong)',
-            fontFamily: "'Caveat', cursive",
+            color: '#4a3418',
+            fontFamily: "'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif",
             fontWeight: 700,
-            WebkitTextStroke: '3px #4a3418',
-            paintOrder: 'stroke fill',
-            textShadow: '3px 4px 6px rgba(0,0,0,0.3)',
           }}
         >
           <AnimatedLetters text={before} startIndex={0} />
@@ -977,7 +947,7 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
                 display: 'inline-block',
                 whiteSpace: 'nowrap',
                 background:
-                  'linear-gradient(104deg, rgba(255,214,10,0) 0.9%, rgba(255,214,10,0.85) 2.4%, rgba(255,214,10,0.85) 5.8%, rgba(255,214,10,0.85) 93%, rgba(255,214,10,0) 96%)',
+                  'linear-gradient(104deg, rgba(249,203,96,0) 0.9%, rgba(249,203,96,0.85) 2.4%, rgba(249,203,96,0.85) 5.8%, rgba(249,203,96,0.85) 93%, rgba(249,203,96,0) 96%)',
                 padding: '0 4px',
               }}
             >
@@ -1151,9 +1121,6 @@ function SummaryStep({ t, goals }: { t: OnboardingStrings; goals: NutrientAmount
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
             {t.summary.title}
           </h2>
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {t.summary.subtitle}
-          </p>
         </div>
 
         {goals && (

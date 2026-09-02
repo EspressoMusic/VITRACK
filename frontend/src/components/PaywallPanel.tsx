@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PaddleEventData } from '@paddle/paddle-js'
 import type { BillingPlan } from '../types'
-import { activateSubscription, getStoredGoals } from '../lib/profile'
+import { activateSubscription } from '../lib/profile'
 import { openPaddleCheckout } from '../lib/paddle'
 import { waitForServerSubscription } from '../lib/cloudProfile'
-import { NUTRIENTS } from '../lib/nutrients'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { CheckIcon, HeadsetIcon, LockIcon } from './icons'
+import { CheckIcon, HeadsetIcon } from './icons'
 import { GoogleSignInOverlay } from './GoogleSignInOverlay'
 import { LegalPanel } from './LegalPanel'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -42,8 +41,6 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   const [legalOpen, setLegalOpen] = useState(false)
   const [showAgreeError, setShowAgreeError] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const goals = getStoredGoals()
-
   useEffect(() => {
     if (!showAgreeError) return
     const t = setTimeout(() => setShowAgreeError(false), 2200)
@@ -142,7 +139,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
       style={{
         backgroundColor: 'var(--surface-0)',
-        backgroundImage: "url('/background-calendar.png')",
+        backgroundImage: "url('/background-calendar.png?v=3')",
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
@@ -158,38 +155,10 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         }}
       >
         <div className="shrink-0 text-center">
-          <h1 className="headline-anim whitespace-nowrap text-xs font-bold leading-tight">
+          <h1 className="headline-anim text-base font-bold leading-snug">
             {t.headline}
           </h1>
         </div>
-
-        {goals && (
-          <div className="relative w-full shrink-0 overflow-hidden rounded-2xl" style={{ border: '1px solid var(--border-strong)' }}>
-            <div className="grid grid-cols-4 gap-1 p-0.5" style={{ filter: 'blur(3px)', backgroundColor: 'var(--surface-1)' }}>
-              {NUTRIENTS.slice(0, 4).map((n) => (
-                <div key={n.id} className="rounded-lg px-1 py-0.5" style={{ backgroundColor: 'var(--surface-tint)' }}>
-                  <div className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {n.shortLabel}
-                  </div>
-                  <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {goals[n.id]}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(11,11,11,0.32)' }}
-            >
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded-full"
-                style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: 'var(--accent-strong)' }}
-              >
-                <LockIcon className="h-3.5 w-3.5" />
-              </span>
-            </div>
-          </div>
-        )}
 
         <div className="flex w-full shrink-0 flex-col gap-1 text-start">
           {t.features.map((f, i) => (
@@ -222,7 +191,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             selected={plan === 'monthly'}
             onSelect={() => setPlan('monthly')}
             title={t.monthly.title}
-            price="$9.99"
+            price="$19.9"
             period={t.monthly.period}
             note={t.monthly.note}
           />

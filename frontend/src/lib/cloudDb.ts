@@ -11,6 +11,7 @@ interface MealRow {
   nutrients: MealEntry['nutrients']
   confidence: MealEntry['confidence']
   analysis_note: string | null
+  is_junk_food: boolean | null
 }
 
 function fromRow(row: MealRow): MealEntry {
@@ -23,6 +24,7 @@ function fromRow(row: MealRow): MealEntry {
     nutrients: row.nutrients,
     confidence: row.confidence,
     analysisNote: row.analysis_note ?? undefined,
+    isJunkFood: row.is_junk_food ?? undefined,
   }
 }
 
@@ -37,6 +39,7 @@ function toRow(entry: MealEntry, userId: string): Omit<MealRow, 'created_at'> & 
     nutrients: entry.nutrients,
     confidence: entry.confidence,
     analysis_note: entry.analysisNote ?? null,
+    is_junk_food: entry.isJunkFood ?? null,
   }
 }
 

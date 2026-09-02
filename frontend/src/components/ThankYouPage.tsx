@@ -17,7 +17,7 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
       className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-6 py-6"
       style={{
         backgroundColor: 'var(--surface-0)',
-        backgroundImage: "url('/background-calendar.png')",
+        backgroundImage: "url('/background-calendar.png?v=3')",
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
