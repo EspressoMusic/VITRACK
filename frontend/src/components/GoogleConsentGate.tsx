@@ -28,24 +28,24 @@ export function GoogleConsentGate({ t, dir, children }: { t: GoogleConsentString
 
   return (
     <div className="flex w-full flex-col gap-1.5">
-      <div className="flex items-center justify-center gap-2 text-center">
+      <div className="flex items-center justify-center gap-2.5 text-center">
         <button
           type="button"
           role="switch"
           aria-checked={agreed}
           onClick={() => setAgreed((a) => !a)}
-          className="relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors"
+          className="relative flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors"
           style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '2px solid #222' }}
         >
           <span
-            className="h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+            className="h-5 w-5 rounded-full bg-white shadow transition-transform"
             style={{
-              transform: agreed ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * 0.875rem))` : 'translateX(0px)',
+              transform: agreed ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * 1.5rem))` : 'translateX(0px)',
               border: '1px solid #222',
             }}
           />
         </button>
-        <span className="whitespace-nowrap text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {t.agreePrefix}
           <button type="button" onClick={() => setLegalOpen(true)} style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}>
             {t.agreeLinkLabel}

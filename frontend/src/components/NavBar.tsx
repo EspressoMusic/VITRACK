@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NAV_BAR_STRINGS } from '../lib/i18n/navBar'
-import { AppleIcon, CalendarIcon, CameraIcon, GearIcon, HeartIcon } from './icons'
+import { AppleIcon, CalendarIcon, CameraIcon, DumbbellIcon } from './icons'
 
-export type Tab = 'camera' | 'calendar' | 'insights' | 'superfoods'
+export type Tab = 'camera' | 'calendar' | 'insights' | 'superfoods' | 'workouts'
 
 function NavIcon({
   active,
@@ -19,7 +19,7 @@ function NavIcon({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center py-1.5 transition"
+      className="flex flex-col items-center justify-center gap-0 py-1.5 transition"
       aria-label={ariaLabel}
       aria-current={active ? 'page' : undefined}
     >
@@ -39,6 +39,14 @@ function NavIcon({
           {icon}
         </span>
       </span>
+      {!active && (
+        <span
+          className="-mt-1 text-[10px] font-medium leading-none"
+          style={{ color: '#6b4423' }}
+        >
+          {ariaLabel}
+        </span>
+      )}
     </button>
   )
 }
@@ -46,17 +54,19 @@ function NavIcon({
 export function NavBar({
   active,
   onChange,
-  onOpenSettings,
   settingsActive = false,
+  insightsPercent = 0,
 }: {
   active: Tab
   onChange: (tab: Tab) => void
-  onOpenSettings: () => void
   settingsActive?: boolean
+  /** Weekly goal completion percentage, shown inside the insights tab icon. */
+  insightsPercent?: number
 }) {
   const { lang } = useLanguage()
   const t = NAV_BAR_STRINGS[lang]
-  const cameraActive = !settingsActive && active === 'camera'
+  const insightsActive = !settingsActive && active === 'insights'
+  const clampedPercent = Math.round(Math.max(0, Math.min(100, insightsPercent)))
 
   return (
     <nav
@@ -71,13 +81,37 @@ export function NavBar({
           icon={<CalendarIcon className="h-full w-full" strokeWidth={1.7} />}
         />
         <NavIcon
-          active={!settingsActive && active === 'insights'}
-          onClick={() => onChange('insights')}
-          ariaLabel={t.insights}
-          icon={<HeartIcon className="h-full w-full" strokeWidth={1.7} />}
+          active={!settingsActive && active === 'camera'}
+          onClick={() => onChange('camera')}
+          ariaLabel={t.camera}
+          icon={<CameraIcon className="h-full w-full" strokeWidth={1.7} />}
         />
 
-        <div />
+        <div className="flex items-center justify-center py-1.5">
+          <button
+            onClick={() => onChange('insights')}
+            className={`nav-tab-transition flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full active:translate-y-0.5 active:shadow-none${
+              clampedPercent >= 100 ? ' nav-goal-complete-glow' : ''
+            }`}
+            style={{
+              backgroundColor: insightsActive ? '#6b4423' : 'var(--surface-cream)',
+              border: '2px solid #000000',
+              boxShadow: clampedPercent >= 100 ? undefined : '0 3px 0 #000000',
+            }}
+            aria-current={insightsActive ? 'page' : undefined}
+            aria-label={t.insights}
+          >
+            <span
+              className="nav-tab-transition flex items-center justify-center text-xs font-extrabold leading-none"
+              style={{
+                color: insightsActive ? '#f5deb3' : '#6b4423',
+                transform: insightsActive ? 'scale(1.1)' : 'scale(1)',
+              }}
+            >
+              {clampedPercent}%
+            </span>
+          </button>
+        </div>
 
         <NavIcon
           active={!settingsActive && active === 'superfoods'}
@@ -86,35 +120,11 @@ export function NavBar({
           icon={<AppleIcon className="h-full w-full" strokeWidth={1.7} />}
         />
         <NavIcon
-          active={settingsActive}
-          onClick={onOpenSettings}
-          ariaLabel={t.settings}
-          icon={<GearIcon className="h-full w-full" strokeWidth={1.7} />}
+          active={!settingsActive && active === 'workouts'}
+          onClick={() => onChange('workouts')}
+          ariaLabel={t.workouts}
+          icon={<DumbbellIcon className="h-full w-full" strokeWidth={1.7} />}
         />
-
-        <div className="absolute" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
-          <button
-            onClick={() => onChange('camera')}
-            className="nav-tab-transition flex h-14 w-14 items-center justify-center rounded-full active:translate-y-0.5 active:shadow-none"
-            style={{
-              backgroundColor: cameraActive ? '#6b4423' : 'var(--surface-cream)',
-              border: '2px solid #000000',
-              boxShadow: '0 3px 0 #000000',
-            }}
-            aria-current={cameraActive ? 'page' : undefined}
-            aria-label={t.camera}
-          >
-            <span
-              className="nav-tab-transition flex h-7 w-7 items-center justify-center"
-              style={{
-                color: cameraActive ? '#f5deb3' : '#6b4423',
-                transform: cameraActive ? 'scale(1.15)' : 'scale(1)',
-              }}
-            >
-              <CameraIcon className="h-full w-full" strokeWidth={1.7} />
-            </span>
-          </button>
-        </div>
       </div>
     </nav>
   )

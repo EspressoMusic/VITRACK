@@ -173,6 +173,11 @@ interface SuperfoodsPanelChrome {
   filterAll: string
   categories: Record<SuperfoodCategory, string>
   noItemsInCategory: string
+  healthyAriaLabel: string
+  junkAriaLabel: string
+  searchPlaceholder: string
+  /** Header greeting above the filter row; includes the user's first name when known. */
+  greeting: (name?: string | null) => string
 }
 
 export const SUPERFOODS_PANEL_CHROME: Record<Lang, SuperfoodsPanelChrome> = {
@@ -181,17 +186,29 @@ export const SUPERFOODS_PANEL_CHROME: Record<Lang, SuperfoodsPanelChrome> = {
     filterAll: 'All',
     categories: { fruit: 'Fruits', vegetable: 'Veggies', protein: 'Protein', nuts: 'Nuts' },
     noItemsInCategory: 'Nothing in this category yet.',
+    healthyAriaLabel: 'Show healthy foods',
+    junkAriaLabel: 'Show junk foods',
+    searchPlaceholder: 'Search food...',
+    greeting: (name) => (name ? `Hey ${name}, so what are we eating today?` : 'So what are we eating today?'),
   },
   he: {
     todaysSuperfood: 'מאכל העל של היום',
     filterAll: 'הכל',
     categories: { fruit: 'פירות', vegetable: 'ירקות', protein: 'חלבון', nuts: 'אגוזים' },
     noItemsInCategory: 'אין עדיין פריטים בקטגוריה הזו.',
+    healthyAriaLabel: 'הצג אוכל בריא',
+    junkAriaLabel: 'הצג אוכל לא בריא',
+    searchPlaceholder: 'חיפוש מזון...',
+    greeting: (name) => (name ? `היי ${name}, אז מה אנחנו אוכלים היום?` : 'אז מה אנחנו אוכלים היום?'),
   },
   ar: {
     todaysSuperfood: 'الطعام الخارق لليوم',
     filterAll: 'الكل',
     categories: { fruit: 'فواكه', vegetable: 'خضروات', protein: 'بروتين', nuts: 'مكسرات' },
     noItemsInCategory: 'لا توجد عناصر في هذه الفئة بعد.',
+    healthyAriaLabel: 'إظهار الأطعمة الصحية',
+    junkAriaLabel: 'إظهار الأطعمة غير الصحية',
+    searchPlaceholder: 'ابحث عن طعام...',
+    greeting: (name) => (name ? `مرحبًا ${name}، إذن ماذا سنأكل اليوم؟` : 'إذن ماذا سنأكل اليوم؟'),
   },
 }

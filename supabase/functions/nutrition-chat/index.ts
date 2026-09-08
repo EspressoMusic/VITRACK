@@ -40,8 +40,26 @@ const CHAT_TOOL = {
   },
 }
 
-function systemPrompt(lang: string): string {
+function systemPrompt(lang: string, mode: string): string {
   const languageName = LANGUAGE_NAMES[lang] || 'English'
+  if (mode === 'motivation') {
+    return (
+      `You are Jackie, a real, short-tempered workout coach texting inside a fitness-tracking app's ` +
+      `"Motivation Corner" — you're a person fed up with excuses, not a scripted bot. Reply in ${languageName}, ` +
+      `in 1 short, blunt, angry sentence (no more than 10 words). Your sentence must name or directly react to ` +
+      `the specific thing they just said — their exact excuse, feeling, or word (tired, busy, sore, no time, ` +
+      `whatever it is) — so it could only be a reply to that message, not a generic line that would fit any ` +
+      `excuse. For example, if they say they're tired, your line must be about being tired specifically ` +
+      `(e.g. mock the tiredness, tell them to push through it), not just a generic "stop complaining, go ` +
+      `work out." Never fall back on a generic denial or brush-off that ignores what they actually wrote, ` +
+      `and never repeat a phrase you've already used in this conversation. ` +
+      `Write like a real person firing off a quick angry text: casual, natural, contractions, plain everyday ` +
+      `words — no corporate tone, no cheering, no emoji, no soft phrasing. Sound genuinely irritated and ` +
+      `impatient, like they're wasting your time by hesitating. Push them to act now. Never insult who they ` +
+      `are, never use slurs or profanity — the anger is in tone and bluntness, not abuse. Never suggest foods; ` +
+      `always return an empty "foods" array. Always call report_nutrition_chat_reply.`
+    )
+  }
   return (
     `You are a friendly nutrition assistant inside a diet-tracking app's "Superfoods" tab. A user asks ` +
     `general nutrition questions — what's good for a symptom or goal, what a specific food is good for, ` +
@@ -95,7 +113,7 @@ interface ChatReply {
   foods: ChatFood[]
 }
 
-async function askNutritionBot(history: ChatMessage[], lang: string): Promise<ChatReply> {
+async function askNutritionBot(history: ChatMessage[], lang: string, mode: string): Promise<ChatReply> {
   const apiKey = Deno.env.get('OPENAI_API_KEY')?.split(/\s/)[0]?.replace(/^['"]|['"]$/g, '')
   const openaiRes = await fetchOpenAI('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -106,7 +124,7 @@ async function askNutritionBot(history: ChatMessage[], lang: string): Promise<Ch
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 500,
-      messages: [{ role: 'system', content: systemPrompt(lang) }, ...history],
+      messages: [{ role: 'system', content: systemPrompt(lang, mode) }, ...history],
       tools: [CHAT_TOOL],
       tool_choice: { type: 'function', function: { name: 'report_nutrition_chat_reply' } },
     }),
@@ -171,7 +189,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  let body: { messages?: ChatMessage[]; lang?: string }
+  let body: { messages?: ChatMessage[]; lang?: string; mode?: string }
   try {
     body = await req.json()
   } catch {
@@ -193,7 +211,7 @@ Deno.serve(async (req) => {
     .slice(-10)
 
   try {
-    const result = await askNutritionBot(history, body.lang || 'en')
+    const result = await askNutritionBot(history, body.lang || 'en', body.mode || 'nutrition')
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -51,6 +51,25 @@ export interface MealEntry {
   isJunkFood?: boolean
 }
 
+export interface WorkoutExercise {
+  id: string
+  name: string
+  sets?: number
+  reps?: number
+  weight?: number
+}
+
+export interface WorkoutEntry {
+  id: string
+  /** ISO date string, e.g. 2026-08-14 (local day the workout is scheduled/logged for) */
+  date: string
+  /** ISO timestamp of when the entry was created */
+  createdAt: string
+  name: string
+  done: boolean
+  exercises?: WorkoutExercise[]
+}
+
 export type ThemeMode = 'light' | 'dark'
 
 export type Sex = 'male' | 'female' | 'unspecified'

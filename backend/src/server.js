@@ -68,7 +68,7 @@ app.post('/api/nutrition-chat', async (req, res) => {
     })
   }
 
-  const { messages, lang } = req.body || {}
+  const { messages, lang, mode } = req.body || {}
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Request body must include a non-empty "messages" array.' })
   }
@@ -78,7 +78,7 @@ app.post('/api/nutrition-chat', async (req, res) => {
     .slice(-10)
 
   try {
-    const result = await askNutritionBot(history, lang || 'en')
+    const result = await askNutritionBot(history, lang || 'en', mode)
     res.json(result)
   } catch (err) {
     console.error('Nutrition chat failed:', err)

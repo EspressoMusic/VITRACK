@@ -1,17 +1,156 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
 import { getAllMeals } from '../lib/db'
-import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
+import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, weekdayLetters } from '../lib/date'
 import { EMPTY_MACROS, isMacroTrackingEnabled, sumMacros } from '../lib/macros'
-import { ACHIEVEMENT_TIERS, countGoalDays, type AchievementTier } from '../lib/achievements'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
+import { MOTIVATION_CHAT_STRINGS } from '../lib/i18n/motivationChat'
+import type { Lang } from '../lib/i18n/lang'
+import { askNutritionBot, AnalyzeError } from '../lib/api'
 import { MealDetailModal } from './MealDetailModal'
-import { AchievementDetailModal } from './AchievementsPanel'
-import { PlusIcon } from './icons'
+import { SendIcon, ExpandIcon, CloseIcon } from './icons'
 import { resolveFoodEmoji } from '../lib/foodEmoji'
 
 const GRID_COLS = 'grid-cols-7'
+
+interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const CHAT_HEADER = '#6b4423'
+const CHAT_WALLPAPER = '#f6e4bb'
+const CHAT_OUTGOING = '#eec978'
+
+/** Always-visible workout-motivation chat embedded below the calendar card, styled like a
+ *  messaging app so it reads as a running pep-talk conversation rather than a Q&A widget. */
+function MotivationChat({ lang }: { lang: Lang }) {
+  const t = MOTIVATION_CHAT_STRINGS[lang]
+  const [expanded, setExpanded] = useState(false)
+  const [turns, setTurns] = useState<ChatTurn[]>([{ role: 'assistant', content: t.greeting }])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [turns, loading])
+
+  async function send() {
+    const text = input.trim()
+    if (!text || loading) return
+    const next: ChatTurn[] = [...turns, { role: 'user', content: text }]
+    setTurns(next)
+    setInput('')
+    setLoading(true)
+    try {
+      const res = await askNutritionBot(next, lang, 'motivation')
+      setTurns((prev) => [...prev, { role: 'assistant', content: res.reply }])
+    } catch (err) {
+      setTurns((prev) => [
+        ...prev,
+        { role: 'assistant', content: err instanceof AnalyzeError ? err.message : t.errorMessage },
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const card = (
+    <div
+      className={
+        expanded
+          ? 'modal-card-enter relative z-10 flex h-[75vh] max-h-[640px] w-full max-w-sm flex-col overflow-hidden rounded-2xl'
+          : 'mx-auto flex w-[92%] min-h-0 flex-1 flex-col overflow-hidden rounded-2xl'
+      }
+      style={{ border: '3px solid #000000', boxShadow: '0 5px 0 #c9a463' }}
+    >
+      <div className="flex shrink-0 items-center gap-2 px-3 py-2" style={{ backgroundColor: CHAT_HEADER }}>
+        <span className="flex-1 text-center text-xs font-semibold" style={{ color: '#f5deb3' }}>{t.title}</span>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? t.collapseAriaLabel : t.expandAriaLabel}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#f5deb3' }}
+        >
+          {expanded ? <CloseIcon className="h-3 w-3" /> : <ExpandIcon className="h-3 w-3" />}
+        </button>
+      </div>
+
+      <div
+        ref={scrollRef}
+        className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-2.5"
+        style={{ backgroundColor: CHAT_WALLPAPER }}
+      >
+        {turns.map((turn, i) => (
+          <p
+            key={i}
+            className={`max-w-[85%] px-2.5 py-1.5 text-start text-[11px] leading-snug ${
+              turn.role === 'user' ? 'self-end rounded-2xl rounded-br-sm' : 'self-start rounded-2xl rounded-bl-sm'
+            }`}
+            style={{
+              backgroundColor: turn.role === 'user' ? CHAT_OUTGOING : 'var(--surface-cream)',
+              color: 'var(--text-primary)',
+              boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
+            }}
+          >
+            {turn.content}
+          </p>
+        ))}
+        {loading && (
+          <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }} aria-hidden>
+            …
+          </p>
+        )}
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          send()
+        }}
+        className="flex shrink-0 items-center gap-1.5 p-2"
+        style={{ backgroundColor: CHAT_WALLPAPER }}
+      >
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={t.placeholder}
+          className="min-w-0 flex-1 rounded-full px-3 py-1.5 text-[11px] outline-none"
+          style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)' }}
+        />
+        <button
+          type="submit"
+          aria-label={t.sendAriaLabel}
+          disabled={loading || !input.trim()}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
+          style={{ backgroundColor: CHAT_HEADER, color: '#f5deb3', opacity: loading || !input.trim() ? 0.5 : 1 }}
+        >
+          <SendIcon className="h-3 w-3" />
+        </button>
+      </form>
+    </div>
+  )
+
+  if (expanded) {
+    return createPortal(
+      <div className="fixed inset-0 z-[65] flex items-center justify-center px-4" role="dialog" aria-modal="true">
+        <div
+          className="modal-backdrop-enter absolute inset-0"
+          style={{ backgroundColor: 'rgba(80,80,80,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+          onClick={() => setExpanded(false)}
+        />
+        {card}
+      </div>,
+      document.body
+    )
+  }
+
+  return card
+}
 
 export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang, dir } = useLanguage()
@@ -24,7 +163,6 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const [selectedDate, setSelectedDate] = useState(todayKey())
   const [view, setView] = useState<'month' | 'day'>('month')
   const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
-  const [selectedTier, setSelectedTier] = useState<AchievementTier | null>(null)
 
   useEffect(() => {
     getAllMeals().then(setMeals)
@@ -50,7 +188,6 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
 
   const selectedMeals = mealsByDate.get(selectedDate) ?? []
   const trackNutrition = isMacroTrackingEnabled()
-  const goalDayCount = useMemo(() => countGoalDays(meals, trackNutrition), [meals, trackNutrition])
   const dayCalories = useMemo(() => sumMacros(selectedMeals.map((m) => m.macros ?? EMPTY_MACROS)).calories, [selectedMeals])
 
   function changeMonth(delta: number) {
@@ -60,7 +197,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     })
   }
 
-  const selectedLabel = selectedDate === today ? t.todayPrefix : formatFriendlyDate(selectedDate)
+  const selectedLabel = selectedDate === today ? t.todayPrefix : formatFriendlyDate(selectedDate, lang)
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 pt-5 text-center">
@@ -87,7 +224,7 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
                 {dir === 'rtl' ? '›' : '‹'}
               </button>
               <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {shortMonthLabel(cursor.year, cursor.month)}
+                {shortMonthLabel(cursor.year, cursor.month, lang)}
               </span>
               <button
                 onClick={() => changeMonth(1)}
@@ -100,9 +237,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
             </div>
 
             <div className={`mb-1 grid ${GRID_COLS} gap-0.5 text-center text-[10px] font-medium`}>
-              {WEEKDAY_NAMES.map((w) => (
-                <span key={w} style={{ color: '#000000' }}>
-                  {w.slice(0, 1)}
+              {weekdayLetters(lang).map((w, i) => (
+                <span key={i} style={{ color: '#000000' }}>
+                  {w}
                 </span>
               ))}
             </div>
@@ -202,33 +339,11 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         </div>
       </div>
 
-      <div className="mt-3 flex min-h-0 flex-1 flex-col">
-        <div className="thin-scroll flex min-h-0 flex-1 flex-wrap content-start justify-center gap-x-3 gap-y-1.5 overflow-y-auto px-0.5 pb-20 pt-0.5">
-          {ACHIEVEMENT_TIERS.map((tier) => {
-            const unlocked = goalDayCount >= tier.threshold
-            return (
-              <button
-                key={tier.id}
-                onClick={() => setSelectedTier(tier)}
-                className="relative flex aspect-square w-16 flex-col items-center justify-center rounded-lg p-1.5"
-                style={{
-                  backgroundColor: 'var(--surface-cream)',
-                  border: '2px solid #000000',
-                  boxShadow: '0 3px 0 #000000',
-                  opacity: unlocked ? 1 : 0.55,
-                }}
-              >
-                <PlusIcon className="h-6 w-6" style={{ color: unlocked ? tier.color : 'var(--text-secondary)' }} strokeWidth={3} />
-              </button>
-            )
-          })}
-        </div>
+      <div className="mt-3 flex min-h-0 flex-1 flex-col pb-20">
+        <MotivationChat lang={lang} />
       </div>
 
       {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
-      {selectedTier && (
-        <AchievementDetailModal tier={selectedTier} goalDayCount={goalDayCount} onClose={() => setSelectedTier(null)} />
-      )}
     </div>
   )
 }

@@ -7,6 +7,8 @@ export interface InsightsPanelStrings {
   noDeficienciesNote: string
   closeAriaLabel: string
   claimReward: string
+  vitaminsLabel: string
+  workoutsLabel: string
 }
 
 export const INSIGHTS_PANEL_STRINGS: Record<Lang, InsightsPanelStrings> = {
@@ -17,6 +19,8 @@ export const INSIGHTS_PANEL_STRINGS: Record<Lang, InsightsPanelStrings> = {
     noDeficienciesNote: "You're getting everything your body needs this week.",
     closeAriaLabel: 'Close',
     claimReward: 'Claim',
+    vitaminsLabel: 'Vitamins',
+    workoutsLabel: 'Workouts',
   },
   he: {
     nothingHereYet: 'עדיין אין כאן כלום',
@@ -25,6 +29,8 @@ export const INSIGHTS_PANEL_STRINGS: Record<Lang, InsightsPanelStrings> = {
     noDeficienciesNote: 'אתם מקבלים השבוע את כל מה שהגוף צריך.',
     closeAriaLabel: 'סגירה',
     claimReward: 'קבל',
+    vitaminsLabel: 'ויטמינים',
+    workoutsLabel: 'אימונים',
   },
   ar: {
     nothingHereYet: 'لا يوجد شيء هنا بعد',
@@ -33,5 +39,7 @@ export const INSIGHTS_PANEL_STRINGS: Record<Lang, InsightsPanelStrings> = {
     noDeficienciesNote: 'أنت تحصل هذا الأسبوع على كل ما يحتاجه جسمك.',
     closeAriaLabel: 'إغلاق',
     claimReward: 'استلم',
+    vitaminsLabel: 'الفيتامينات',
+    workoutsLabel: 'التمارين',
   },
 }

@@ -1,3 +1,5 @@
+import type { Lang } from './i18n/lang'
+
 /** Local YYYY-MM-DD, avoiding UTC-shift bugs from toISOString(). */
 export function toLocalDateKey(d: Date): string {
   const year = d.getFullYear()
@@ -16,22 +18,36 @@ export function daysAgoKey(days: number): string {
   return toLocalDateKey(d)
 }
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
-const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-export function monthLabel(year: number, month: number): string {
-  return `${MONTH_NAMES[month]} ${year}`
+const MONTH_NAMES: Record<Lang, string[]> = {
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  he: ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'],
+  ar: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
 }
 
-export function shortMonthLabel(year: number, month: number): string {
-  return `${MONTH_NAMES[month].slice(0, 3)} ${String(year).slice(-2)}`
+const MONTH_NAMES_SHORT: Record<Lang, string[]> = {
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  he: MONTH_NAMES.he,
+  ar: MONTH_NAMES.ar,
 }
 
-export { MONTH_NAMES, WEEKDAY_NAMES }
+/** Single-glyph weekday labels, Sunday-first to match buildCalendarGrid(). */
+const WEEKDAY_LETTERS: Record<Lang, string[]> = {
+  en: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+  he: ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'],
+  ar: ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'],
+}
+
+export function weekdayLetters(lang: Lang = 'en'): string[] {
+  return WEEKDAY_LETTERS[lang]
+}
+
+export function monthLabel(year: number, month: number, lang: Lang = 'en'): string {
+  return `${MONTH_NAMES[lang][month]} ${year}`
+}
+
+export function shortMonthLabel(year: number, month: number, lang: Lang = 'en'): string {
+  return `${MONTH_NAMES_SHORT[lang][month]} ${String(year).slice(-2)}`
+}
 
 /** Builds a 6x7 calendar grid (leading/trailing days from adjacent months included). */
 export function buildCalendarGrid(year: number, month: number): Date[] {
@@ -57,8 +73,19 @@ export function isoWeekNumber(d: Date): number {
   return 1 + Math.round((date.getTime() - firstThursday.getTime()) / (7 * 86400000))
 }
 
-export function formatFriendlyDate(dateKey: string): string {
+const WEEKDAY_NAMES_FULL: Record<Lang, string[]> = {
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  he: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
+  ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+}
+
+export function formatFriendlyDate(dateKey: string, lang: Lang = 'en'): string {
   const [y, m, d] = dateKey.split('-').map(Number)
   const date = new Date(y, m - 1, d)
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  if (lang === 'en') {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  }
+  const weekday = WEEKDAY_NAMES_FULL[lang][date.getDay()]
+  const month = MONTH_NAMES[lang][m - 1]
+  return lang === 'he' ? `יום ${weekday}, ${d} ב${month} ${y}` : `${weekday}، ${d} ${month} ${y}`
 }

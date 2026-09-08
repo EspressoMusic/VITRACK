@@ -301,12 +301,83 @@ export function PlusIcon({ className, style, strokeWidth }: IconProps) {
   )
 }
 
+export function BodyIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <circle cx="12" cy="4.8" r="2.3" />
+      <path d="M8.2 21v-6.2l-1.9-5.3a1.6 1.6 0 0 1 1.5-2.1h8.4a1.6 1.6 0 0 1 1.5 2.1l-1.9 5.3V21" />
+      <path d="M9.3 14.5h5.4" />
+    </svg>
+  )
+}
+
+export function DumbbellIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M6.5 8.5v7M4 10v4M2.2 11v2" />
+      <path d="M17.5 8.5v7M20 10v4M21.8 11v2" />
+      <path d="M6.5 12h11" />
+    </svg>
+  )
+}
+
+export function FilterIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
+    </svg>
+  )
+}
+
+export function SearchIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.35-4.35" />
+    </svg>
+  )
+}
+
 export function TargetIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
       <circle cx="12" cy="12" r="8.5" />
       <circle cx="12" cy="12" r="4.5" />
       <circle cx="12" cy="12" r="0.5" />
+    </svg>
+  )
+}
+
+export function PlayIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth} fill="currentColor" stroke="none">
+      <path d="M7 4.5v15l13-7.5Z" />
+    </svg>
+  )
+}
+
+export function PauseIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth} fill="currentColor" stroke="none">
+      <rect x="6" y="4.5" width="4" height="15" rx="1" />
+      <rect x="14" y="4.5" width="4" height="15" rx="1" />
+    </svg>
+  )
+}
+
+export function RefreshIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M4 12a8 8 0 0 1 13.7-5.7M20 12a8 8 0 0 1-13.7 5.7" />
+      <path d="M17 4.3v4h-4M7 19.7v-4h4" />
+    </svg>
+  )
+}
+
+export function ExpandIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
     </svg>
   )
 }

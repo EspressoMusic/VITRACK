@@ -9,6 +9,7 @@ interface MealRow {
   image_data_url: string
   foods: MealEntry['foods']
   nutrients: MealEntry['nutrients']
+  macros: MealEntry['macros'] | null
   confidence: MealEntry['confidence']
   analysis_note: string | null
   is_junk_food: boolean | null
@@ -22,6 +23,7 @@ function fromRow(row: MealRow): MealEntry {
     imageDataUrl: row.image_data_url,
     foods: row.foods,
     nutrients: row.nutrients,
+    macros: row.macros ?? undefined,
     confidence: row.confidence,
     analysisNote: row.analysis_note ?? undefined,
     isJunkFood: row.is_junk_food ?? undefined,
@@ -37,6 +39,7 @@ function toRow(entry: MealEntry, userId: string): Omit<MealRow, 'created_at'> & 
     image_data_url: entry.imageDataUrl,
     foods: entry.foods,
     nutrients: entry.nutrients,
+    macros: entry.macros ?? null,
     confidence: entry.confidence,
     analysis_note: entry.analysisNote ?? null,
     is_junk_food: entry.isJunkFood ?? null,

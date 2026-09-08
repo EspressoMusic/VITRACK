@@ -37,6 +37,13 @@ export function playConfirmSound(): void {
   tone(840, 0.06, 0.14, 0.05)
 }
 
+/** Three ascending beeps — rest timer finished. */
+export function playTimerDoneSound(): void {
+  tone(660, 0, 0.15, 0.06)
+  tone(660, 0.2, 0.15, 0.06)
+  tone(880, 0.4, 0.25, 0.07)
+}
+
 /**
  * Plays a tap sound on every button press app-wide, without each component wiring it up
  * individually. Uses the capture phase so it still fires even when a handler calls

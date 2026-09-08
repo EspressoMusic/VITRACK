@@ -173,7 +173,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-2 pb-24">
         <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
           {step === 'welcome' && <WelcomeStep t={t} />}
-          {step === 'signin' && <SignInStep t={t} />}
+          {step === 'signin' && <SignInStep t={t} onDevSkip={goNext} />}
           {step === 'age' && <AgeStep t={t} value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
           {step === 'sex' && <SexStep t={t} value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
           {step === 'weight' && (
@@ -239,7 +239,7 @@ function StepCard({
 }) {
   return (
     <div
-      className="flex w-full max-w-xs flex-col items-center gap-1.5 rounded-3xl px-5 py-3 text-center"
+      className="flex w-full max-w-sm flex-col items-center gap-1.5 rounded-3xl px-6 py-3 text-center"
       style={{
         backgroundColor: '#e5c184',
         border: '2px solid #000000',
@@ -981,11 +981,11 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
   )
 }
 
-function SignInStep({ t }: { t: OnboardingStrings }) {
+function SignInStep({ t, onDevSkip }: { t: OnboardingStrings; onDevSkip?: () => void }) {
   const { dir } = useLanguage()
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <StepCard icon={<UserIcon className="h-5 w-5" />} title={t.signIn.title} subtitle={t.signIn.subtitle}>
+      <StepCard icon={<UserIcon className="h-5 w-5" />} title={t.signIn.title}>
         <GoogleConsentGate t={t.signIn} dir={dir}>
           <button
             type="button"
@@ -998,6 +998,16 @@ function SignInStep({ t }: { t: OnboardingStrings }) {
           </button>
         </GoogleConsentGate>
       </StepCard>
+      {import.meta.env.DEV && onDevSkip && (
+        <button
+          type="button"
+          onClick={onDevSkip}
+          className="mt-4 text-xs underline"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          Skip (dev)
+        </button>
+      )}
     </div>
   )
 }

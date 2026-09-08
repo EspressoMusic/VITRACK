@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { MealEntry, NutrientId } from '../types'
-import { getAllMeals } from '../lib/db'
+import type { MealEntry, NutrientId, WorkoutEntry } from '../types'
+import { getAllMeals, getAllWorkouts } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { coverageStatus } from '../lib/nutrients'
-import { computeWeeklyInsights } from '../lib/insights'
+import { computeWeeklyInsights, computeWorkoutCompletion } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
-import { NutrientRow } from './NutrientRow'
+import { MACRO_LABELS } from '../lib/i18n/macros'
+import { CategoryRow } from './CategoryRow'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { MissingToGoalModal } from './MissingToGoalModal'
+import { NutrientBreakdownModal } from './NutrientBreakdownModal'
 import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CheckIcon, CloseIcon } from './icons'
@@ -19,26 +21,33 @@ const LAST_NO_DEFICIENCIES_REWARD_KEY = 'vitrack:lastNoDeficienciesReward'
 export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang } = useLanguage()
   const t = INSIGHTS_PANEL_STRINGS[lang]
+  const macroLabels = MACRO_LABELS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([])
   const [loaded, setLoaded] = useState(false)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [missingOpen, setMissingOpen] = useState(false)
+  const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [noDeficienciesOpen, setNoDeficienciesOpen] = useState(false)
   const confettiFired = useRef(false)
   const noDeficienciesFired = useRef(false)
 
   useEffect(() => {
-    getAllMeals().then((m) => {
+    Promise.all([getAllMeals(), getAllWorkouts()]).then(([m, w]) => {
       setMeals(m)
+      setWorkouts(w)
       setLoaded(true)
     })
   }, [refreshSignal])
 
-  const { ranked, weeklyCompletion } = useMemo(() => computeWeeklyInsights(meals), [meals])
+  const { ranked, weeklyCompletion, vitaminsPercent, macros } = useMemo(
+    () => computeWeeklyInsights(meals, workouts),
+    [meals, workouts]
+  )
+  const workoutsPercent = useMemo(() => computeWorkoutCompletion(workouts), [workouts])
 
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
-  const onTrack = ranked.filter((r) => coverageStatus(r.percent) === 'good')
 
   useEffect(() => {
     if (!confettiFired.current && meals.length > 0 && weeklyCompletion === 100) {
@@ -75,43 +84,17 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
       {showConfetti && <ConfettiBurst />}
       <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        <div className="mt-8">
-          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} size={130} />
+        <div className="mt-10">
+          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} size={148} />
         </div>
       </div>
 
-      <div className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col">
-        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1.5 pb-20 pt-1.5">
-          {deficient.length > 0 && (
-            <div className="flex flex-col">
-              <div className="flex flex-col gap-1">
-                {deficient.map((d) => (
-                  <NutrientRow
-                    key={d.id}
-                    id={d.id}
-                    amount={d.avgAmount}
-                    onClick={() => setSelectedNutrient(d.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {onTrack.length > 0 && (
-            <div>
-              <div className="flex flex-col gap-1">
-                {onTrack.map((r) => (
-                  <NutrientRow
-                    key={r.id}
-                    id={r.id}
-                    amount={r.avgAmount}
-                    onClick={() => setSelectedNutrient(r.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col justify-center gap-2 px-1.5 pb-28 pt-1.5">
+        <CategoryRow name={macroLabels.proteinG} icon="🥩" percent={macros.proteinG.percent} />
+        <CategoryRow name={macroLabels.carbsG} icon="🌾" percent={macros.carbsG.percent} />
+        <CategoryRow name={macroLabels.fatG} icon="🥑" percent={macros.fatG.percent} />
+        <CategoryRow name={t.vitaminsLabel} icon="🍊" percent={vitaminsPercent} onClick={() => setBreakdownOpen(true)} />
+        <CategoryRow name={t.workoutsLabel} icon="🏋️" percent={workoutsPercent} />
       </div>
 
       {selectedNutrient && (
@@ -128,6 +111,17 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
           onClose={() => setMissingOpen(false)}
           onSelect={(id) => {
             setMissingOpen(false)
+            setSelectedNutrient(id)
+          }}
+        />
+      )}
+
+      {breakdownOpen && (
+        <NutrientBreakdownModal
+          items={ranked}
+          onClose={() => setBreakdownOpen(false)}
+          onSelect={(id) => {
+            setBreakdownOpen(false)
             setSelectedNutrient(id)
           }}
         />

@@ -15,7 +15,6 @@ interface OnboardingStrings {
   }
   signIn: {
     title: string
-    subtitle: string
     buttonLabel: string
     agreePrefix: string
     agreeLinkLabel: string
@@ -82,8 +81,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       benefits: ['Better sleep 😴', 'Better workouts 💪', 'More energy ⚡', 'Sharper focus 🎯'],
     },
     signIn: {
-      title: 'Save your progress',
-      subtitle: "Sign in with Google so your goals and data are never lost.",
+      title: 'Sign in with Google',
       buttonLabel: 'Sign in with Google',
       agreePrefix: 'I agree to the ',
       agreeLinkLabel: 'Terms & Privacy Policy',
@@ -166,8 +164,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       benefits: ['שינה טובה יותר 😴', 'אימונים טובים יותר 💪', 'יותר אנרגיה ⚡', 'ריכוז חד יותר 🎯'],
     },
     signIn: {
-      title: 'שומרים את ההתקדמות שלך',
-      subtitle: 'התחברו עם Google כדי שהיעדים והנתונים שלכם לא יאבדו לעולם',
+      title: 'התחברות עם Google',
       buttonLabel: 'התחברות עם Google',
       agreePrefix: 'אני מאשר/ת את ',
       agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
@@ -250,8 +247,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       benefits: ['نوم أفضل 😴', 'تمارين أفضل 💪', 'طاقة أكبر ⚡', 'تركيز أعلى 🎯'],
     },
     signIn: {
-      title: 'احفظ تقدّمك',
-      subtitle: 'سجّل الدخول عبر Google حتى لا تفقد أهدافك وبياناتك أبدًا',
+      title: 'تسجيل الدخول عبر Google',
       buttonLabel: 'تسجيل الدخول عبر Google',
       agreePrefix: 'أوافق على ',
       agreeLinkLabel: 'الشروط وسياسة الخصوصية',

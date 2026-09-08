@@ -120,81 +120,76 @@ export function NutritionChatModal({ lang, onClose }: { lang: Lang; onClose: () 
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[65] flex items-end justify-center px-3 pb-3 sm:items-center" role="dialog" aria-modal="true">
-      <div
-        className="modal-backdrop-enter absolute inset-0"
-        style={{ backgroundColor: 'rgba(80,80,80,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+    <div
+      className="modal-card-enter fixed inset-0 z-[65] flex flex-col gap-2 p-3"
+      style={{ backgroundColor: 'var(--surface-cream)' }}
+      role="dialog"
+      aria-modal="true"
+    >
+      <button
         onClick={onClose}
-      />
-      <div
-        className="modal-card-enter relative z-10 flex h-[75vh] max-h-[640px] w-full max-w-sm flex-col gap-2 rounded-3xl p-3"
-        style={{ backgroundColor: 'var(--surface-cream)', border: '4px solid #1a1a19', boxShadow: '0 14px 30px rgba(11,11,11,0.22), 0 4px 0 #1a1a19' }}
+        aria-label={t.closeAriaLabel}
+        className="absolute end-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full"
+        style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)', border: '2px solid #000000' }}
       >
-        <button
-          onClick={onClose}
-          aria-label={t.closeAriaLabel}
-          className="absolute end-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: 'var(--text-primary)' }}
-        >
-          <CloseIcon className="h-3.5 w-3.5" />
-        </button>
+        <CloseIcon className="h-4 w-4" />
+      </button>
 
-        <div ref={scrollRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1.5 pt-8">
-          {turns.map((turn, i) => (
-            <div key={i} className={`flex flex-col gap-1 ${turn.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <p
-                className="max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-snug"
-                style={{
-                  backgroundColor: turn.role === 'user' ? 'var(--accent)' : 'var(--surface-1)',
-                  color: turn.role === 'user' ? 'white' : 'var(--text-primary)',
-                  border: turn.role === 'user' ? 'none' : '1.5px solid rgba(0,0,0,0.15)',
-                }}
-              >
-                {turn.content}
-              </p>
-              {turn.foods && turn.foods.length > 0 && (
-                <div className="flex max-w-[92%] flex-wrap gap-1.5">
-                  {turn.foods.map((food, fi) => (
-                    <ChatFoodCard key={fi} food={food} onSelect={() => selectFood(food)} />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          {loading && (
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }} aria-hidden>
-              …
+      <div ref={scrollRef} className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1.5 pt-8">
+        {turns.map((turn, i) => (
+          <div key={i} className={`flex flex-col gap-1 ${turn.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <p
+              className="max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-snug"
+              style={{
+                backgroundColor: turn.role === 'user' ? 'var(--accent)' : 'var(--surface-1)',
+                color: turn.role === 'user' ? 'white' : 'var(--text-primary)',
+                border: turn.role === 'user' ? 'none' : '1.5px solid rgba(0,0,0,0.15)',
+              }}
+            >
+              {turn.content}
             </p>
-          )}
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            send()
-          }}
-          className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5"
-          style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t.placeholder}
-            className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-            style={{ color: 'var(--text-primary)' }}
-            autoFocus
-          />
-          <button
-            type="submit"
-            aria-label={t.sendAriaLabel}
-            disabled={loading || !input.trim()}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
-            style={{ backgroundColor: 'var(--accent)', color: 'white', opacity: loading || !input.trim() ? 0.5 : 1 }}
-          >
-            <SendIcon className="h-3.5 w-3.5" />
-          </button>
-        </form>
+            {turn.foods && turn.foods.length > 0 && (
+              <div className="flex max-w-[92%] flex-wrap gap-1.5">
+                {turn.foods.map((food, fi) => (
+                  <ChatFoodCard key={fi} food={food} onSelect={() => selectFood(food)} />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {loading && (
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }} aria-hidden>
+            …
+          </p>
+        )}
       </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          send()
+        }}
+        className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5"
+        style={{ backgroundColor: 'var(--surface-1)', border: '2px solid #000000' }}
+      >
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={t.placeholder}
+          className="min-w-0 flex-1 bg-transparent text-xs outline-none"
+          style={{ color: 'var(--text-primary)' }}
+          autoFocus
+        />
+        <button
+          type="submit"
+          aria-label={t.sendAriaLabel}
+          disabled={loading || !input.trim()}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
+          style={{ backgroundColor: 'var(--accent)', color: 'white', opacity: loading || !input.trim() ? 0.5 : 1 }}
+        >
+          <SendIcon className="h-3.5 w-3.5" />
+        </button>
+      </form>
 
       {catalogFood && <SuperfoodDetailModal food={catalogFood} onClose={() => setCatalogFood(null)} />}
       {chatFood && <ChatFoodModal food={chatFood} onClose={() => setChatFood(null)} />}

@@ -9,6 +9,7 @@ create table if not exists meals (
   image_data_url text not null,
   foods jsonb not null,
   nutrients jsonb not null,
+  macros jsonb,
   confidence text not null,
   analysis_note text,
   is_junk_food boolean
@@ -16,6 +17,7 @@ create table if not exists meals (
 
 -- Safe to re-run against an existing table (schema.sql above only applies on first create).
 alter table meals add column if not exists is_junk_food boolean;
+alter table meals add column if not exists macros jsonb;
 
 create index if not exists meals_user_id_idx on meals (user_id);
 create index if not exists meals_date_idx on meals (date);
@@ -36,6 +38,38 @@ create policy "Users can update their own meals"
 
 create policy "Users can delete their own meals"
   on meals for delete
+  using (auth.uid() = user_id);
+
+create table if not exists workouts (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  date date not null,
+  created_at timestamptz not null,
+  name text not null,
+  done boolean not null default false
+);
+
+alter table workouts add column if not exists exercises jsonb not null default '[]'::jsonb;
+
+create index if not exists workouts_user_id_idx on workouts (user_id);
+create index if not exists workouts_date_idx on workouts (date);
+
+alter table workouts enable row level security;
+
+create policy "Users can read their own workouts"
+  on workouts for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own workouts"
+  on workouts for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own workouts"
+  on workouts for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete their own workouts"
+  on workouts for delete
   using (auth.uid() = user_id);
 
 -- Per-caller-IP rate limiting for the public (no-auth) `analyze` and `identify-food`

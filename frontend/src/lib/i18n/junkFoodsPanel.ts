@@ -85,27 +85,3 @@ export const JUNK_FOOD_CONTENT: Record<Lang, Record<string, JunkFoodContent>> = 
     pretzel: { name: 'بريتزل', power: 'كربوهيدرات مكررة وكمية كبيرة من الملح 🥨', benefit: 'مصنوع من دقيق مكرر ومغطى بالملح، فيملأ معدتك دون أن يمنح جسمك الكثير من القيمة الغذائية الحقيقية.' },
   },
 }
-
-export interface JunkFoodsPanelChrome {
-  superfoodsTab: string
-  junkFoodTab: string
-  removeAriaLabel: string
-}
-
-export const JUNK_FOODS_PANEL_CHROME: Record<Lang, JunkFoodsPanelChrome> = {
-  en: {
-    superfoodsTab: 'HERO FOOD',
-    junkFoodTab: 'VILLAIN FOOD',
-    removeAriaLabel: 'Remove',
-  },
-  he: {
-    superfoodsTab: 'גיבורים',
-    junkFoodTab: 'אויבים',
-    removeAriaLabel: 'הסר',
-  },
-  ar: {
-    superfoodsTab: 'أطعمة خارقة',
-    junkFoodTab: 'أطعمة غير صحية',
-    removeAriaLabel: 'إزالة',
-  },
-}

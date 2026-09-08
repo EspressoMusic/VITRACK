@@ -45,10 +45,11 @@ async function invokeEdgeFunction<T>(name: 'analyze' | 'identify-food' | 'nutrit
 
 // A dev-server hiccup (backend mid-restart, or a flaky phone-to-PC Wi-Fi hop when testing over
 // the LAN) surfaces as either a 502-ish proxy status or a fetch() that throws outright before any
-// response exists — retrying once clears most of these instead of failing the whole scan.
+// response exists. These windows can last a couple seconds (e.g. a backend process actually
+// restarting), so retry with growing backoff instead of a single fixed-delay attempt.
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504])
-const MAX_ATTEMPTS = 2
-const RETRY_DELAY_MS = 600
+const MAX_ATTEMPTS = 4
+const BASE_RETRY_DELAY_MS = 500
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -66,13 +67,13 @@ async function postLocal<T>(path: string, body: Record<string, unknown>): Promis
       })
     } catch (err) {
       if (isLastAttempt) throw new AnalyzeError('Could not reach the server. Check your connection and try again.')
-      await sleep(RETRY_DELAY_MS)
+      await sleep(BASE_RETRY_DELAY_MS * 2 ** attempt)
       continue
     }
 
     if (!res.ok) {
       if (RETRYABLE_STATUS.has(res.status) && !isLastAttempt) {
-        await sleep(RETRY_DELAY_MS)
+        await sleep(BASE_RETRY_DELAY_MS * 2 ** attempt)
         continue
       }
       const errBody = await res.json().catch(() => ({}))
@@ -117,8 +118,14 @@ export interface ChatReply {
 }
 
 /** General nutrition Q&A for the Superfoods chat — sends the running conversation and gets
- *  back a conversational reply plus any specific foods worth showing as tappable cards. */
-export async function askNutritionBot(messages: ChatMessage[], lang: string): Promise<ChatReply> {
-  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang })
-  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang })
+ *  back a conversational reply plus any specific foods worth showing as tappable cards.
+ *  Pass mode: 'motivation' to get the workout-motivation coach persona instead (used by the
+ *  Motivation Corner chat), which never returns food suggestions. */
+export async function askNutritionBot(
+  messages: ChatMessage[],
+  lang: string,
+  mode: 'nutrition' | 'motivation' = 'nutrition'
+): Promise<ChatReply> {
+  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang, mode })
+  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang, mode })
 }

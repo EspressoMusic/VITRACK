@@ -28,12 +28,14 @@ export function MissingToGoalModal({
         style={{ backgroundColor: '#e5c184', border: '1px solid #1a1a19' }}
       >
         <div className="relative mb-4 flex shrink-0 items-center justify-center">
-          <h2
-            className="whitespace-nowrap rounded-full py-1.5 ps-4 pe-12 text-sm font-semibold"
-            style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface-cream)' }}
-          >
-            {t.title}
-          </h2>
+          {items.length > 0 && (
+            <h2
+              className="whitespace-nowrap rounded-full py-1.5 ps-4 pe-12 text-sm font-semibold"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface-cream)' }}
+            >
+              {t.title}
+            </h2>
+          )}
           <button
             onClick={onClose}
             aria-label={t.closeAriaLabel}
@@ -45,10 +47,7 @@ export function MissingToGoalModal({
         </div>
 
         {items.length === 0 ? (
-          <p
-            className="rounded-xl p-3 text-center text-sm"
-            style={{ backgroundColor: 'var(--status-good-soft)', color: 'var(--text-primary)' }}
-          >
+          <p className="px-3 py-6 text-center text-sm" style={{ color: 'var(--text-primary)' }}>
             {t.allDone}
           </p>
         ) : (

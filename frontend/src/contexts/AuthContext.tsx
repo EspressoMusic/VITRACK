@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { setCurrentUserId } from '../lib/db'
 import { syncLocalMealsToCloud } from '../lib/cloudDb'
+import { syncLocalWorkoutsToCloud } from '../lib/cloudWorkouts'
 import { syncProfileWithCloud } from '../lib/cloudProfile'
 
 declare global {
@@ -144,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // from while they're still anonymous.
         if (!session.user.is_anonymous) {
           syncLocalMealsToCloud().catch((err) => console.error('Sync to cloud failed:', err))
+          syncLocalWorkoutsToCloud().catch((err) => console.error('Sync to cloud failed:', err))
         }
         syncProfileWithCloud(session.user.id)
           .then((restored) => {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MealEntry } from '../types'
 import { getAllMeals } from '../lib/db'
-import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, WEEKDAY_NAMES } from '../lib/date'
+import { buildCalendarGrid, formatFriendlyDate, monthLabel, toLocalDateKey, todayKey, weekdayLetters } from '../lib/date'
 import { EMPTY_MACROS, isMacroTrackingEnabled, macroTargetFor, sumMacros } from '../lib/macros'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
@@ -56,8 +56,8 @@ export function MiniCalendar() {
   const selectedMeals = selectedDate ? (mealsByDate.get(selectedDate) ?? []) : []
   const selectedLabel = selectedDate
     ? selectedDate === today
-      ? `${t.todayPrefix} · ${formatFriendlyDate(selectedDate)}`
-      : formatFriendlyDate(selectedDate)
+      ? `${t.todayPrefix} · ${formatFriendlyDate(selectedDate, lang)}`
+      : formatFriendlyDate(selectedDate, lang)
     : ''
   const trackNutrition = isMacroTrackingEnabled()
   const dayCalories = useMemo(() => sumMacros(selectedMeals.map((m) => m.macros ?? EMPTY_MACROS)).calories, [selectedMeals])
@@ -74,7 +74,7 @@ export function MiniCalendar() {
           {dir === 'rtl' ? '›' : '‹'}
         </button>
         <span className="truncate px-0.5 text-[9px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {monthLabel(cursor.year, cursor.month)}
+          {monthLabel(cursor.year, cursor.month, lang)}
         </span>
         <button
           onClick={() => changeMonth(1)}
@@ -87,9 +87,9 @@ export function MiniCalendar() {
       </div>
 
       <div className={`mb-0.5 grid ${GRID_COLS} gap-[2px] text-center text-[7px] font-medium`}>
-        {WEEKDAY_NAMES.map((w) => (
-          <span key={w} style={{ color: '#000000' }}>
-            {w.slice(0, 1)}
+        {weekdayLetters(lang).map((w, i) => (
+          <span key={i} style={{ color: '#000000' }}>
+            {w}
           </span>
         ))}
       </div>

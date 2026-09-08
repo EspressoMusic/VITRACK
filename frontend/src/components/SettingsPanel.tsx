@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { LANGUAGES } from '../lib/i18n/lang'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { clearAllMeals } from '../lib/db'
+import { clearAllMeals, clearAllWorkouts } from '../lib/db'
 import { seedDemoMeals } from '../lib/demoData'
 import { getBillingPlan, isSubscribed, resetOnboarding } from '../lib/profile'
 import { isAdvancedMode, setAdvancedMode } from '../lib/nutrients'
@@ -136,6 +136,7 @@ export function SettingsPanel({
 
   async function handleClear() {
     await clearAllMeals()
+    await clearAllWorkouts()
     setConfirmingClear(false)
     onDataCleared()
     onClose()
