@@ -191,7 +191,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             selected={plan === 'monthly'}
             onSelect={() => setPlan('monthly')}
             title={t.monthly.title}
-            price="$19.9"
+            price="$9.99"
             period={t.monthly.period}
             note={t.monthly.note}
           />
