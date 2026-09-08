@@ -33,7 +33,7 @@ import { installButtonClickSounds } from './lib/sound'
 const CameraPanel = lazy(() => import('./components/CameraPanel').then((m) => ({ default: m.CameraPanel })))
 
 function AppShell() {
-  const { lang, dir } = useLanguage()
+  const { lang } = useLanguage()
   const { loading: authLoading } = useAuth()
   const [tab, setTab] = useState<Tab>('camera')
   const [settingsOpen, setSettingsOpen] = useState(false)
