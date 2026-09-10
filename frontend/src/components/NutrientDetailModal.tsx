@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { NutrientId } from '../types'
 import { NUTRIENT_MAP, coverageStatus, percentOfRda, percentOfMealTarget, targetFor, mealTargetFor } from '../lib/nutrients'
@@ -22,6 +23,7 @@ export function NutrientDetailModal({
 }) {
   const { lang } = useLanguage()
   const t = NUTRIENT_DETAIL_MODAL_STRINGS[lang]
+  const [revealedFood, setRevealedFood] = useState<string | null>(null)
   const def = NUTRIENT_MAP[id]
   const content = NUTRIENT_CONTENT[lang][id]
   const englishFoodSources = NUTRIENT_CONTENT.en[id].foodSources
@@ -95,17 +97,26 @@ export function NutrientDetailModal({
             </p>
             <div className="flex flex-wrap justify-center gap-1.5 rounded-2xl p-2.5" style={{ backgroundColor: 'var(--surface-cream)' }}>
               {content.foodSources.map((food, i) => (
-                <span
+                <button
                   key={food}
-                  title={food}
+                  type="button"
+                  onClick={() => setRevealedFood((prev) => (prev === food ? null : food))}
                   aria-label={food}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base"
-                  style={{ backgroundColor: 'var(--surface-1)', border: '1.5px solid #1a1a19' }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base transition-transform active:translate-y-0.5"
+                  style={{
+                    backgroundColor: revealedFood === food ? 'var(--accent)' : 'var(--surface-1)',
+                    border: '1.5px solid #1a1a19',
+                  }}
                 >
                   {resolveFoodEmoji(englishFoodSources[i])}
-                </span>
+                </button>
               ))}
             </div>
+            {revealedFood && (
+              <p className="mt-1 text-center text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {revealedFood}
+              </p>
+            )}
           </div>
         </div>
       </div>

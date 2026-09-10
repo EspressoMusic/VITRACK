@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NAV_BAR_STRINGS } from '../lib/i18n/navBar'
-import { AppleIcon, CalendarIcon, CameraIcon, DumbbellIcon } from './icons'
+import { AppleIcon, BotIcon, CalendarIcon, CameraIcon } from './icons'
 
-export type Tab = 'camera' | 'calendar' | 'insights' | 'superfoods' | 'workouts'
+export type Tab = 'camera' | 'calendar' | 'insights' | 'superfoods' | 'chat'
 
 function NavIcon({
   active,
@@ -120,10 +120,10 @@ export function NavBar({
           icon={<AppleIcon className="h-full w-full" strokeWidth={1.7} />}
         />
         <NavIcon
-          active={!settingsActive && active === 'workouts'}
-          onClick={() => onChange('workouts')}
-          ariaLabel={t.workouts}
-          icon={<DumbbellIcon className="h-full w-full" strokeWidth={1.7} />}
+          active={!settingsActive && active === 'chat'}
+          onClick={() => onChange('chat')}
+          ariaLabel={t.chat}
+          icon={<BotIcon className="h-full w-full" strokeWidth={1.7} />}
         />
       </div>
     </nav>

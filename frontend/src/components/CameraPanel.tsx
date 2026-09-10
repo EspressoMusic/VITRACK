@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { MealEntry, NutrientAmounts, NutrientId } from '../types'
 import { analyzeFoodImage, analyzeFoodText, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
-import { addMeal } from '../lib/db'
+import { addMeal, getMealsByDate } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
 import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
-import { EMPTY_NUTRIENTS, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget } from '../lib/nutrients'
+import { EMPTY_NUTRIENTS, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, sumNutrients } from '../lib/nutrients'
 import { EMPTY_MACROS, isMacroTrackingEnabled } from '../lib/macros'
 import { MacroSummaryRow } from './MacroSummaryRow'
 import { searchFoodNames } from '../lib/foodSuggestions'
@@ -307,6 +307,20 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [justSaved, setJustSaved] = useState(false)
+  const [todayNutrients, setTodayNutrients] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
+
+  // Loaded fresh each time the result screen appears so the "what's left today" modal reflects
+  // meals already logged today, not just this scanned item in isolation.
+  useEffect(() => {
+    if (stage !== 'result') return
+    let cancelled = false
+    getMealsByDate(todayKey()).then((meals) => {
+      if (!cancelled) setTodayNutrients(sumNutrients(meals.map((m) => m.nutrients)))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [stage])
 
   const resultNutrients = result
     ? getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, result.nutrients[n.id]))
@@ -568,7 +582,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setStage('identifying')
 
     try {
-      const res = await analyzeFoodImage(dataUrl)
+      const res = await analyzeFoodImage(dataUrl, lang)
       devLog('vision-api', `Identified ${res.foods.length} food item(s).`)
 
       if (res.foods.length === 0) {
@@ -650,7 +664,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     const normalized = name.trim().toLowerCase()
     devLog('nutrition', `Looking up: ${normalized} (${quantity.trim() || 'a typical serving'})`)
     try {
-      const res = await analyzeFoodText(normalized, quantity)
+      const res = await analyzeFoodText(normalized, quantity, lang)
       devLog('nutrition', 'Lookup succeeded.')
       setResult(res)
       setStage('result')
@@ -690,7 +704,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setStage('analyzing')
     devLog('nutrition', `Looking up: ${manualName.trim().toLowerCase()}`)
     try {
-      const res = await analyzeFoodText(manualName, manualQuantity)
+      const res = await analyzeFoodText(manualName, manualQuantity, lang)
       setResult(res)
       setStage('result')
     } catch (err) {
@@ -720,7 +734,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setManualLoading(true)
     setAnalyzeErrorMsg(null)
     try {
-      const res = await analyzeFoodText(manualName, manualQuantity)
+      const res = await analyzeFoodText(manualName, manualQuantity, lang)
       setResult(res)
     } catch (err) {
       setAnalyzeErrorMsg(
@@ -1133,11 +1147,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             )}
           </div>
 
-          <div className="mx-auto mb-2 mt-3 flex w-[88%] shrink-0 justify-center">
+          <div className="mx-auto mb-5 mt-3 flex w-[88%] shrink-0 justify-center">
             <button
               onClick={saveEntry}
               disabled={justSaved}
-              className="rounded-full px-12 py-3 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+              className="rounded-full px-8 py-2 text-base font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
               style={{
                 backgroundColor: justSaved ? 'var(--status-good)' : 'var(--accent)',
                 border: '4px solid #1a1a19',
@@ -1153,8 +1167,7 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       {selectedNutrient && result && (
         <NutrientDetailModal
           id={selectedNutrient}
-          amount={result.nutrients[selectedNutrient]}
-          perMeal
+          amount={todayNutrients[selectedNutrient] + result.nutrients[selectedNutrient]}
           onClose={() => setSelectedNutrient(null)}
         />
       )}

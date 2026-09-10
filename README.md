@@ -44,28 +44,38 @@ Get a key at https://platform.openai.com/api-keys. This key stays on
 your machine in `.env` (already git-ignored) — never commit it or paste it
 into a chat.
 
-Start the backend:
-
-```bash
-npm run dev
-```
-
-It listens on http://localhost:4000.
-
 ### 2. Frontend
-
-In a second terminal:
 
 ```bash
 cd frontend
 npm install
+```
+
+### 3. Run both together
+
+From the repo root (one-time `npm install` to get `concurrently`):
+
+```bash
+npm install
 npm run dev
 ```
 
-Open the printed URL (usually http://localhost:5173). The frontend proxies
-`/api/*` requests to the backend automatically in dev.
+This starts the backend (http://localhost:4000) and frontend (usually
+http://localhost:5173) together in one terminal. **Both must be running** —
+the frontend proxies `/api/*` to the backend in dev, so if only the frontend
+is up, AI features (camera analysis, nutrition chat) fail with a 502/"Could
+not reach the server" error.
 
-### 3. Optional: accounts & cross-device sync (Supabase)
+Prefer separate terminals? You still can:
+
+```bash
+# terminal 1
+cd backend && npm run dev
+# terminal 2
+cd frontend && npm run dev
+```
+
+### 4. Optional: accounts & cross-device sync (Supabase)
 
 The app works fully without this — it's only needed for Google sign-in and
 syncing meal history across devices. Skip it to keep everything local-only.

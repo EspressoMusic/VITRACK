@@ -12,7 +12,7 @@ export function NutrientFillBar({ percent, startDelayMs = 0 }: { percent: number
 
   return (
     <div
-      className="relative mx-auto flex h-11 w-[88%] shrink-0 items-center justify-center overflow-hidden rounded-full"
+      className="relative mx-auto flex h-11 w-[78%] shrink-0 items-center justify-center overflow-hidden rounded-full"
       style={{
         border: '3px solid #000000',
         backgroundColor: 'rgba(255,255,255,0.18)',

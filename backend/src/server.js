@@ -22,14 +22,14 @@ app.post('/api/analyze', async (req, res) => {
     })
   }
 
-  const { image, foodName, quantity } = req.body || {}
+  const { image, foodName, quantity, lang } = req.body || {}
 
   try {
     let result
     if (typeof image === 'string' && image.startsWith('data:image/')) {
-      result = await analyzeFoodImage(image)
+      result = await analyzeFoodImage(image, lang)
     } else if (typeof foodName === 'string' && foodName.trim()) {
-      result = await analyzeFoodText(foodName, quantity)
+      result = await analyzeFoodText(foodName, quantity, lang)
     } else {
       return res.status(400).json({ error: 'Request body must include an "image" data URL or a "foodName".' })
     }

@@ -1,161 +1,144 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import type { MealEntry } from '../types'
-import { getAllMeals } from '../lib/db'
-import { buildCalendarGrid, formatFriendlyDate, shortMonthLabel, toLocalDateKey, todayKey, weekdayLetters } from '../lib/date'
+import { useEffect, useMemo, useState } from 'react'
+import type { MealEntry, WorkoutEntry } from '../types'
+import { addWorkout, deleteWorkout, getAllMeals, getAllWorkouts, updateWorkout } from '../lib/db'
+import { buildCalendarGrid, formatFriendlyDate, getWeekDateKeys, shortMonthLabel, toLocalDateKey, todayKey, weekdayLetters } from '../lib/date'
 import { EMPTY_MACROS, isMacroTrackingEnabled, sumMacros } from '../lib/macros'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CALENDAR_PANEL_STRINGS } from '../lib/i18n/calendarPanel'
-import { MOTIVATION_CHAT_STRINGS } from '../lib/i18n/motivationChat'
 import type { Lang } from '../lib/i18n/lang'
-import { askNutritionBot, AnalyzeError } from '../lib/api'
 import { MealDetailModal } from './MealDetailModal'
-import { SendIcon, ExpandIcon, CloseIcon } from './icons'
+import { AddGoalModal } from './AddGoalModal'
+import { CompletedChallengesModal, type CompletedChallenge } from './CompletedChallengesModal'
+import { ChallengeCompletedModal } from './ChallengeCompletedModal'
+import { CheckIcon, MedalIcon, PlusIcon } from './icons'
 import { resolveFoodEmoji } from '../lib/foodEmoji'
 
 const GRID_COLS = 'grid-cols-7'
 
-interface ChatTurn {
-  role: 'user' | 'assistant'
-  content: string
-}
+/** One weekly challenge, embedded below the calendar card — only one can be active per week
+ *  (picked from a quick-start template or custom name) and it's tracked with a 7-day strip
+ *  instead of a single done/not-done toggle. */
+function WeeklyChallengeCard({
+  lang,
+  weekDates,
+  goals,
+  selectedDate,
+  onAdd,
+  onEdit,
+  onToggleDay,
+  onShowCompleted,
+}: {
+  lang: Lang
+  weekDates: string[]
+  goals: WorkoutEntry[]
+  selectedDate: string
+  onAdd: () => void
+  onEdit: () => void
+  onToggleDay: (dateKey: string) => void
+  onShowCompleted: () => void
+}) {
+  const ct = CALENDAR_PANEL_STRINGS[lang]
+  const challengeName = goals[0]?.name
+  const letters = weekdayLetters(lang)
 
-const CHAT_HEADER = '#6b4423'
-const CHAT_WALLPAPER = '#f6e4bb'
-const CHAT_OUTGOING = '#eec978'
-
-/** Always-visible workout-motivation chat embedded below the calendar card, styled like a
- *  messaging app so it reads as a running pep-talk conversation rather than a Q&A widget. */
-function MotivationChat({ lang }: { lang: Lang }) {
-  const t = MOTIVATION_CHAT_STRINGS[lang]
-  const [expanded, setExpanded] = useState(false)
-  const [turns, setTurns] = useState<ChatTurn[]>([{ role: 'assistant', content: t.greeting }])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = scrollRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [turns, loading])
-
-  async function send() {
-    const text = input.trim()
-    if (!text || loading) return
-    const next: ChatTurn[] = [...turns, { role: 'user', content: text }]
-    setTurns(next)
-    setInput('')
-    setLoading(true)
-    try {
-      const res = await askNutritionBot(next, lang, 'motivation')
-      setTurns((prev) => [...prev, { role: 'assistant', content: res.reply }])
-    } catch (err) {
-      setTurns((prev) => [
-        ...prev,
-        { role: 'assistant', content: err instanceof AnalyzeError ? err.message : t.errorMessage },
-      ])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const card = (
+  return (
     <div
-      className={
-        expanded
-          ? 'modal-card-enter relative z-10 flex h-[75vh] max-h-[640px] w-full max-w-sm flex-col overflow-hidden rounded-2xl'
-          : 'mx-auto flex w-[92%] min-h-0 flex-1 flex-col overflow-hidden rounded-2xl'
-      }
+      className="mx-auto flex w-[92%] flex-col overflow-hidden rounded-2xl"
       style={{ border: '3px solid #000000', boxShadow: '0 5px 0 #c9a463' }}
     >
-      <div className="flex shrink-0 items-center gap-2 px-3 py-2" style={{ backgroundColor: CHAT_HEADER }}>
-        <span className="flex-1 text-center text-xs font-semibold" style={{ color: '#f5deb3' }}>{t.title}</span>
+      <div className="relative flex shrink-0 items-center justify-center px-4 py-3" style={{ backgroundColor: '#6b4423' }}>
+        <span className="text-xs font-semibold" style={{ color: '#f5deb3' }}>
+          {ct.goalsTitle}
+        </span>
         <button
-          onClick={() => setExpanded((v) => !v)}
-          aria-label={expanded ? t.collapseAriaLabel : t.expandAriaLabel}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#f5deb3' }}
+          onClick={onShowCompleted}
+          aria-label={ct.completedGoalsAriaLabel}
+          className="absolute start-3 flex h-6 w-6 items-center justify-center"
+          style={{ color: '#f5deb3' }}
         >
-          {expanded ? <CloseIcon className="h-3 w-3" /> : <ExpandIcon className="h-3 w-3" />}
+          <MedalIcon className="h-4 w-4" strokeWidth={2.4} />
         </button>
       </div>
 
       <div
-        ref={scrollRef}
-        className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-2.5"
-        style={{ backgroundColor: CHAT_WALLPAPER }}
+        className="flex flex-col gap-2.5 p-2.5"
+        style={{ backgroundColor: '#f6e4bb' }}
       >
-        {turns.map((turn, i) => (
-          <p
-            key={i}
-            className={`max-w-[85%] px-2.5 py-1.5 text-start text-[11px] leading-snug ${
-              turn.role === 'user' ? 'self-end rounded-2xl rounded-br-sm' : 'self-start rounded-2xl rounded-bl-sm'
-            }`}
-            style={{
-              backgroundColor: turn.role === 'user' ? CHAT_OUTGOING : 'var(--surface-cream)',
-              color: 'var(--text-primary)',
-              boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
-            }}
-          >
-            {turn.content}
-          </p>
-        ))}
-        {loading && (
-          <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }} aria-hidden>
-            …
-          </p>
+        {!challengeName ? (
+          <div className="flex flex-col items-center justify-center py-6">
+            <button
+              onClick={onAdd}
+              aria-label={ct.addGoalAriaLabel}
+              className="flex h-12 w-12 items-center justify-center rounded-full transition active:translate-y-0.5"
+              style={{ backgroundColor: '#6b4423', color: 'white', border: '2px solid #000000' }}
+            >
+              <PlusIcon className="h-5 w-5" strokeWidth={3} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={onEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onEdit()
+                }
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl px-2.5 py-1.5 transition active:scale-[0.98]"
+              style={{ backgroundColor: 'var(--surface-cream)', boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)' }}
+            >
+              <span className="min-w-0 truncate text-center text-[12px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                {challengeName}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {weekDates.map((dateKey, i) => {
+                const done = goals.find((g) => g.date === dateKey)?.done ?? false
+                const isSelected = dateKey === selectedDate
+                return (
+                  <button
+                    key={dateKey}
+                    onClick={() => onToggleDay(dateKey)}
+                    aria-label={`${letters[i]} ${done ? ct.markNotDoneAriaLabel : ct.markDoneAriaLabel}`}
+                    aria-pressed={done}
+                    className="flex w-full flex-col items-center gap-1"
+                  >
+                    <span
+                      className="text-[9px] font-semibold"
+                      style={{ color: isSelected ? 'var(--accent-strong)' : 'var(--text-secondary)' }}
+                    >
+                      {letters[i]}
+                    </span>
+                    <span
+                      className="flex h-7 w-full items-center justify-center rounded-md transition"
+                      style={{
+                        backgroundColor: done ? '#6b4423' : 'transparent',
+                        color: '#f5deb3',
+                        border: `2px solid ${isSelected ? 'var(--accent-strong)' : '#000000'}`,
+                      }}
+                    >
+                      {done && <CheckIcon className="h-3 w-3" strokeWidth={3} />}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          send()
-        }}
-        className="flex shrink-0 items-center gap-1.5 p-2"
-        style={{ backgroundColor: CHAT_WALLPAPER }}
-      >
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t.placeholder}
-          className="min-w-0 flex-1 rounded-full px-3 py-1.5 text-[11px] outline-none"
-          style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)' }}
-        />
-        <button
-          type="submit"
-          aria-label={t.sendAriaLabel}
-          disabled={loading || !input.trim()}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition"
-          style={{ backgroundColor: CHAT_HEADER, color: '#f5deb3', opacity: loading || !input.trim() ? 0.5 : 1 }}
-        >
-          <SendIcon className="h-3 w-3" />
-        </button>
-      </form>
     </div>
   )
-
-  if (expanded) {
-    return createPortal(
-      <div className="fixed inset-0 z-[65] flex items-center justify-center px-4" role="dialog" aria-modal="true">
-        <div
-          className="modal-backdrop-enter absolute inset-0"
-          style={{ backgroundColor: 'rgba(80,80,80,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-          onClick={() => setExpanded(false)}
-        />
-        {card}
-      </div>,
-      document.body
-    )
-  }
-
-  return card
 }
 
 export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const { lang, dir } = useLanguage()
   const t = CALENDAR_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>([])
   const [cursor, setCursor] = useState(() => {
     const now = new Date()
     return { year: now.getFullYear(), month: now.getMonth() }
@@ -163,9 +146,14 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   const [selectedDate, setSelectedDate] = useState(todayKey())
   const [view, setView] = useState<'month' | 'day'>('month')
   const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
+  const [showAddGoal, setShowAddGoal] = useState(false)
+  const [editingChallenge, setEditingChallenge] = useState(false)
+  const [showCompletedChallenges, setShowCompletedChallenges] = useState(false)
+  const [justCompletedChallenge, setJustCompletedChallenge] = useState<string | null>(null)
 
   useEffect(() => {
     getAllMeals().then(setMeals)
+    getAllWorkouts().then(setWorkouts)
   }, [refreshSignal])
 
   const mealsByDate = useMemo(() => {
@@ -177,6 +165,17 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     }
     return map
   }, [meals])
+
+  const goalsByDate = useMemo(() => {
+    const map = new Map<string, WorkoutEntry[]>()
+    for (const goal of workouts) {
+      if (goal.archived) continue
+      const list = map.get(goal.date) ?? []
+      list.push(goal)
+      map.set(goal.date, list)
+    }
+    return map
+  }, [workouts])
 
   const grid = useMemo(() => buildCalendarGrid(cursor.year, cursor.month), [cursor])
   const weeks = useMemo(() => {
@@ -198,6 +197,84 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
   }
 
   const selectedLabel = selectedDate === today ? t.todayPrefix : formatFriendlyDate(selectedDate, lang)
+  const weekDates = useMemo(() => getWeekDateKeys(selectedDate), [selectedDate])
+  const weekGoals = useMemo(() => weekDates.flatMap((d) => goalsByDate.get(d) ?? []), [weekDates, goalsByDate])
+
+  const completedChallenges = useMemo(() => {
+    const byWeek = new Map<string, WorkoutEntry[]>()
+    for (const goal of workouts) {
+      const weekStart = getWeekDateKeys(goal.date)[0]
+      const list = byWeek.get(weekStart) ?? []
+      list.push(goal)
+      byWeek.set(weekStart, list)
+    }
+    const result: CompletedChallenge[] = []
+    for (const [weekStart, entries] of byWeek) {
+      const doneDates = new Set(entries.filter((e) => e.done).map((e) => e.date))
+      if (doneDates.size === 7) result.push({ weekStart, name: entries[0].name })
+    }
+    return result.sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1))
+  }, [workouts])
+
+  async function handleAddGoal(name: string) {
+    const entry: WorkoutEntry = {
+      id: crypto.randomUUID(),
+      date: selectedDate,
+      createdAt: new Date().toISOString(),
+      name,
+      done: false,
+    }
+    setShowAddGoal(false)
+    setWorkouts((prev) => [...prev, entry])
+    await addWorkout(entry)
+  }
+
+  async function handleUpdateChallengeName(name: string) {
+    setEditingChallenge(false)
+    const updated = weekGoals.map((g) => ({ ...g, name }))
+    const byId = new Map(updated.map((g) => [g.id, g]))
+    setWorkouts((prev) => prev.map((g) => byId.get(g.id) ?? g))
+    await Promise.all(updated.map((g) => updateWorkout(g)))
+  }
+
+  async function handleToggleDayGoal(dateKey: string) {
+    const challengeName = weekGoals[0]?.name
+    if (!challengeName) return
+    const existing = weekGoals.find((g) => g.date === dateKey)
+    let updatedEntry: WorkoutEntry
+    if (existing) {
+      updatedEntry = { ...existing, done: !existing.done }
+      setWorkouts((prev) => prev.map((g) => (g.id === existing.id ? updatedEntry : g)))
+      await updateWorkout(updatedEntry)
+    } else {
+      updatedEntry = {
+        id: crypto.randomUUID(),
+        date: dateKey,
+        createdAt: new Date().toISOString(),
+        name: challengeName,
+        done: true,
+      }
+      setWorkouts((prev) => [...prev, updatedEntry])
+      await addWorkout(updatedEntry)
+    }
+
+    if (!updatedEntry.done) return
+    const nextGoals = weekGoals.filter((g) => g.date !== dateKey).concat(updatedEntry)
+    const allDone = weekDates.every((d) => nextGoals.find((g) => g.date === d)?.done)
+    if (!allDone) return
+
+    const archived = nextGoals.map((g) => ({ ...g, archived: true }))
+    const byId = new Map(archived.map((g) => [g.id, g]))
+    setWorkouts((prev) => prev.map((g) => byId.get(g.id) ?? g))
+    setJustCompletedChallenge(challengeName)
+    await Promise.all(archived.map((g) => updateWorkout(g)))
+  }
+
+  async function handleDeleteChallenge() {
+    const ids = weekGoals.map((g) => g.id)
+    setWorkouts((prev) => prev.filter((g) => !ids.includes(g.id)))
+    await Promise.all(ids.map((id) => deleteWorkout(id)))
+  }
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-2.5 pt-5 text-center">
@@ -339,11 +416,45 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
         </div>
       </div>
 
-      <div className="mt-3 flex min-h-0 flex-1 flex-col pb-20">
-        <MotivationChat lang={lang} />
+      <div className="mt-3 flex min-h-0 flex-1 flex-col justify-center pb-20">
+        <WeeklyChallengeCard
+          lang={lang}
+          weekDates={weekDates}
+          goals={weekGoals}
+          selectedDate={selectedDate}
+          onAdd={() => setShowAddGoal(true)}
+          onEdit={() => setEditingChallenge(true)}
+          onToggleDay={handleToggleDayGoal}
+          onShowCompleted={() => setShowCompletedChallenges(true)}
+        />
       </div>
 
       {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
+
+      {showAddGoal && <AddGoalModal onClose={() => setShowAddGoal(false)} onSave={handleAddGoal} />}
+
+      {editingChallenge && (
+        <AddGoalModal
+          initialName={weekGoals[0]?.name}
+          onClose={() => setEditingChallenge(false)}
+          onSave={handleUpdateChallengeName}
+          onDelete={() => {
+            setEditingChallenge(false)
+            handleDeleteChallenge()
+          }}
+        />
+      )}
+
+      {showCompletedChallenges && (
+        <CompletedChallengesModal challenges={completedChallenges} onClose={() => setShowCompletedChallenges(false)} />
+      )}
+
+      {justCompletedChallenge && (
+        <ChallengeCompletedModal
+          challengeName={justCompletedChallenge}
+          onClose={() => setJustCompletedChallenge(null)}
+        />
+      )}
     </div>
   )
 }

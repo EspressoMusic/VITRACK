@@ -4,7 +4,7 @@ import type { MealEntry, NutrientId, WorkoutEntry } from '../types'
 import { getAllMeals, getAllWorkouts } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { coverageStatus } from '../lib/nutrients'
-import { computeWeeklyInsights, computeWorkoutCompletion } from '../lib/insights'
+import { computeWeeklyInsights } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
 import { MACRO_LABELS } from '../lib/i18n/macros'
@@ -45,8 +45,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     () => computeWeeklyInsights(meals, workouts),
     [meals, workouts]
   )
-  const workoutsPercent = useMemo(() => computeWorkoutCompletion(workouts), [workouts])
-
   const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
 
   useEffect(() => {
@@ -59,7 +57,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
   useEffect(() => {
     if (
       !noDeficienciesFired.current &&
-      meals.length > 0 &&
+      ranked.length > 0 &&
       deficient.length === 0 &&
       localStorage.getItem(LAST_NO_DEFICIENCIES_REWARD_KEY) !== todayKey()
     ) {
@@ -68,7 +66,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
       setNoDeficienciesOpen(true)
       setShowConfetti(true)
     }
-  }, [meals, deficient.length])
+  }, [ranked.length, deficient.length])
 
   if (!loaded) return null
 
@@ -94,7 +92,6 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
         <CategoryRow name={macroLabels.carbsG} icon="🌾" percent={macros.carbsG.percent} />
         <CategoryRow name={macroLabels.fatG} icon="🥑" percent={macros.fatG.percent} />
         <CategoryRow name={t.vitaminsLabel} icon="🍊" percent={vitaminsPercent} onClick={() => setBreakdownOpen(true)} />
-        <CategoryRow name={t.workoutsLabel} icon="🏋️" percent={workoutsPercent} />
       </div>
 
       {selectedNutrient && (
@@ -108,6 +105,7 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
       {missingOpen && (
         <MissingToGoalModal
           items={ranked.filter((r) => r.percent < 100)}
+          hasData={ranked.length > 0}
           onClose={() => setMissingOpen(false)}
           onSelect={(id) => {
             setMissingOpen(false)

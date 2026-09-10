@@ -6,8 +6,7 @@ import { NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
 import { SuperfoodsPanel } from './components/SuperfoodsPanel'
-import { WorkoutsPanel } from './components/WorkoutsPanel'
-import { NutritionChatModal } from './components/NutritionChatModal'
+import { ChatPanel } from './components/ChatPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { GearIcon } from './components/icons'
 import { NAV_BAR_STRINGS } from './lib/i18n/navBar'
@@ -37,7 +36,6 @@ function AppShell() {
   const { loading: authLoading } = useAuth()
   const [tab, setTab] = useState<Tab>('camera')
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [chatOpen, setChatOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [weeklyCompletion, setWeeklyCompletion] = useState(0)
   const bumpRefresh = () => setRefreshSignal((n) => n + 1)
@@ -47,7 +45,7 @@ function AppShell() {
     calendar: 'background-plain',
     insights: 'background-insights',
     superfoods: 'background-plain',
-    workouts: 'background-plain',
+    chat: 'background-plain',
   }[tab]
 
   const navT = NAV_BAR_STRINGS[lang]
@@ -57,9 +55,9 @@ function AppShell() {
     // signed-in user id is known (see db.ts's useCloud), so firing before that resolves
     // would read the (empty) local store and leave the nav badge stuck at 0%.
     if (authLoading) return
-    // Also reruns on tab change: panels like WorkoutsPanel/CalendarPanel mutate data without
-    // bumping refreshSignal, so without this the nav badge can go stale relative to the panel
-    // the user is actually looking at (e.g. marking a workout done, then switching to Insights).
+    // Also reruns on tab change: panels like CalendarPanel mutate data without bumping
+    // refreshSignal, so without this the nav badge can go stale relative to the panel the
+    // user is actually looking at.
     Promise.all([getAllMeals(), getAllWorkouts()]).then(([meals, workouts]) => {
       const { loggedDayCount, ranked, weeklyCompletion } = computeWeeklyInsights(meals, workouts)
       const deficientCount = ranked.filter((r) => coverageStatus(r.percent) !== 'good').length
@@ -83,7 +81,7 @@ function AppShell() {
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
           {tab === 'superfoods' && <SuperfoodsPanel />}
-          {tab === 'workouts' && <WorkoutsPanel refreshSignal={refreshSignal} />}
+          {tab === 'chat' && <ChatPanel />}
         </div>
 
         {tab !== 'calendar' && !settingsOpen && (
@@ -91,8 +89,8 @@ function AppShell() {
             onClick={() => setSettingsOpen((open) => !open)}
             aria-label={navT.settings}
             aria-pressed={settingsOpen}
-            className="nav-tab-transition absolute end-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full"
-            style={{ color: '#3a2a06', backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
+            className="nav-tab-transition absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center"
+            style={{ color: '#3a2a06' }}
           >
             <GearIcon className="h-5 w-5" strokeWidth={2.2} />
           </button>
@@ -116,8 +114,6 @@ function AppShell() {
         settingsActive={settingsOpen}
         insightsPercent={weeklyCompletion}
       />
-
-      {chatOpen && <NutritionChatModal lang={lang} onClose={() => setChatOpen(false)} />}
     </div>
   )
 }

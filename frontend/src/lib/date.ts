@@ -18,6 +18,13 @@ export function daysAgoKey(days: number): string {
   return toLocalDateKey(d)
 }
 
+/** The 7 date keys (Sunday-first) of the week containing `dateKey`. */
+export function getWeekDateKeys(dateKey: string): string[] {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const start = new Date(year, month - 1, day - new Date(year, month - 1, day).getDay())
+  return Array.from({ length: 7 }, (_, i) => toLocalDateKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)))
+}
+
 const MONTH_NAMES: Record<Lang, string[]> = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   he: ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'],
@@ -49,7 +56,9 @@ export function shortMonthLabel(year: number, month: number, lang: Lang = 'en'):
   return `${MONTH_NAMES_SHORT[lang][month]} ${String(year).slice(-2)}`
 }
 
-/** Builds a 6x7 calendar grid (leading/trailing days from adjacent months included). */
+/** Builds a calendar grid (leading/trailing days from adjacent months included), 5 rows when
+ *  the month fits in 5, 6 rows only when a 6th is actually needed — no row that's entirely
+ *  next month's overflow. */
 export function buildCalendarGrid(year: number, month: number): Date[] {
   const firstOfMonth = new Date(year, month, 1)
   const startOffset = firstOfMonth.getDay()
@@ -59,6 +68,7 @@ export function buildCalendarGrid(year: number, month: number): Date[] {
   for (let i = 0; i < 42; i++) {
     days.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i))
   }
+  if (days[35].getMonth() !== firstOfMonth.getMonth()) days.length = 35
   return days
 }
 
@@ -77,6 +87,21 @@ const WEEKDAY_NAMES_FULL: Record<Lang, string[]> = {
   en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
   he: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
   ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+}
+
+/** Short "Sep 8–14" style label for the 7-day week starting at `weekStartKey`. */
+export function formatWeekRangeLabel(weekStartKey: string, lang: Lang = 'en'): string {
+  const [y, m, d] = weekStartKey.split('-').map(Number)
+  const start = new Date(y, m - 1, d)
+  const end = new Date(y, m - 1, d + 6)
+  const startMonth = MONTH_NAMES_SHORT[lang][start.getMonth()]
+  const endMonth = MONTH_NAMES_SHORT[lang][end.getMonth()]
+  if (start.getMonth() === end.getMonth()) {
+    return lang === 'en' ? `${startMonth} ${start.getDate()}–${end.getDate()}` : `${start.getDate()}–${end.getDate()} ${startMonth}`
+  }
+  return lang === 'en'
+    ? `${startMonth} ${start.getDate()} – ${endMonth} ${end.getDate()}`
+    : `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth}`
 }
 
 export function formatFriendlyDate(dateKey: string, lang: Lang = 'en'): string {

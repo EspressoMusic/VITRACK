@@ -4,6 +4,7 @@ export interface MissingToGoalModalStrings {
   title: string
   closeAriaLabel: string
   allDone: string
+  noData: string
   /** Composes the trailing "<amount+unit> to go · <percent>%" line — amount is a formatted data value. */
   toGo: (amountWithUnit: string, percent: number) => string
 }
@@ -13,18 +14,21 @@ export const MISSING_TO_GOAL_MODAL_STRINGS: Record<Lang, MissingToGoalModalStrin
     title: "What's missing to 100%",
     closeAriaLabel: 'Close',
     allDone: "You've hit 100% on everything this week.",
+    noData: "No meals logged this week yet — snap one to see your progress.",
     toGo: (amountWithUnit, percent) => `${amountWithUnit} to go · ${percent}%`,
   },
   he: {
     title: 'מה חסר כדי להגיע ל-100%',
     closeAriaLabel: 'סגירה',
     allDone: 'השגת/ה 100% בכל הנוטריינטים השבוע.',
+    noData: 'עדיין לא נרשמו ארוחות השבוע — צלמו ארוחה כדי לראות התקדמות.',
     toGo: (amountWithUnit, percent) => `נשארו ${amountWithUnit} · ${percent}%`,
   },
   ar: {
     title: 'الناقص للوصول إلى 100%',
     closeAriaLabel: 'إغلاق',
     allDone: 'لقد حقّقت 100% في كل شيء هذا الأسبوع.',
+    noData: 'لم تُسجَّل أي وجبات هذا الأسبوع بعد — التقط صورة لوجبة لترى تقدّمك.',
     toGo: (amountWithUnit, percent) => `متبقّي ${amountWithUnit} · ${percent}%`,
   },
 }

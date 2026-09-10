@@ -10,6 +10,8 @@ export interface NutritionChatStrings {
   startButton: string
   expandAriaLabel: string
   collapseAriaLabel: string
+  chooseLabel: string
+  disclaimer: string
 }
 
 export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
@@ -23,6 +25,8 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     startButton: 'Ask the bot 💬',
     expandAriaLabel: 'Expand',
     collapseAriaLabel: 'Collapse',
+    chooseLabel: 'Choose',
+    disclaimer: 'The bot gives general estimates, not medical advice — always check ingredients yourself for allergies or sensitivities.',
   },
   he: {
     title: 'בוט התזונה',
@@ -34,6 +38,8 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     startButton: 'שאל את הבוט 💬',
     expandAriaLabel: 'הגדלה',
     collapseAriaLabel: 'הקטנה',
+    chooseLabel: 'בחר',
+    disclaimer: 'הבוט נותן הערכה כללית בלבד ולא ייעוץ רפואי — תמיד תבדקו בעצמכם את הרכיבים מול אלרגיות או רגישויות.',
   },
   ar: {
     title: 'بوت التغذية',
@@ -45,5 +51,7 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     startButton: 'اسأل البوت 💬',
     expandAriaLabel: 'تكبير',
     collapseAriaLabel: 'تصغير',
+    chooseLabel: 'اختر',
+    disclaimer: 'البوت يقدم تقديرًا عامًا فقط وليس نصيحة طبية — تحقق دائمًا بنفسك من المكونات بخصوص الحساسية أو الحساسية الغذائية.',
   },
 }

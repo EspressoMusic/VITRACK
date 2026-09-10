@@ -85,14 +85,14 @@ async function postLocal<T>(path: string, body: Record<string, unknown>): Promis
   throw new AnalyzeError('Request failed.')
 }
 
-export async function analyzeFoodImage(imageDataUrl: string): Promise<AnalyzeResult> {
-  if (useSupabase) return invokeEdgeFunction<AnalyzeResult>('analyze', { image: imageDataUrl })
-  return postLocal<AnalyzeResult>('/api/analyze', { image: imageDataUrl })
+export async function analyzeFoodImage(imageDataUrl: string, lang: string): Promise<AnalyzeResult> {
+  if (useSupabase) return invokeEdgeFunction<AnalyzeResult>('analyze', { image: imageDataUrl, lang })
+  return postLocal<AnalyzeResult>('/api/analyze', { image: imageDataUrl, lang })
 }
 
-export async function analyzeFoodText(foodName: string, quantity: string): Promise<AnalyzeResult> {
-  if (useSupabase) return invokeEdgeFunction<AnalyzeResult>('analyze', { foodName, quantity })
-  return postLocal<AnalyzeResult>('/api/analyze', { foodName, quantity })
+export async function analyzeFoodText(foodName: string, quantity: string, lang: string): Promise<AnalyzeResult> {
+  if (useSupabase) return invokeEdgeFunction<AnalyzeResult>('analyze', { foodName, quantity, lang })
+  return postLocal<AnalyzeResult>('/api/analyze', { foodName, quantity, lang })
 }
 
 /** Identifies the food in a single camera frame — identification only, no nutrients. */
@@ -112,9 +112,21 @@ export interface ChatFoodSuggestion {
   tip: string
 }
 
+export interface ChatMealSuggestion {
+  name: string
+  emoji: string
+  tip: string
+  calories: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+}
+
 export interface ChatReply {
   reply: string
+  options: string[]
   foods: ChatFoodSuggestion[]
+  meals: ChatMealSuggestion[]
 }
 
 /** General nutrition Q&A for the Superfoods chat — sends the running conversation and gets

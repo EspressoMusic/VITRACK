@@ -7,10 +7,13 @@ import { CloseIcon } from './icons'
 
 export function MissingToGoalModal({
   items,
+  hasData,
   onClose,
   onSelect,
 }: {
   items: { id: NutrientId; avgAmount: number; percent: number }[]
+  /** False when nothing was logged this week at all — an empty `items` then means "no data", not "100% achieved". */
+  hasData: boolean
   onClose: () => void
   onSelect: (id: NutrientId) => void
 }) {
@@ -48,7 +51,7 @@ export function MissingToGoalModal({
 
         {items.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm" style={{ color: 'var(--text-primary)' }}>
-            {t.allDone}
+            {hasData ? t.allDone : t.noData}
           </p>
         ) : (
           <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pe-1">

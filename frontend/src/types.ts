@@ -68,6 +68,8 @@ export interface WorkoutEntry {
   name: string
   done: boolean
   exercises?: WorkoutExercise[]
+  /** Set once a weekly challenge's 7 days are all done, so it drops off the active board but stays in the completed-challenges history. */
+  archived?: boolean
 }
 
 export type ThemeMode = 'light' | 'dark'

@@ -19,7 +19,7 @@ export function CustomNutritionForm({
   values: NutrientAmounts
   onValueChange: (id: NutrientId, v: number) => void
 }) {
-  const { lang } = useLanguage()
+  const { lang, dir } = useLanguage()
   const t = CUSTOM_NUTRITION_FORM_STRINGS[lang]
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -28,6 +28,8 @@ export function CustomNutritionForm({
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
         placeholder={t.namePlaceholder}
+        dir={dir}
+        lang={lang}
         className="mx-auto w-[70%] rounded-xl px-3 py-2 text-sm"
         style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
       />

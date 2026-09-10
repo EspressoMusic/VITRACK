@@ -52,11 +52,14 @@ export function InsightsIcon({ className }: IconProps) {
   )
 }
 
-export function GearIcon({ className, style, strokeWidth }: IconProps) {
+export function GearIcon({ className, style }: IconProps) {
   return (
-    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"
+      />
     </svg>
   )
 }
@@ -104,9 +107,9 @@ export function LogOutIcon({ className }: IconProps) {
   )
 }
 
-export function StarIcon({ className }: IconProps) {
+export function StarIcon({ className, style, filled }: IconProps & { filled?: boolean }) {
   return (
-    <svg className={className} {...base}>
+    <svg className={className} style={style} {...base} fill={filled ? 'currentColor' : 'none'}>
       <path d="M12 3.5l2.4 5 5.4.6-4 3.8.9 5.5-4.7-2.6-4.7 2.6.9-5.5-4-3.8 5.4-.6z" />
     </svg>
   )
@@ -135,6 +138,15 @@ export function TrashIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
       <path d="M4 7h16M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.7 12.1a2 2 0 0 0 2 1.9h5.6a2 2 0 0 0 2-1.9L17.5 7" />
+    </svg>
+  )
+}
+
+export function PencilIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M4 20l.9-4.7L15.2 4.9a1.4 1.4 0 0 1 2 0l1.9 1.9a1.4 1.4 0 0 1 0 2L8.7 19.1 4 20Z" />
+      <path d="M13.6 6.5l3.9 3.9" />
     </svg>
   )
 }
@@ -268,10 +280,17 @@ export function SendIcon({ className }: IconProps) {
   )
 }
 
-export function ChatIcon({ className }: IconProps) {
+export function BotIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
-      <path d="M4 5.5h16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H9l-4.5 4V16H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z" />
+      <path d="M12 8.5V5.5" />
+      <circle cx="12" cy="4" r="1.1" fill="currentColor" stroke="none" />
+      <rect x="5" y="8.5" width="14" height="11" rx="3.2" />
+      <circle cx="9.2" cy="14" r="1.15" fill="currentColor" stroke="none" />
+      <circle cx="14.8" cy="14" r="1.15" fill="currentColor" stroke="none" />
+      <path d="M9 17.3h6" />
+      <path d="M3 12.5v3.2" />
+      <path d="M21 12.5v3.2" />
     </svg>
   )
 }

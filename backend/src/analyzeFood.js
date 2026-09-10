@@ -4,6 +4,8 @@ import { withOpenAIRetry } from './openaiRetry.js'
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
+const LANGUAGE_NAMES = { en: 'English', he: 'Hebrew', ar: 'Arabic' }
+
 const nutrientProperties = Object.fromEntries(
   NUTRIENT_IDS.map((id) => [
     id,
@@ -38,8 +40,8 @@ const REPORT_TOOL = {
           items: {
             type: 'object',
             properties: {
-              name: { type: 'string', description: 'Short name of the food item, e.g. "Grilled chicken breast".' },
-              portion: { type: 'string', description: 'Estimated portion size, e.g. "~150g" or "1 medium bowl".' },
+              name: { type: 'string', description: 'Short name of the food item in the reply language, e.g. "Grilled chicken breast".' },
+              portion: { type: 'string', description: 'Estimated portion size in the reply language, kept as short as possible — just a weight like "150 grams" with the unit word fully translated into the reply language (e.g. "150 גרם" in Hebrew, never "150g" or "150g~") or a short count like "1 bowl". Never use the "~" symbol. Never combine a size word with a weight (e.g. write "150 grams", not "medium (150 grams)").' },
             },
             required: ['name', 'portion'],
           },
@@ -70,7 +72,7 @@ const REPORT_TOOL = {
         },
         note: {
           type: 'string',
-          description: 'One short, friendly sentence noting any major assumptions made about hidden ingredients or portion size.',
+          description: 'One short, friendly sentence in the reply language noting any major assumptions made about hidden ingredients or portion size.',
         },
       },
       required: ['foods', 'nutrients', 'macros', 'confidence', 'isJunkFood'],
@@ -78,26 +80,34 @@ const REPORT_TOOL = {
   },
 }
 
-const SYSTEM_PROMPT = `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
+function systemPrompt(lang) {
+  const languageName = LANGUAGE_NAMES[lang] || 'English'
+  return `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
 A user uploads a photo of a meal. Identify each distinct food item and its approximate portion size,
 then estimate the TOTAL calories, macronutrients (carbs/fat/protein), and vitamin/mineral content of the
 whole meal using standard nutrition-database knowledge (e.g. USDA FoodData Central figures) for those
-portions. Always call the report_nutrition tool with your best numeric estimate for every field, even if
-approximate — never leave a nutrient, macro, or calorie value blank or zero unless the food genuinely
-contains none of it. Be realistic: a single meal rarely supplies 100% of any nutrient's daily allowance.
-Also set isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
-minimally-processed foods. If the image does not show food at all, still call the tool with an empty foods
-array, all nutrients and macros at 0, confidence "low", and a note explaining that no food was recognized.`
+portions. Write the food names, portions, and note in ${languageName}. Always call the report_nutrition
+tool with your best numeric estimate for every field, even if approximate — never leave a nutrient, macro,
+or calorie value blank or zero unless the food genuinely contains none of it. Be realistic: a single meal
+rarely supplies 100% of any nutrient's daily allowance. Also set isJunkFood honestly — true for
+ultra-processed/fried/sugary/refined items, false for whole or minimally-processed foods. If the image does
+not show food at all, still call the tool with an empty foods array, all nutrients and macros at 0,
+confidence "low", and a note explaining that no food was recognized.`
+}
 
-const TEXT_SYSTEM_PROMPT = `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
+function textSystemPrompt(lang) {
+  const languageName = LANGUAGE_NAMES[lang] || 'English'
+  return `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
 A user manually logs a food they ate by typing its name and the quantity they consumed, with no photo.
 Estimate the TOTAL calories, macronutrients (carbs/fat/protein), and vitamin/mineral content of that food
-and quantity using standard nutrition-database knowledge (e.g. USDA FoodData Central figures). Always call
-the report_nutrition tool with your best numeric estimate for every field, even if approximate — never leave
-a nutrient, macro, or calorie value blank or zero unless the food genuinely contains none of it. Also set
-isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
-minimally-processed foods. Report exactly one entry in the foods array, using the given name and quantity as
-its portion.`
+and quantity using standard nutrition-database knowledge (e.g. USDA FoodData Central figures). Write the
+food name, portion, and note in ${languageName}. Always call the report_nutrition tool with your best
+numeric estimate for every field, even if approximate — never leave a nutrient, macro, or calorie value
+blank or zero unless the food genuinely contains none of it. Also set isJunkFood honestly — true for
+ultra-processed/fried/sugary/refined items, false for whole or minimally-processed foods. Report exactly
+one entry in the foods array, using the given name and quantity as its portion, translated into
+${languageName}.`
+}
 
 const client = new OpenAI()
 
@@ -120,13 +130,13 @@ async function requestNutritionReport(messages) {
   throw Object.assign(new Error('The model did not return a structured nutrition estimate.'), { status: 502 })
 }
 
-export async function analyzeFoodText(foodName, quantity) {
+export async function analyzeFoodText(foodName, quantity, lang = 'en') {
   if (typeof foodName !== 'string' || !foodName.trim()) {
     throw Object.assign(new Error('Food name is required.'), { status: 400 })
   }
 
   const toolCall = await requestNutritionReport([
-    { role: 'system', content: TEXT_SYSTEM_PROMPT },
+    { role: 'system', content: textSystemPrompt(lang) },
     {
       role: 'user',
       content: `Food: ${foodName.trim()}\nQuantity: ${quantity?.trim() || 'a typical serving'}`,
@@ -145,7 +155,7 @@ export async function analyzeFoodText(foodName, quantity) {
   return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
 }
 
-export async function analyzeFoodImage(imageDataUrl) {
+export async function analyzeFoodImage(imageDataUrl, lang = 'en') {
   if (!/^data:image\/(?:jpeg|png|webp|gif);base64,.+/.test(imageDataUrl)) {
     throw Object.assign(new Error('Image must be a base64 data URL (jpeg, png, webp, or gif).'), {
       status: 400,
@@ -153,7 +163,7 @@ export async function analyzeFoodImage(imageDataUrl) {
   }
 
   const toolCall = await requestNutritionReport([
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: systemPrompt(lang) },
     {
       role: 'user',
       content: [

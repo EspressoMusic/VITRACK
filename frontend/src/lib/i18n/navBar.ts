@@ -5,7 +5,7 @@ interface NavBarStrings {
   insights: string
   camera: string
   superfoods: string
-  workouts: string
+  chat: string
   settings: string
 }
 
@@ -15,7 +15,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'Insights',
     camera: 'Scan',
     superfoods: 'Superfoods',
-    workouts: 'Workouts',
+    chat: 'Bot',
     settings: 'Settings',
   },
   he: {
@@ -23,7 +23,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'תובנות',
     camera: 'מצלמה',
     superfoods: 'מאכלי על',
-    workouts: 'אימונים',
+    chat: 'בוט',
     settings: 'הגדרות',
   },
   ar: {
@@ -31,7 +31,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'التحليلات',
     camera: 'الكاميرا',
     superfoods: 'الأطعمة الخارقة',
-    workouts: 'التمارين',
+    chat: 'بوت',
     settings: 'الإعدادات',
   },
 }

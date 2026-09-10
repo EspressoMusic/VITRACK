@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { WorkoutExercise } from '../types'
 import { useLanguage } from '../contexts/LanguageContext'
 import { WORKOUTS_PANEL_STRINGS } from '../lib/i18n/workoutsPanel'
+import { WORKOUT_TEMPLATES, WORKOUT_TEMPLATE_IDS, type WorkoutTemplateId } from '../lib/workoutTemplates'
 import { CloseIcon, PlusIcon, TrashIcon } from './icons'
 
 export function AddWorkoutModal({
@@ -16,11 +17,18 @@ export function AddWorkoutModal({
   onClose: () => void
   onSave: (name: string, exercises: WorkoutExercise[]) => void
 }) {
-  const { lang } = useLanguage()
+  const { lang, dir } = useLanguage()
   const t = WORKOUTS_PANEL_STRINGS[lang]
   const isEditing = initialName !== undefined
   const [name, setName] = useState(initialName ?? '')
   const [exercises, setExercises] = useState<WorkoutExercise[]>(initialExercises ?? [])
+  const templates = WORKOUT_TEMPLATES[lang]
+
+  function applyTemplate(id: WorkoutTemplateId) {
+    const template = templates[id]
+    setName(template.label)
+    setExercises(template.exercises.map((ex) => ({ id: crypto.randomUUID(), ...ex })))
+  }
 
   function addExerciseRow() {
     setExercises((prev) => [...prev, { id: crypto.randomUUID(), name: '' }])
@@ -67,10 +75,34 @@ export function AddWorkoutModal({
           </div>
 
           <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-0.5 pb-1">
+            {!isEditing && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  {t.templatesLabel}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {WORKOUT_TEMPLATE_IDS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => applyTemplate(id)}
+                      className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold"
+                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
+                    >
+                      <span aria-hidden>{templates[id].emoji}</span>
+                      {templates[id].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t.workoutNamePlaceholder}
+              dir={dir}
+              lang={lang}
               className="w-full rounded-full px-4 py-2.5 text-sm outline-none"
               style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
             />
@@ -86,6 +118,8 @@ export function AddWorkoutModal({
                     value={ex.name}
                     onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
                     placeholder={t.exerciseNamePlaceholder}
+                    dir={dir}
+                    lang={lang}
                     className="min-w-0 flex-1 bg-transparent text-xs font-medium outline-none"
                     style={{ color: 'var(--text-primary)' }}
                   />
