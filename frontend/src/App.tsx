@@ -29,6 +29,7 @@ import { installButtonClickSounds } from './lib/sound'
 import { getTodaysBotMood } from './lib/botMood'
 import { getBotPersonality } from './lib/botPersonality'
 import { shouldShowBotAlertToast, markBotAlertToastSeen } from './lib/botAlertToastSeen'
+import { peekShouldSendCheckIn } from './lib/botCheckIn'
 import {
   peekPendingChallengeAnnounce,
   peekPendingChallengeCompleted,
@@ -83,7 +84,10 @@ function AppShell() {
       // here too, so the bot icon/toast can flag them before the user ever opens chat.
       const startedChallenge = peekPendingChallengeAnnounce()
       const completedChallenge = peekPendingChallengeCompleted()
-      setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge)
+      // Unprompted check-ins (see botCheckIn.ts) are the third source of a bot-initiated message
+      // besides these two — peeked the same way so the badge doesn't miss them.
+      const checkInPending = tab !== 'chat' && peekShouldSendCheckIn()
+      setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge || checkInPending)
       // Pop the heads-up card at most once per distinct trigger so it doesn't reappear on every
       // tab switch while the same thing (junk food, broken challenge, pending greeting) stands.
       if (tab === 'chat') {
