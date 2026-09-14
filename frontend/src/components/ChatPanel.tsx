@@ -252,7 +252,7 @@ function ChatOptionRow({ options, disabled, onChoose }: { options: string[]; dis
           key={oi}
           onClick={() => onChoose(option)}
           disabled={disabled}
-          className="rounded-xl px-3 py-1.5 text-[11px] font-semibold transition active:translate-y-0.5"
+          className="rounded-md px-3 py-1.5 text-[11px] font-semibold transition active:translate-y-0.5"
           style={{ backgroundColor: 'var(--surface-cream)', boxShadow: '0 6px 14px rgba(11,11,11,0.18), 0 3px 0 rgba(0,0,0,0.25)', color: 'var(--text-primary)', opacity: disabled ? 0.6 : 1 }}
         >
           {option}
@@ -587,7 +587,7 @@ export function ChatPanel() {
           style={{ backgroundColor: CHAT_WALLPAPER }}
         >
           {turns.map((turn, i) => (
-            <div key={i} className={`flex flex-col gap-1 ${turn.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div key={i} className={`flex flex-col gap-1 ${turn.role === 'user' ? 'items-start' : 'items-end'}`}>
               <p
                 className={`max-w-[85%] px-3 py-2 text-start text-xs leading-snug ${
                   turn.role === 'user' ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl rounded-bl-sm'
@@ -630,7 +630,7 @@ export function ChatPanel() {
             </div>
           ))}
           {loading && (
-            <div className="flex items-center gap-1 self-start rounded-2xl rounded-bl-sm px-3 py-2.5" aria-hidden style={{ backgroundColor: 'var(--surface-cream)', boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)' }}>
+            <div className="flex items-center gap-1 self-end rounded-2xl rounded-bl-sm px-3 py-2.5" aria-hidden style={{ backgroundColor: 'var(--surface-cream)', boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)' }}>
               {[0, 1, 2].map((i) => (
                 <span
                   key={i}
