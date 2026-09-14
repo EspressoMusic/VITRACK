@@ -128,6 +128,12 @@ function systemPrompt(lang: string, mode: string, personality: string): string {
     `Leave "options", "foods" and "meals" empty. Never reinterpret a plain acknowledgment as a new question, ` +
     `and never ask why they're not answering or not giving you something — they don't owe you an answer to ` +
     `something you asked. ` +
+    `If the latest message is unclear, gibberish, or just a stray letter/word you genuinely can't parse as a ` +
+    `question, don't fall back to a generic greeting or "how can I help you" line — ask what they mean in a ` +
+    `short, natural, casual way, like a real person would. Never send the exact same reply twice in this ` +
+    `conversation — check the history above and rephrase differently each time, even when the underlying point ` +
+    `is the same (e.g. asking for clarification again should sound different from how you asked the first time). ` +
+    `Leave "options", "foods" and "meals" empty for this case. ` +
     `Whenever they ask what to eat for a specific meal of the day — breakfast, lunch, dinner, or a snack, ` +
     `whether named directly or picked from your own "options" chips — this is a MEAL question, not a food ` +
     `question: you MUST use "meals" and leave "foods" empty. This applies even to a bare one-word reply like ` +
