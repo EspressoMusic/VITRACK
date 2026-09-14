@@ -95,6 +95,13 @@ export async function analyzeFoodText(foodName: string, quantity: string, lang: 
   return postLocal<AnalyzeResult>('/api/analyze', { foodName, quantity, lang })
 }
 
+/** Re-estimates total nutrients for a user-corrected list of foods/portions from an existing result
+ *  (e.g. after editing a portion the vision step got wrong), without re-sending the photo. */
+export async function analyzeFoodList(foods: IdentifiedFood[], lang: string): Promise<AnalyzeResult> {
+  if (useSupabase) return invokeEdgeFunction<AnalyzeResult>('analyze', { foods, lang })
+  return postLocal<AnalyzeResult>('/api/analyze', { foods, lang })
+}
+
 /** Identifies the food in a single camera frame — identification only, no nutrients. */
 export async function identifyFood(imageDataUrl: string): Promise<FoodIdentification> {
   if (useSupabase) return invokeEdgeFunction<FoodIdentification>('identify-food', { image: imageDataUrl })
@@ -132,12 +139,14 @@ export interface ChatReply {
 /** General nutrition Q&A for the Superfoods chat — sends the running conversation and gets
  *  back a conversational reply plus any specific foods worth showing as tappable cards.
  *  Pass mode: 'motivation' to get the workout-motivation coach persona instead (used by the
- *  Motivation Corner chat), which never returns food suggestions. */
+ *  Motivation Corner chat), which never returns food suggestions. `personality` shifts the
+ *  reply's tone (nutrition mode only) to match the user's chosen bot personality. */
 export async function askNutritionBot(
   messages: ChatMessage[],
   lang: string,
-  mode: 'nutrition' | 'motivation' = 'nutrition'
+  mode: 'nutrition' | 'motivation' = 'nutrition',
+  personality: string = 'normal'
 ): Promise<ChatReply> {
-  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang, mode })
-  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang, mode })
+  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang, mode, personality })
+  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang, mode, personality })
 }

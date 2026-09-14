@@ -12,6 +12,7 @@ import { CompletedChallengesModal, type CompletedChallenge } from './CompletedCh
 import { ChallengeCompletedModal } from './ChallengeCompletedModal'
 import { CheckIcon, MedalIcon, PlusIcon } from './icons'
 import { resolveFoodEmoji } from '../lib/foodEmoji'
+import { setPendingChallengeAnnounce, setPendingChallengeCompleted } from '../lib/challengeAnnounce'
 
 const GRID_COLS = 'grid-cols-7'
 
@@ -134,7 +135,16 @@ function WeeklyChallengeCard({
   )
 }
 
-export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
+export function CalendarPanel({
+  refreshSignal,
+  onChallengeUpdate,
+}: {
+  refreshSignal: number
+  /** Fired right after a challenge starts or completes — App.tsx re-checks the pending
+   *  announce/complete flags on this signal, since this component has no other way to tell it
+   *  something changed while the user stays on the calendar tab the whole time. */
+  onChallengeUpdate?: () => void
+}) {
   const { lang, dir } = useLanguage()
   const t = CALENDAR_PANEL_STRINGS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
@@ -226,7 +236,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     }
     setShowAddGoal(false)
     setWorkouts((prev) => [...prev, entry])
+    setPendingChallengeAnnounce(name)
     await addWorkout(entry)
+    onChallengeUpdate?.()
   }
 
   async function handleUpdateChallengeName(name: string) {
@@ -267,7 +279,9 @@ export function CalendarPanel({ refreshSignal }: { refreshSignal: number }) {
     const byId = new Map(archived.map((g) => [g.id, g]))
     setWorkouts((prev) => prev.map((g) => byId.get(g.id) ?? g))
     setJustCompletedChallenge(challengeName)
+    setPendingChallengeCompleted(challengeName)
     await Promise.all(archived.map((g) => updateWorkout(g)))
+    onChallengeUpdate?.()
   }
 
   async function handleDeleteChallenge() {

@@ -1,60 +1,192 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NUTRITION_CHAT_STRINGS } from '../lib/i18n/nutritionChat'
 import { SUPERFOODS_PANEL_CHROME } from '../lib/i18n/superfoodsPanel'
-import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
 import { askNutritionBot, AnalyzeError, type ChatFoodSuggestion, type ChatMealSuggestion } from '../lib/api'
 import { getSavedMeals, saveMeal, unsaveMeal, type SavedMeal } from '../lib/savedMeals'
-import { SendIcon, StarIcon, CloseIcon } from './icons'
+import { getSavedChatFoods, saveChatFood, unsaveChatFood, type SavedChatFood } from '../lib/savedChatFoods'
+import { getBotPersonality, setBotPersonality, type BotPersonality } from '../lib/botPersonality'
+import { getTodaysBotMood, type BotMoodStatus } from '../lib/botMood'
+import { consumePendingChallengeAnnounce, consumePendingChallengeCompleted } from '../lib/challengeAnnounce'
+import { shouldSendCheckIn, markCheckInSent } from '../lib/botCheckIn'
+import { CHALLENGE_TEMPLATES, CHALLENGE_TEMPLATE_IDS, type ChallengeTemplateId } from '../lib/nutritionChallengeTemplates'
+import { addWorkout } from '../lib/db'
+import { todayKey } from '../lib/date'
+import type { WorkoutEntry } from '../types'
+import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
+import { SendIcon, StarIcon, BotIcon, CloseIcon } from './icons'
 import { MacroSummaryRow } from './MacroSummaryRow'
+import { BotPersonalityModal } from './BotPersonalityModal'
 import { SavedMealCard } from './FavoritesPanel'
 
 const CHAT_HEADER = '#6b4423'
+const CHAT_HEADER_ANGRY = 'var(--status-critical)'
 const CHAT_WALLPAPER = '#f6e4bb'
 const CHAT_OUTGOING = '#eec978'
 
-/** The whole card is NOT a click target — only the "Choose" button is. Otherwise a stray tap
- *  anywhere on the card (which is easy to do while scrolling the chat) silently sends a chat
- *  message on the user's behalf. */
-function ChatFoodCard({ food, disabled, onChoose, chooseLabel }: { food: ChatFoodSuggestion; disabled: boolean; onChoose: () => void; chooseLabel: string }) {
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+/** Styled to match the Superfoods tab's own food cards (FoodCard in SuperfoodsPanel.tsx) — same
+ *  border, shadow, emoji size and name/tagline typography — so a bot-suggested food doesn't look
+ *  like a different UI language. Tapping the card opens a detail popup; the star stays a separate
+ *  action so saving/unsaving never also opens the popup. */
+function ChatFoodCard({
+  food,
+  saved,
+  onToggleSave,
+  onOpenDetail,
+  saveLabel,
+  unsaveLabel,
+}: {
+  food: ChatFoodSuggestion
+  saved: boolean
+  onToggleSave: () => void
+  onOpenDetail: () => void
+  saveLabel: string
+  unsaveLabel: string
+}) {
   return (
-    <div
-      className="flex min-w-0 flex-col gap-1.5 rounded-xl px-2 py-2"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '1.5px solid rgba(0,0,0,0.15)', opacity: disabled ? 0.6 : 1 }}
+    <button
+      type="button"
+      onClick={onOpenDetail}
+      className="relative flex w-full shrink-0 flex-col items-center justify-start gap-0.5 rounded-xl px-1 py-2 text-center transition active:translate-y-0.5"
+      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center text-base leading-none" aria-hidden>
-          {food.emoji}
-        </span>
-        <span className="truncate text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {food.name}
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={onChoose}
-        disabled={disabled}
-        className="w-full rounded-full py-1 text-[10px] font-semibold text-white transition active:translate-y-0.5"
-        style={{ backgroundColor: 'var(--accent)' }}
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSave()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation()
+            e.preventDefault()
+            onToggleSave()
+          }
+        }}
+        aria-label={saved ? unsaveLabel : saveLabel}
+        aria-pressed={saved}
+        className="absolute end-1 top-1 flex h-5 w-5 items-center justify-center"
+        style={{ color: saved ? 'var(--accent)' : 'var(--text-secondary)' }}
       >
-        {chooseLabel}
-      </button>
-    </div>
+        <StarIcon className="h-3.5 w-3.5" filled={saved} />
+      </span>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center text-2xl" aria-hidden>
+        {food.emoji}
+      </span>
+      <span className="w-full truncate text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+        {food.name}
+      </span>
+      {food.tip && (
+        <span className="line-clamp-2 flex min-h-[2.2em] w-full items-center justify-center text-[9px] font-bold leading-tight" style={{ color: 'var(--accent-strong)' }}>
+          {food.tip}
+        </span>
+      )}
+    </button>
   )
 }
 
-/** Groups the bot's food suggestions into one bordered square, matching the app's
- *  card language, instead of loose pills floating in the chat bubble area. Each card's
- *  "Choose" button sends it back into the conversation so the bot continues from that
- *  choice, instead of dead-ending in a popup. */
-function ChatFoodGrid({ foods, disabled, onChoose, chooseLabel }: { foods: ChatFoodSuggestion[]; disabled: boolean; onChoose: (food: ChatFoodSuggestion) => void; chooseLabel: string }) {
+/** Detail popup for a tapped chat food card. The bot only ever gives us name/emoji/tip for a
+ *  suggested food, so this just presents that same data larger and readably, matching the visual
+ *  language of the Superfoods tab's own NutrientInfoModal rather than introducing a new style. */
+function ChatFoodDetailModal({
+  food,
+  saved,
+  onToggleSave,
+  saveLabel,
+  unsaveLabel,
+  onClose,
+}: {
+  food: ChatFoodSuggestion
+  saved: boolean
+  onToggleSave: () => void
+  saveLabel: string
+  unsaveLabel: string
+  onClose: () => void
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" role="dialog" aria-modal="true">
+      <div
+        className="modal-backdrop-enter absolute inset-0"
+        style={{ backgroundColor: 'rgba(80,80,80,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        onClick={onClose}
+      />
+      <div
+        className="modal-card-enter relative z-10 flex w-full max-w-xs flex-col items-center gap-2 rounded-3xl p-4 text-center"
+        style={{ backgroundColor: 'var(--surface-cream)', border: '4px solid #1a1a19', boxShadow: '0 14px 30px rgba(11,11,11,0.22), 0 4px 0 #1a1a19' }}
+      >
+        <button
+          onClick={onToggleSave}
+          aria-label={saved ? unsaveLabel : saveLabel}
+          aria-pressed={saved}
+          className="absolute start-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: saved ? 'var(--accent)' : 'var(--text-primary)' }}
+        >
+          <StarIcon className="h-3.5 w-3.5" filled={saved} />
+        </button>
+        <button
+          onClick={onClose}
+          aria-label={food.name}
+          className="absolute end-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: 'var(--text-primary)' }}
+        >
+          <CloseIcon className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-4xl" aria-hidden>
+          {food.emoji}
+        </span>
+        <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+          {food.name}
+        </h2>
+        {food.tip && (
+          <p className="text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
+            {food.tip}
+          </p>
+        )}
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+/** Groups the bot's food suggestions into one bordered square, matching the app's card
+ *  language, instead of loose pills floating in the chat bubble area — each card inside is
+ *  the same FoodCard-style tile used in the Superfoods tab. */
+function ChatFoodGrid({
+  foods,
+  savedFoodNames,
+  onToggleSave,
+  onOpenDetail,
+  saveLabel,
+  unsaveLabel,
+}: {
+  foods: ChatFoodSuggestion[]
+  savedFoodNames: Set<string>
+  onToggleSave: (food: ChatFoodSuggestion) => void
+  onOpenDetail: (food: ChatFoodSuggestion) => void
+  saveLabel: string
+  unsaveLabel: string
+}) {
   return (
     <div
       className="grid w-full max-w-[92%] grid-cols-2 gap-1.5 rounded-2xl p-2"
-      style={{ backgroundColor: CHAT_WALLPAPER, border: '2px solid #000000' }}
+      style={{ backgroundColor: CHAT_WALLPAPER }}
     >
       {foods.map((food, fi) => (
-        <ChatFoodCard key={fi} food={food} disabled={disabled} onChoose={() => onChoose(food)} chooseLabel={chooseLabel} />
+        <ChatFoodCard
+          key={fi}
+          food={food}
+          saved={savedFoodNames.has(food.name)}
+          onToggleSave={() => onToggleSave(food)}
+          onOpenDetail={() => onOpenDetail(food)}
+          saveLabel={saveLabel}
+          unsaveLabel={unsaveLabel}
+        />
       ))}
     </div>
   )
@@ -63,31 +195,24 @@ function ChatFoodGrid({ foods, disabled, onChoose, chooseLabel }: { foods: ChatF
 /** A full meal suggestion — richer than ChatFoodCard, so it carries its own macro breakdown via
  *  the same MacroSummaryRow used by scan results and the meal detail modal. The card itself is
  *  not a click target (a stray tap while scrolling the chat must not silently send a message on
- *  the user's behalf) — picking "Choose" sends it back into the conversation so the bot continues
- *  from it; the star in the corner saves it into favorites instead, independent of that. */
+ *  the user's behalf) — the star in the corner is the only action, saving it into favorites. */
 function ChatMealCard({
   meal,
-  disabled,
   saved,
-  onChoose,
   onToggleSave,
   saveLabel,
   unsaveLabel,
-  chooseLabel,
 }: {
   meal: ChatMealSuggestion
-  disabled: boolean
   saved: boolean
-  onChoose: () => void
   onToggleSave: () => void
   saveLabel: string
   unsaveLabel: string
-  chooseLabel: string
 }) {
   return (
     <div
       className="relative flex w-full max-w-[92%] flex-col gap-1.5 rounded-2xl p-2 text-start"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', opacity: disabled ? 0.6 : 1 }}
+      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
     >
       <button
         type="button"
@@ -113,15 +238,6 @@ function ChatMealCard({
         </p>
       )}
       <MacroSummaryRow macros={{ calories: meal.calories, carbsG: meal.carbsG, fatG: meal.fatG, proteinG: meal.proteinG }} />
-      <button
-        type="button"
-        onClick={onChoose}
-        disabled={disabled}
-        className="mt-0.5 w-full rounded-full py-1.5 text-xs font-semibold text-white transition active:translate-y-0.5"
-        style={{ backgroundColor: 'var(--accent)' }}
-      >
-        {chooseLabel}
-      </button>
     </div>
   )
 }
@@ -136,13 +252,130 @@ function ChatOptionRow({ options, disabled, onChoose }: { options: string[]; dis
           key={oi}
           onClick={() => onChoose(option)}
           disabled={disabled}
-          className="rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:translate-y-0.5"
-          style={{ backgroundColor: 'var(--surface-cream)', border: '1.5px solid rgba(0,0,0,0.15)', color: 'var(--text-primary)', opacity: disabled ? 0.6 : 1 }}
+          className="rounded-xl px-3 py-1.5 text-[11px] font-semibold transition active:translate-y-0.5"
+          style={{ backgroundColor: 'var(--surface-cream)', boxShadow: '0 6px 14px rgba(11,11,11,0.18), 0 3px 0 rgba(0,0,0,0.25)', color: 'var(--text-primary)', opacity: disabled ? 0.6 : 1 }}
         >
           {option}
         </button>
       ))}
     </div>
+  )
+}
+
+/** Same visual language as SavedMealCard (FavoritesPanel.tsx) minus the macro row, since a
+ *  bot-suggested single food never carries calorie/macro data. */
+function SavedChatFoodCard({ food, removeAriaLabel, onRemove }: { food: SavedChatFood; removeAriaLabel: string; onRemove: () => void }) {
+  return (
+    <div
+      className="relative flex flex-col gap-1.5 rounded-2xl p-2.5"
+      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+    >
+      <button
+        onClick={onRemove}
+        aria-label={removeAriaLabel}
+        className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center"
+        style={{ color: 'var(--accent)' }}
+      >
+        <StarIcon className="h-4 w-4" filled />
+      </button>
+      <div className="flex items-center gap-2 pe-6">
+        <span className="text-xl leading-none" aria-hidden>
+          {food.emoji}
+        </span>
+        <span className="truncate text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+          {food.name}
+        </span>
+      </div>
+      {food.tip && (
+        <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+          {food.tip}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/** Quick-access list of foods and meals starred from the chat (see ChatFoodCard, ChatMealCard) —
+ *  opened from the header star so they don't only live, undiscoverable, inside the Superfoods tab. */
+function SavedChatItemsModal({
+  foods,
+  meals,
+  onClose,
+  onRemoveFood,
+  onRemoveMeal,
+}: {
+  foods: SavedChatFood[]
+  meals: SavedMeal[]
+  onClose: () => void
+  onRemoveFood: (name: string) => void
+  onRemoveMeal: (name: string) => void
+}) {
+  const { lang } = useLanguage()
+  const ft = FAVORITES_PANEL_STRINGS[lang]
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
+      <div
+        className="modal-backdrop-enter absolute inset-0"
+        style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        onClick={onClose}
+      />
+      <div
+        className="modal-card-enter relative z-10 flex max-h-[75vh] w-full max-w-md flex-col overflow-hidden rounded-2xl p-4"
+        style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
+      >
+        <div className="relative flex shrink-0 items-center justify-center pb-2">
+          <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+            {ft.title}
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label={ft.ariaLabel}
+            className="absolute end-0 top-0 flex h-7 w-7 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-primary)' }}
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pe-1">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
+              {ft.savedFoodsTitle}
+            </span>
+            {foods.length === 0 ? (
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                {ft.emptyFoods}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {foods.map((food) => (
+                  <SavedChatFoodCard key={food.name} food={food} removeAriaLabel={ft.removeAriaLabel} onRemove={() => onRemoveFood(food.name)} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
+              {ft.savedMealsTitle}
+            </span>
+            {meals.length === 0 ? (
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                {ft.emptyMeals}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {meals.map((meal) => (
+                  <SavedMealCard key={meal.name} meal={meal} removeAriaLabel={ft.removeAriaLabel} onRemove={() => onRemoveMeal(meal.name)} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   )
 }
 
@@ -152,6 +385,13 @@ interface ChatTurn {
   options?: string[]
   foods?: ChatFoodSuggestion[]
   meals?: ChatMealSuggestion[]
+  /** Rendered in the bot's angry red styling instead of the normal bubble. */
+  angry?: boolean
+  /** Set when "options" is a confirm/different-one choice for this locally-generated challenge
+   *  suggestion, so picking one of those options is handled locally instead of being sent to
+   *  the nutrition Q&A bot (which knows nothing about challenges and would just answer as if
+   *  asked a food question). */
+  challengeSuggestionId?: ChallengeTemplateId
 }
 
 /** The nutrition bot, shown as its own tab (replaces the old workouts tab) so it's always
@@ -160,19 +400,117 @@ export function ChatPanel() {
   const { lang, dir } = useLanguage()
   const t = NUTRITION_CHAT_STRINGS[lang]
   const st = SUPERFOODS_PANEL_CHROME[lang]
-  const ft = FAVORITES_PANEL_STRINGS[lang]
   const [turns, setTurns] = useState<ChatTurn[]>([{ role: 'assistant', content: t.greeting }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>(() => getSavedMeals())
-  const [showSavedMeals, setShowSavedMeals] = useState(false)
+  const [savedChatFoods, setSavedChatFoods] = useState<SavedChatFood[]>(() => getSavedChatFoods())
+  const [personality, setPersonality] = useState<BotPersonality>(() => getBotPersonality())
+  const [showPersonalityModal, setShowPersonalityModal] = useState(false)
+  const [showSavedItems, setShowSavedItems] = useState(false)
+  const [detailFood, setDetailFood] = useState<ChatFoodSuggestion | null>(null)
+  const [mood, setMood] = useState<BotMoodStatus | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const savedMealNames = new Set(savedMeals.map((m) => m.name))
+  const savedChatFoodNames = new Set(savedChatFoods.map((f) => f.name))
+
+  // Re-read fresh each time the chat tab is opened (this component remounts on tab switch),
+  // so the angry state always reflects today's latest food log and challenge status.
+  useEffect(() => {
+    getTodaysBotMood().then(setMood)
+  }, [])
+
+  // One-shot per chat visit: at most one bot-initiated message beyond the static greeting.
+  // Priority is a just-started challenge, then a just-completed one (both flagged by
+  // CalendarPanel since this component remounts on every tab switch and can't hold that state
+  // itself), and only otherwise — occasionally, gated by shouldSendCheckIn — an unprompted
+  // check-in so the bot doesn't feel silent between events.
+  useEffect(() => {
+    const startedChallenge = consumePendingChallengeAnnounce()
+    const completedChallenge = consumePendingChallengeCompleted()
+    const isGrumpy = personality === 'angry' || personality === 'superAngry'
+
+    if (startedChallenge) {
+      const template = pickRandom(isGrumpy ? t.challengeStartedGrumpy : t.challengeStartedGentle)
+      const content = template.replace('{challenge}', startedChallenge)
+      setTurns((prev) => [...prev, { role: 'assistant', content, options: [t.tipsYes, t.tipsNo] }])
+    } else if (completedChallenge) {
+      const template = pickRandom(isGrumpy ? t.challengeCompletedGrumpy : t.challengeCompletedGentle)
+      const content = template.replace('{challenge}', completedChallenge)
+      setTurns((prev) => [...prev, { role: 'assistant', content, options: [t.nextChallengeYes, t.tipsNo] }])
+    } else if (shouldSendCheckIn()) {
+      const content = pickRandom(isGrumpy ? t.checkInGrumpy : t.checkInGentle)
+      setTurns((prev) => [...prev, { role: 'assistant', content }])
+      markCheckInSent()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const isAngry = personality === 'superAngry' && !!mood && (!!mood.junkFoodName || mood.challengeBroken)
 
   function toggleSavedMeal(meal: ChatMealSuggestion) {
     if (savedMealNames.has(meal.name)) unsaveMeal(meal.name)
     else saveMeal(meal)
     setSavedMeals(getSavedMeals())
+  }
+
+  function toggleSavedChatFood(food: ChatFoodSuggestion) {
+    if (savedChatFoodNames.has(food.name)) unsaveChatFood(food.name)
+    else saveChatFood(food)
+    setSavedChatFoods(getSavedChatFoods())
+  }
+
+  function handleSelectPersonality(next: BotPersonality) {
+    setPersonality(next)
+    setBotPersonality(next)
+    setShowPersonalityModal(false)
+  }
+
+  function handleBotIconClick() {
+    if (!isAngry || !mood) return
+    const template = mood.junkFoodName ? pickRandom(t.angryRantFood) : pickRandom(t.angryRantChallenge)
+    const content = template.replace('{food}', mood.junkFoodName ?? '').replace('{challenge}', mood.challengeName ?? '')
+    setTurns((prev) => [...prev, { role: 'assistant', content, angry: true }])
+  }
+
+  /** Proposes a challenge from the same template list the manual "add goal" flow uses, with a
+   *  plain confirm / different-one choice — resolved locally so this never round-trips through
+   *  the nutrition Q&A bot, which has no concept of challenges and would otherwise just answer
+   *  as if it were asked a food question (see ChatOptionRow onChoose below). */
+  function suggestChallenge(excludeId?: ChallengeTemplateId) {
+    const templates = CHALLENGE_TEMPLATES[lang]
+    const pool = CHALLENGE_TEMPLATE_IDS.filter((id) => id !== excludeId)
+    const id = pickRandom(pool.length > 0 ? pool : CHALLENGE_TEMPLATE_IDS)
+    const content = t.challengeSuggestPrompt.replace('{challenge}', templates[id].label)
+    setTurns((prev) => [
+      ...prev,
+      { role: 'assistant', content, options: [t.confirmChallengeOption, t.differentChallengeOption], challengeSuggestionId: id },
+    ])
+  }
+
+  async function confirmChallenge(id: ChallengeTemplateId) {
+    const name = CHALLENGE_TEMPLATES[lang][id].label
+    const entry: WorkoutEntry = { id: crypto.randomUUID(), date: todayKey(), createdAt: new Date().toISOString(), name, done: false }
+    await addWorkout(entry)
+    const isGrumpy = personality === 'angry' || personality === 'superAngry'
+    const template = pickRandom(isGrumpy ? t.challengeStartedGrumpy : t.challengeStartedGentle)
+    const content = template.replace('{challenge}', name)
+    setTurns((prev) => [...prev, { role: 'assistant', content, options: [t.tipsYes, t.tipsNo] }])
+  }
+
+  /** Routes a tapped option chip: challenge suggestions and the "suggest one" prompt that leads
+   *  into them are handled locally, everything else is sent to the bot as a normal chat reply. */
+  function handleOptionChoose(option: string, turn: ChatTurn) {
+    if (turn.challengeSuggestionId) {
+      if (option === t.confirmChallengeOption) confirmChallenge(turn.challengeSuggestionId)
+      else suggestChallenge(turn.challengeSuggestionId)
+      return
+    }
+    if (option === t.nextChallengeYes) {
+      suggestChallenge()
+      return
+    }
+    sendMessage(option)
   }
 
   useEffect(() => {
@@ -188,7 +526,9 @@ export function ChatPanel() {
     try {
       const res = await askNutritionBot(
         next.map(({ role, content }) => ({ role, content })),
-        lang
+        lang,
+        'nutrition',
+        personality
       )
       setTurns((prev) => [...prev, { role: 'assistant', content: res.reply, options: res.options, foods: res.foods, meals: res.meals }])
     } catch (err) {
@@ -211,57 +551,36 @@ export function ChatPanel() {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-20 pt-12">
       <div
-        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl ${isAngry ? 'border-blink-critical' : ''}`}
         style={{ border: '3px solid #000000', boxShadow: '0 5px 0 #c9a463' }}
       >
-        <div className="relative flex shrink-0 items-center justify-center px-3 py-2.5" style={{ backgroundColor: CHAT_HEADER }}>
-          <span className="text-sm font-semibold" style={{ color: '#f5deb3' }}>
-            {showSavedMeals ? ft.savedMealsTitle : t.title}
-          </span>
-          {showSavedMeals ? (
-            <button
-              type="button"
-              onClick={() => setShowSavedMeals(false)}
-              aria-label={t.closeAriaLabel}
-              className="absolute end-2 flex h-7 w-7 items-center justify-center rounded-full"
-              style={{ color: '#f5deb3' }}
-            >
-              <CloseIcon className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowSavedMeals(true)}
-              aria-label={ft.savedMealsTitle}
-              className="absolute end-2 flex h-7 w-7 items-center justify-center rounded-full"
-              style={{ color: '#f5deb3' }}
-            >
-              <StarIcon className="h-4 w-4" filled={savedMeals.length > 0} />
-            </button>
-          )}
+        <div
+          className="relative flex shrink-0 items-center justify-center gap-1.5 px-3 py-2.5 transition-colors"
+          style={{ backgroundColor: isAngry ? CHAT_HEADER_ANGRY : CHAT_HEADER }}
+        >
+          <button
+            type="button"
+            onClick={handleBotIconClick}
+            aria-label={isAngry ? t.angryIconAriaLabel : t.title}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center ${isAngry ? 'bot-angry-shake' : ''}`}
+            style={{ color: '#f5deb3' }}
+          >
+            <BotIcon className="h-full w-full" />
+          </button>
+          <button type="button" onClick={() => setShowPersonalityModal(true)} className="text-sm font-semibold" style={{ color: '#f5deb3' }}>
+            {t.title}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSavedItems(true)}
+            aria-label={FAVORITES_PANEL_STRINGS[lang].title}
+            className="absolute end-3 flex h-6 w-6 items-center justify-center"
+            style={{ color: '#f5deb3' }}
+          >
+            <StarIcon className="h-4 w-4" filled={savedMeals.length > 0 || savedChatFoods.length > 0} />
+          </button>
         </div>
 
-        {showSavedMeals ? (
-          <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3" style={{ backgroundColor: CHAT_WALLPAPER }}>
-            {savedMeals.length === 0 ? (
-              <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-                {ft.emptyMeals}
-              </p>
-            ) : (
-              savedMeals.map((meal) => (
-                <SavedMealCard
-                  key={meal.name}
-                  meal={meal}
-                  removeAriaLabel={ft.removeAriaLabel}
-                  onRemove={() => {
-                    unsaveMeal(meal.name)
-                    setSavedMeals(getSavedMeals())
-                  }}
-                />
-              ))
-            )}
-          </div>
-        ) : (
         <div
           ref={scrollRef}
           className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3"
@@ -274,18 +593,25 @@ export function ChatPanel() {
                   turn.role === 'user' ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl rounded-bl-sm'
                 }`}
                 style={{
-                  backgroundColor: turn.role === 'user' ? CHAT_OUTGOING : 'var(--surface-cream)',
-                  color: 'var(--text-primary)',
+                  backgroundColor: turn.angry ? 'var(--status-critical-soft)' : turn.role === 'user' ? CHAT_OUTGOING : 'var(--surface-cream)',
+                  color: turn.angry ? 'var(--status-critical)' : 'var(--text-primary)',
                   boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
                 }}
               >
                 {turn.content}
               </p>
               {turn.options && turn.options.length > 0 && (
-                <ChatOptionRow options={turn.options} disabled={loading} onChoose={(option) => sendMessage(option)} />
+                <ChatOptionRow options={turn.options} disabled={loading} onChoose={(option) => handleOptionChoose(option, turn)} />
               )}
               {turn.foods && turn.foods.length > 0 && (
-                <ChatFoodGrid foods={turn.foods} disabled={loading} onChoose={(food) => sendMessage(food.name)} chooseLabel={t.chooseLabel} />
+                <ChatFoodGrid
+                  foods={turn.foods}
+                  savedFoodNames={savedChatFoodNames}
+                  onToggleSave={toggleSavedChatFood}
+                  onOpenDetail={setDetailFood}
+                  saveLabel={st.save}
+                  unsaveLabel={st.unsave}
+                />
               )}
               {turn.meals && turn.meals.length > 0 && (
                 <div className="flex w-full max-w-[92%] flex-col gap-2">
@@ -293,13 +619,10 @@ export function ChatPanel() {
                     <ChatMealCard
                       key={mi}
                       meal={meal}
-                      disabled={loading}
                       saved={savedMealNames.has(meal.name)}
-                      onChoose={() => sendMessage(meal.name)}
                       onToggleSave={() => toggleSavedMeal(meal)}
                       saveLabel={st.save}
                       unsaveLabel={st.unsave}
-                      chooseLabel={t.chooseLabel}
                     />
                   ))}
                 </div>
@@ -318,9 +641,7 @@ export function ChatPanel() {
             </div>
           )}
         </div>
-        )}
 
-        {!showSavedMeals && (
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -348,13 +669,41 @@ export function ChatPanel() {
             <SendIcon className="h-3.5 w-3.5" />
           </button>
         </form>
-        )}
       </div>
 
-      {!showSavedMeals && (
-        <p className="shrink-0 px-2 pt-1.5 text-center text-[10px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-          {t.disclaimer}
-        </p>
+      <p className="shrink-0 px-2 pt-1.5 text-center text-[10px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+        {t.disclaimer}
+      </p>
+
+      {showPersonalityModal && (
+        <BotPersonalityModal current={personality} onClose={() => setShowPersonalityModal(false)} onSelect={handleSelectPersonality} />
+      )}
+
+      {detailFood && (
+        <ChatFoodDetailModal
+          food={detailFood}
+          saved={savedChatFoodNames.has(detailFood.name)}
+          onToggleSave={() => toggleSavedChatFood(detailFood)}
+          saveLabel={st.save}
+          unsaveLabel={st.unsave}
+          onClose={() => setDetailFood(null)}
+        />
+      )}
+
+      {showSavedItems && (
+        <SavedChatItemsModal
+          foods={savedChatFoods}
+          meals={savedMeals}
+          onClose={() => setShowSavedItems(false)}
+          onRemoveFood={(name) => {
+            unsaveChatFood(name)
+            setSavedChatFoods(getSavedChatFoods())
+          }}
+          onRemoveMeal={(name) => {
+            unsaveMeal(name)
+            setSavedMeals(getSavedMeals())
+          }}
+        />
       )}
     </div>
   )

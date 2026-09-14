@@ -26,6 +26,16 @@ import { computeWeeklyInsights } from './lib/insights'
 import { coverageStatus } from './lib/nutrients'
 import { maybeNotifyVitaminStatus } from './lib/notifications'
 import { installButtonClickSounds } from './lib/sound'
+import { getTodaysBotMood } from './lib/botMood'
+import { getBotPersonality } from './lib/botPersonality'
+import { shouldShowBotAlertToast, markBotAlertToastSeen } from './lib/botAlertToastSeen'
+import {
+  peekPendingChallengeAnnounce,
+  peekPendingChallengeCompleted,
+  shouldShowChallengeToast,
+  markChallengeToastSeen,
+} from './lib/challengeAnnounce'
+import { BotAlertToast, type BotAlertPayload } from './components/BotAlertToast'
 
 // Lazy-loaded so the food-detection model (TensorFlow.js + COCO-SSD, several MB) ships in its
 // own chunk instead of blocking the initial app bundle for users who haven't reached this tab yet.
@@ -38,6 +48,8 @@ function AppShell() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [weeklyCompletion, setWeeklyCompletion] = useState(0)
+  const [botAlert, setBotAlert] = useState(false)
+  const [toastAlert, setToastAlert] = useState<BotAlertPayload | null>(null)
   const bumpRefresh = () => setRefreshSignal((n) => n + 1)
 
   const panelBg = {
@@ -58,13 +70,42 @@ function AppShell() {
     // Also reruns on tab change: panels like CalendarPanel mutate data without bumping
     // refreshSignal, so without this the nav badge can go stale relative to the panel the
     // user is actually looking at.
-    Promise.all([getAllMeals(), getAllWorkouts()]).then(([meals, workouts]) => {
+    Promise.all([getAllMeals(), getAllWorkouts(), getTodaysBotMood()]).then(([meals, workouts, mood]) => {
       const { loggedDayCount, ranked, weeklyCompletion } = computeWeeklyInsights(meals, workouts)
       const deficientCount = ranked.filter((r) => coverageStatus(r.percent) !== 'good').length
       maybeNotifyVitaminStatus({ weeklyCompletion, deficientCount, loggedDayCount })
       setWeeklyCompletion(weeklyCompletion)
+      // Same "something to be upset about" condition ChatPanel uses to turn the header red —
+      // mirrored here so the chat tab icon can flag it while the user is on a different tab.
+      const isAngryMood = getBotPersonality() === 'superAngry' && (!!mood.junkFoodName || mood.challengeBroken)
+      // Challenge start/completion greetings are queued by CalendarPanel as one-shot flags for
+      // ChatPanel to consume on next open (see challengeAnnounce.ts) — peeked (not consumed)
+      // here too, so the bot icon/toast can flag them before the user ever opens chat.
+      const startedChallenge = peekPendingChallengeAnnounce()
+      const completedChallenge = peekPendingChallengeCompleted()
+      setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge)
+      // Pop the heads-up card at most once per distinct trigger so it doesn't reappear on every
+      // tab switch while the same thing (junk food, broken challenge, pending greeting) stands.
+      if (tab === 'chat') {
+        // already in the panel — nothing to surface over itself
+      } else if (isAngryMood && shouldShowBotAlertToast(mood)) {
+        setToastAlert({ kind: 'angry', mood })
+        markBotAlertToastSeen(mood)
+      } else if (startedChallenge && shouldShowChallengeToast('started', startedChallenge)) {
+        setToastAlert({ kind: 'challengeStarted', challengeName: startedChallenge })
+        markChallengeToastSeen('started', startedChallenge)
+      } else if (completedChallenge && shouldShowChallengeToast('completed', completedChallenge)) {
+        setToastAlert({ kind: 'challengeCompleted', challengeName: completedChallenge })
+        markChallengeToastSeen('completed', completedChallenge)
+      }
     })
   }, [refreshSignal, authLoading, tab])
+
+  // Opening the chat tab means the user is now "in the panel" — dismiss the heads-up card so
+  // it doesn't float over the real conversation.
+  useEffect(() => {
+    if (tab === 'chat') setToastAlert(null)
+  }, [tab])
 
   return (
     <div
@@ -78,13 +119,13 @@ function AppShell() {
               <CameraPanel onLogged={bumpRefresh} />
             </Suspense>
           )}
-          {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
+          {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} onChallengeUpdate={bumpRefresh} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
           {tab === 'superfoods' && <SuperfoodsPanel />}
           {tab === 'chat' && <ChatPanel />}
         </div>
 
-        {tab !== 'calendar' && !settingsOpen && (
+        {tab !== 'calendar' && tab !== 'superfoods' && tab !== 'chat' && !settingsOpen && (
           <button
             onClick={() => setSettingsOpen((open) => !open)}
             aria-label={navT.settings}
@@ -103,6 +144,19 @@ function AppShell() {
             onNutrientModeChange={bumpRefresh}
           />
         )}
+
+        {toastAlert && (
+          <BotAlertToast
+            alert={toastAlert}
+            personality={getBotPersonality()}
+            onOpenChat={() => {
+              setToastAlert(null)
+              setTab('chat')
+              setSettingsOpen(false)
+            }}
+            onDismiss={() => setToastAlert(null)}
+          />
+        )}
       </main>
 
       <NavBar
@@ -113,6 +167,7 @@ function AppShell() {
         }}
         settingsActive={settingsOpen}
         insightsPercent={weeklyCompletion}
+        chatAlert={botAlert && tab !== 'chat'}
       />
     </div>
   )

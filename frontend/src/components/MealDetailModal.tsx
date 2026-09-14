@@ -79,11 +79,15 @@ export function MealDetailModal({ meal, onClose }: { meal: MealEntry; onClose: (
             </p>
           ) : (
             <>
-              <div className="flex flex-col items-center gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 {meal.foods.map((f, i) => (
-                  <div key={i} className="flex flex-col items-center gap-0.5 text-center text-xs">
-                    <span className="truncate" style={{ color: 'var(--text-primary)' }}>{f.name}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{f.portion}</span>
+                  <div
+                    key={i}
+                    className="flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-2 text-center"
+                    style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                  >
+                    <span className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{f.name}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{f.portion}</span>
                   </div>
                 ))}
               </div>

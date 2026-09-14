@@ -10,11 +10,16 @@ function NavIcon({
   onClick,
   ariaLabel,
   icon,
+  alwaysCircle = false,
+  badge = false,
 }: {
   active: boolean
   onClick: () => void
   ariaLabel: string
   icon: ReactNode
+  alwaysCircle?: boolean
+  /** Small colored dot in the corner — flags that this tab has something new/unseen. */
+  badge?: boolean
 }) {
   return (
     <button
@@ -24,11 +29,13 @@ function NavIcon({
       aria-current={active ? 'page' : undefined}
     >
       <span
-        className="nav-tab-transition flex h-11 w-11 items-center justify-center rounded-full"
+        className={`nav-tab-transition relative flex items-center justify-center rounded-full ${
+          alwaysCircle && !active ? 'h-8 w-8' : 'h-11 w-11'
+        }`}
         style={{
           backgroundColor: active ? '#6b4423' : 'transparent',
           color: active ? '#f5deb3' : '#6b4423',
-          border: active ? '2px solid #000000' : '2px solid transparent',
+          border: active || alwaysCircle ? '2px solid #000000' : '2px solid transparent',
           boxShadow: active ? '0 2px 0 #000000' : 'none',
         }}
       >
@@ -38,10 +45,17 @@ function NavIcon({
         >
           {icon}
         </span>
+        {badge && (
+          <span
+            aria-hidden
+            className="absolute -top-0.5 end-0.5 h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: 'var(--status-critical)', border: '1.5px solid #000000' }}
+          />
+        )}
       </span>
       {!active && (
         <span
-          className="-mt-1 text-[10px] font-medium leading-none"
+          className={`${alwaysCircle ? 'mt-1' : '-mt-1'} text-[10px] font-medium leading-none`}
           style={{ color: '#6b4423' }}
         >
           {ariaLabel}
@@ -56,12 +70,16 @@ export function NavBar({
   onChange,
   settingsActive = false,
   insightsPercent = 0,
+  chatAlert = false,
 }: {
   active: Tab
   onChange: (tab: Tab) => void
   settingsActive?: boolean
   /** Weekly goal completion percentage, shown inside the insights tab icon. */
   insightsPercent?: number
+  /** Shows a red dot on the chat tab icon — the bot has something to be upset about and the
+   *  user isn't currently looking at the chat panel. */
+  chatAlert?: boolean
 }) {
   const { lang } = useLanguage()
   const t = NAV_BAR_STRINGS[lang]
@@ -81,34 +99,39 @@ export function NavBar({
           icon={<CalendarIcon className="h-full w-full" strokeWidth={1.7} />}
         />
         <NavIcon
-          active={!settingsActive && active === 'camera'}
-          onClick={() => onChange('camera')}
-          ariaLabel={t.camera}
-          icon={<CameraIcon className="h-full w-full" strokeWidth={1.7} />}
+          active={insightsActive}
+          onClick={() => onChange('insights')}
+          ariaLabel={t.insights}
+          alwaysCircle
+          icon={
+            <span className="flex items-center justify-center text-xs font-extrabold leading-none">
+              {clampedPercent}%
+            </span>
+          }
         />
 
         <div className="flex items-center justify-center py-1.5">
           <button
-            onClick={() => onChange('insights')}
+            onClick={() => onChange('camera')}
             className={`nav-tab-transition flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full active:translate-y-0.5 active:shadow-none${
               clampedPercent >= 100 ? ' nav-goal-complete-glow' : ''
             }`}
             style={{
-              backgroundColor: insightsActive ? '#6b4423' : 'var(--surface-cream)',
+              backgroundColor: !settingsActive && active === 'camera' ? '#6b4423' : 'var(--surface-cream)',
               border: '2px solid #000000',
               boxShadow: clampedPercent >= 100 ? undefined : '0 3px 0 #000000',
             }}
-            aria-current={insightsActive ? 'page' : undefined}
-            aria-label={t.insights}
+            aria-current={!settingsActive && active === 'camera' ? 'page' : undefined}
+            aria-label={t.camera}
           >
             <span
-              className="nav-tab-transition flex items-center justify-center text-xs font-extrabold leading-none"
+              className="nav-tab-transition flex h-6 w-6 items-center justify-center"
               style={{
-                color: insightsActive ? '#f5deb3' : '#6b4423',
-                transform: insightsActive ? 'scale(1.1)' : 'scale(1)',
+                color: !settingsActive && active === 'camera' ? '#f5deb3' : '#6b4423',
+                transform: !settingsActive && active === 'camera' ? 'scale(1.1)' : 'scale(1)',
               }}
             >
-              {clampedPercent}%
+              <CameraIcon className="h-full w-full" strokeWidth={1.7} />
             </span>
           </button>
         </div>
@@ -124,6 +147,7 @@ export function NavBar({
           onClick={() => onChange('chat')}
           ariaLabel={t.chat}
           icon={<BotIcon className="h-full w-full" strokeWidth={1.7} />}
+          badge={chatAlert}
         />
       </div>
     </nav>

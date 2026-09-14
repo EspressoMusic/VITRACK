@@ -95,6 +95,20 @@ not show food at all, still call the tool with an empty foods array, all nutrien
 confidence "low", and a note explaining that no food was recognized.`
 }
 
+function listSystemPrompt(lang) {
+  const languageName = LANGUAGE_NAMES[lang] || 'English'
+  return `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
+The user has confirmed the exact foods and portions in a meal, possibly correcting portion sizes from an
+earlier automatic photo estimate. Estimate the TOTAL calories, macronutrients (carbs/fat/protein), and
+vitamin/mineral content of the combined meal using standard nutrition-database knowledge (e.g. USDA
+FoodData Central figures) for exactly the given items and portions — do not add or remove items. Report the
+foods array using the exact given names and portions, translated into ${languageName} if needed. Always call
+the report_nutrition tool with your best numeric estimate for every field, even if approximate — never leave
+a nutrient, macro, or calorie value blank or zero unless the food genuinely contains none of it. Also set
+isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
+minimally-processed foods.`
+}
+
 function textSystemPrompt(lang) {
   const languageName = LANGUAGE_NAMES[lang] || 'English'
   return `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
@@ -141,6 +155,32 @@ export async function analyzeFoodText(foodName, quantity, lang = 'en') {
       role: 'user',
       content: `Food: ${foodName.trim()}\nQuantity: ${quantity?.trim() || 'a typical serving'}`,
     },
+  ])
+
+  const { foods = [], nutrients = {}, macros = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
+
+  const normalizedNutrients = Object.fromEntries(
+    NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
+  )
+  const normalizedMacros = Object.fromEntries(
+    MACRO_IDS.map((id) => [id, Math.max(0, Number(macros[id]) || 0)])
+  )
+
+  return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
+}
+
+export async function analyzeFoodList(items, lang = 'en') {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw Object.assign(new Error('A non-empty list of foods is required.'), { status: 400 })
+  }
+
+  const itemLines = items
+    .map((it) => `- ${String(it?.name ?? '').trim()}: ${String(it?.portion ?? '').trim() || 'a typical serving'}`)
+    .join('\n')
+
+  const toolCall = await requestNutritionReport([
+    { role: 'system', content: listSystemPrompt(lang) },
+    { role: 'user', content: `Foods:\n${itemLines}` },
   ])
 
   const { foods = [], nutrients = {}, macros = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)

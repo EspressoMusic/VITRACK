@@ -193,6 +193,46 @@ async function analyzeFoodText(foodName: string, quantity: string, lang: string)
   return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
 }
 
+function listSystemPrompt(lang: string): string {
+  const languageName = LANGUAGE_NAMES[lang] || 'English'
+  return `You are a careful nutrition-estimation assistant inside a personal diet-tracking app.
+The user has confirmed the exact foods and portions in a meal, possibly correcting portion sizes from an
+earlier automatic photo estimate. Estimate the TOTAL calories, macronutrients (carbs/fat/protein), and
+vitamin/mineral content of the combined meal using standard nutrition-database knowledge (e.g. USDA
+FoodData Central figures) for exactly the given items and portions — do not add or remove items. Report the
+foods array using the exact given names and portions, translated into ${languageName} if needed. Always call
+the report_nutrition tool with your best numeric estimate for every field, even if approximate — never leave
+a nutrient, macro, or calorie value blank or zero unless the food genuinely contains none of it. Also set
+isJunkFood honestly — true for ultra-processed/fried/sugary/refined items, false for whole or
+minimally-processed foods.`
+}
+
+async function analyzeFoodList(items: Array<{ name?: string; portion?: string }>, lang: string) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw Object.assign(new Error('A non-empty list of foods is required.'), { status: 400 })
+  }
+
+  const itemLines = items
+    .map((it) => `- ${String(it?.name ?? '').trim()}: ${String(it?.portion ?? '').trim() || 'a typical serving'}`)
+    .join('\n')
+
+  const toolCall = await requestNutritionReport([
+    { role: 'system', content: listSystemPrompt(lang) },
+    { role: 'user', content: `Foods:\n${itemLines}` },
+  ])
+
+  const { foods = [], nutrients = {}, macros = {}, confidence = 'low', isJunkFood = false, note } = JSON.parse(toolCall.function.arguments)
+
+  const normalizedNutrients = Object.fromEntries(
+    NUTRIENT_IDS.map((id) => [id, Math.max(0, Number(nutrients[id]) || 0)])
+  )
+  const normalizedMacros = Object.fromEntries(
+    MACRO_IDS.map((id) => [id, Math.max(0, Number(macros[id]) || 0)])
+  )
+
+  return { foods, nutrients: normalizedNutrients, macros: normalizedMacros, confidence, isJunkFood, note }
+}
+
 async function analyzeFoodImage(imageDataUrl: string, lang: string) {
   if (!/^data:image\/(?:jpeg|png|webp|gif);base64,.+/.test(imageDataUrl)) {
     throw Object.assign(new Error('Image must be a base64 data URL (jpeg, png, webp, or gif).'), { status: 400 })
@@ -274,7 +314,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  let body: { image?: string; foodName?: string; quantity?: string; lang?: string }
+  let body: { image?: string; foodName?: string; quantity?: string; lang?: string; foods?: Array<{ name?: string; portion?: string }> }
   try {
     body = await req.json()
   } catch {
@@ -285,9 +325,10 @@ Deno.serve(async (req) => {
   }
 
   const hasImage = typeof body.image === 'string' && body.image.startsWith('data:image/')
+  const hasFoodsList = Array.isArray(body.foods) && body.foods.length > 0
   const hasFoodName = typeof body.foodName === 'string' && body.foodName.trim().length > 0
-  if (!hasImage && !hasFoodName) {
-    return new Response(JSON.stringify({ error: 'Request body must include an "image" data URL or a "foodName".' }), {
+  if (!hasImage && !hasFoodsList && !hasFoodName) {
+    return new Response(JSON.stringify({ error: 'Request body must include an "image" data URL, a "foodName", or a "foods" list.' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -297,7 +338,9 @@ Deno.serve(async (req) => {
     const lang = body.lang || 'en'
     const result = hasImage
       ? await analyzeFoodImage(body.image as string, lang)
-      : await analyzeFoodText(body.foodName as string, body.quantity ?? '', lang)
+      : hasFoodsList
+        ? await analyzeFoodList(body.foods as Array<{ name?: string; portion?: string }>, lang)
+        : await analyzeFoodText(body.foodName as string, body.quantity ?? '', lang)
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

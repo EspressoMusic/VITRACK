@@ -57,6 +57,14 @@ export interface CameraPanelStrings {
     save: string
     saved: string
     mealFallbackName: string
+    /** Composes "+N more" on the button that expands the rest of a long food list. */
+    moreFoodsButton: (count: number) => string
+    remainingFoodsTitle: string
+    closeAriaLabel: string
+    editQuantities: string
+    editQuantitiesTitle: string
+    updateQuantities: string
+    cancel: string
   }
   /** Shown instead of the nutrient list when the AI flags the food as junk/ultra-processed. One is picked at random. */
   junkFood: string[]
@@ -122,6 +130,13 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'Save',
       saved: 'Saved!',
       mealFallbackName: 'Meal',
+      moreFoodsButton: (count) => `+${count} more`,
+      remainingFoodsTitle: 'Rest of the meal',
+      closeAriaLabel: 'Close',
+      editQuantities: 'Edit quantities',
+      editQuantitiesTitle: 'Edit quantities',
+      updateQuantities: 'Update',
+      cancel: 'Cancel',
     },
     junkFood: [
       "This is basically dessert wearing a food costume. The vitamins ran away screaming. 🏃💨",
@@ -193,6 +208,13 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'שמירה',
       saved: 'נשמר!',
       mealFallbackName: 'ארוחה',
+      moreFoodsButton: (count) => `עוד ${count}`,
+      remainingFoodsTitle: 'שאר הארוחה',
+      closeAriaLabel: 'סגירה',
+      editQuantities: 'עריכת כמויות',
+      editQuantitiesTitle: 'עריכת כמויות',
+      updateQuantities: 'עדכון',
+      cancel: 'ביטול',
     },
     junkFood: [
       'זה בעיקר קינוח שמתחפש לארוחה. הויטמינים ברחו צורחים. 🏃💨',
@@ -264,6 +286,13 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       save: 'حفظ',
       saved: 'تم الحفظ!',
       mealFallbackName: 'وجبة',
+      moreFoodsButton: (count) => `+${count} أخرى`,
+      remainingFoodsTitle: 'باقي الوجبة',
+      closeAriaLabel: 'إغلاق',
+      editQuantities: 'تعديل الكميات',
+      editQuantitiesTitle: 'تعديل الكميات',
+      updateQuantities: 'تحديث',
+      cancel: 'إلغاء',
     },
     junkFood: [
       'هذه في الأساس حلوى متنكرة كوجبة. الفيتامينات هربت صارخة. 🏃💨',

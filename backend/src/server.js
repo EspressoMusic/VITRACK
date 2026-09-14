@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { analyzeFoodImage, analyzeFoodText } from './analyzeFood.js'
+import { analyzeFoodImage, analyzeFoodText, analyzeFoodList } from './analyzeFood.js'
 import { identifyFood } from './identifyFood.js'
 import { askNutritionBot } from './nutritionChat.js'
 
@@ -22,16 +22,18 @@ app.post('/api/analyze', async (req, res) => {
     })
   }
 
-  const { image, foodName, quantity, lang } = req.body || {}
+  const { image, foodName, quantity, lang, foods } = req.body || {}
 
   try {
     let result
     if (typeof image === 'string' && image.startsWith('data:image/')) {
       result = await analyzeFoodImage(image, lang)
+    } else if (Array.isArray(foods) && foods.length > 0) {
+      result = await analyzeFoodList(foods, lang)
     } else if (typeof foodName === 'string' && foodName.trim()) {
       result = await analyzeFoodText(foodName, quantity, lang)
     } else {
-      return res.status(400).json({ error: 'Request body must include an "image" data URL or a "foodName".' })
+      return res.status(400).json({ error: 'Request body must include an "image" data URL, a "foodName", or a "foods" list.' })
     }
     res.json(result)
   } catch (err) {
@@ -68,7 +70,7 @@ app.post('/api/nutrition-chat', async (req, res) => {
     })
   }
 
-  const { messages, lang, mode } = req.body || {}
+  const { messages, lang, mode, personality } = req.body || {}
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Request body must include a non-empty "messages" array.' })
   }
@@ -78,7 +80,7 @@ app.post('/api/nutrition-chat', async (req, res) => {
     .slice(-10)
 
   try {
-    const result = await askNutritionBot(history, lang || 'en', mode)
+    const result = await askNutritionBot(history, lang || 'en', mode, personality)
     res.json(result)
   } catch (err) {
     console.error('Nutrition chat failed:', err)

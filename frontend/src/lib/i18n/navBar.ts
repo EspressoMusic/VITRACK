@@ -20,9 +20,9 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
   },
   he: {
     calendar: 'יומן',
-    insights: 'תובנות',
+    insights: 'התזונה שלי',
     camera: 'מצלמה',
-    superfoods: 'מאכלי על',
+    superfoods: 'האוכל שלי',
     chat: 'בוט',
     settings: 'הגדרות',
   },

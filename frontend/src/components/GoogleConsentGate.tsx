@@ -34,13 +34,13 @@ export function GoogleConsentGate({ t, dir, children }: { t: GoogleConsentString
           role="switch"
           aria-checked={agreed}
           onClick={() => setAgreed((a) => !a)}
-          className="relative flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors"
-          style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '2px solid #222' }}
+          className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+          style={{ backgroundColor: agreed ? 'var(--accent-strong)' : 'var(--surface-1)', border: '3px solid #222', padding: '3px' }}
         >
           <span
-            className="h-5 w-5 rounded-full bg-white shadow transition-transform"
+            className="h-4 w-4 rounded-full bg-white shadow transition-transform"
             style={{
-              transform: agreed ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * 1.5rem))` : 'translateX(0px)',
+              transform: agreed ? `translateX(calc(${dir === 'rtl' ? '-1' : '1'} * 1.25rem))` : 'translateX(0px)',
               border: '1px solid #222',
             }}
           />

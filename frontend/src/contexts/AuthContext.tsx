@@ -1,5 +1,8 @@
 import type { User } from '@supabase/supabase-js'
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { setCurrentUserId } from '../lib/db'
 import { syncLocalMealsToCloud } from '../lib/cloudDb'
@@ -28,6 +31,14 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim()
+
+// Google blocks OAuth sign-in from embedded WebViews ("disallowed_useragent"), so the
+// Google Identity Services widget used on web can never work inside the Capacitor Android
+// app. Native falls back to opening the OAuth URL in a real system browser tab (Custom
+// Tabs) and catching the redirect back via this custom-scheme deep link — it must be
+// registered both in AndroidManifest.xml's intent-filter and in Supabase's Auth > URL
+// Configuration > Redirect URLs, or the browser tab will redirect but the app won't reopen.
+const NATIVE_AUTH_REDIRECT = 'com.vitrack.app://auth-callback'
 
 let googleScriptPromise: Promise<void> | null = null
 
@@ -101,6 +112,24 @@ function ensureAnonymousSession(): Promise<User | null> {
   return anonSignInPromise
 }
 
+/** Opens Google's OAuth consent screen in a real system browser tab (Chrome Custom Tabs) —
+ *  the WebView the Android app runs in is rejected by Google as a "disallowed_useragent",
+ *  so the click must escape the app entirely. The tab redirects to NATIVE_AUTH_REDIRECT,
+ *  which the OS hands back to this app (see the appUrlOpen listener below) to complete the
+ *  sign-in via exchangeCodeForSession. */
+async function nativeGoogleSignIn(): Promise<void> {
+  if (!supabase) return
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true },
+  })
+  if (error) {
+    console.error('Google sign-in failed:', error)
+    return
+  }
+  if (data?.url) await Browser.open({ url: data.url })
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -158,8 +187,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (!supabase || !Capacitor.isNativePlatform()) return
+    const listenerPromise = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return
+      Browser.close().catch(() => {})
+      supabase!.auth.exchangeCodeForSession(url).catch((err) => console.error('Google sign-in failed:', err))
+    })
+    return () => {
+      listenerPromise.then((listener) => listener.remove())
+    }
+  }, [])
+
   const renderGoogleButton = useCallback((container: HTMLElement) => {
     if (!supabase) return
+
+    // The web-based Google Identity Services widget (below) can never work inside the
+    // Android app's WebView — see nativeGoogleSignIn's comment — so native gets its own
+    // click handler that escapes to a system browser tab instead of trying to render it.
+    if (Capacitor.isNativePlatform()) {
+      container.style.pointerEvents = 'auto'
+      container.onclick = () => {
+        nativeGoogleSignIn().catch((err) => console.error('Google sign-in failed:', err))
+      }
+      return
+    }
 
     // No branded client configured (e.g. local dev without the env var) — fall back to the
     // classic redirect flow so sign-in still works, just showing the supabase.co domain.

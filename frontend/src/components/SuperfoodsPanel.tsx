@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { SUPERFOODS, superfoodOfTheDay, type SuperfoodDef } from '../lib/superfoods'
+import { MEAL_TIME_EMOJI, MEAL_TIMES, SUPERFOODS, superfoodOfTheDay, type MealTime, type SuperfoodDef } from '../lib/superfoods'
 import { todayKey } from '../lib/date'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { Lang } from '../lib/i18n/lang'
@@ -9,8 +9,11 @@ import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { NUTRIENT_FILTER_CHROME } from '../lib/i18n/nutrientFilter'
 import { NUTRIENT_BUCKETS, type NutrientBucket } from '../lib/nutrientBuckets'
 import { getSavedSuperfoodIds, setSavedSuperfoodIds } from '../lib/savedSuperfoods'
+import { getSavedMeals, unsaveMeal, type SavedMeal } from '../lib/savedMeals'
+import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
 import type { NutrientId } from '../types'
 import { CloseIcon, FilterIcon, SearchIcon, StarIcon } from './icons'
+import { SavedMealCard } from './FavoritesPanel'
 
 function NutrientInfoModal({ id, onClose }: { id: NutrientId; onClose: () => void }) {
   const { lang } = useLanguage()
@@ -146,6 +149,14 @@ export function SuperfoodDetailModal({
         >
           {content.power}
         </span>
+        {food.category === 'meal' && food.mealTime && (
+          <span
+            className="rounded-full px-3 py-1 text-xs font-bold"
+            style={{ backgroundColor: 'var(--surface-1)', color: 'var(--text-primary)', border: '1.5px solid #1a1a19' }}
+          >
+            {t.mealTimes[food.mealTime]} {MEAL_TIME_EMOJI[food.mealTime]}
+          </span>
+        )}
         <SuperfoodBenefit parts={content.benefit} onSelectNutrient={setSelectedNutrient} />
       </div>
 
@@ -257,13 +268,17 @@ function FoodGrid({
 export function SuperfoodsPanel() {
   const { lang, dir } = useLanguage()
   const [selected, setSelected] = useState<SuperfoodDef | null>(null)
+  const [mainTab, setMainTab] = useState<'singleFood' | 'meals'>('singleFood')
   const [activeFilter, setActiveFilter] = useState<NutrientBucket | 'superfood' | 'liked' | null>(null)
+  const [activeMealTime, setActiveMealTime] = useState<MealTime | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set(getSavedSuperfoodIds()))
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>(() => getSavedMeals())
   const filterZoneRef = useRef<HTMLDivElement>(null)
   const filterChrome = NUTRIENT_FILTER_CHROME[lang]
   const t = SUPERFOODS_PANEL_CHROME[lang]
+  const ft = FAVORITES_PANEL_STRINGS[lang]
 
   const today = todayKey()
   const featuredSuperfoodId = useMemo(() => superfoodOfTheDay(today).id, [today])
@@ -278,22 +293,29 @@ export function SuperfoodsPanel() {
     })
   }
 
+  const removeSavedMeal = (name: string) => {
+    unsaveMeal(name)
+    setSavedMeals(getSavedMeals())
+  }
+
   const filteredFoods = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return SUPERFOODS.filter((food) => {
-      if (!activeFilter) return true
-      if (activeFilter === 'superfood') return food.category === 'superfood'
-      if (activeFilter === 'liked') return savedIds.has(food.id)
-      return food.nutrients[activeFilter] !== undefined
-    })
+    return SUPERFOODS.filter((food) => (mainTab === 'meals' ? food.category === 'meal' : food.category !== 'meal'))
+      .filter((food) => {
+        if (mainTab === 'meals') return !activeMealTime || food.mealTime === activeMealTime
+        if (!activeFilter) return true
+        if (activeFilter === 'superfood') return food.category === 'superfood'
+        if (activeFilter === 'liked') return savedIds.has(food.id)
+        return food.nutrients[activeFilter] !== undefined
+      })
       .filter((food) => !query || SUPERFOOD_CONTENT[lang][food.id].name.toLowerCase().includes(query))
       .sort((a, b) => {
         const savedDiff = Number(savedIds.has(b.id)) - Number(savedIds.has(a.id))
         if (savedDiff !== 0) return savedDiff
-        if (!activeFilter || activeFilter === 'superfood' || activeFilter === 'liked') return 0
+        if (mainTab === 'meals' || !activeFilter || activeFilter === 'superfood' || activeFilter === 'liked') return 0
         return (b.nutrients[activeFilter] ?? 0) - (a.nutrients[activeFilter] ?? 0)
       })
-  }, [activeFilter, search, lang, savedIds])
+  }, [activeFilter, activeMealTime, mainTab, search, lang, savedIds])
 
   useEffect(() => {
     if (!filterOpen) return
@@ -307,7 +329,39 @@ export function SuperfoodsPanel() {
   }, [filterOpen])
 
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col gap-3 px-4 pt-12">
+    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pt-4">
+      <div
+        className="flex shrink-0 items-center gap-1 self-center rounded-full p-1"
+        style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
+      >
+        <button
+          onClick={() => {
+            setMainTab('singleFood')
+            setActiveMealTime(null)
+          }}
+          className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-bold transition"
+          style={{
+            backgroundColor: mainTab === 'singleFood' ? 'var(--accent-strong)' : 'transparent',
+            color: mainTab === 'singleFood' ? '#ffffff' : 'var(--text-primary)',
+          }}
+        >
+          {t.mainTabs.singleFood}
+        </button>
+        <button
+          onClick={() => {
+            setMainTab('meals')
+            setActiveFilter(null)
+          }}
+          className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-bold transition"
+          style={{
+            backgroundColor: mainTab === 'meals' ? 'var(--accent-strong)' : 'transparent',
+            color: mainTab === 'meals' ? '#ffffff' : 'var(--text-primary)',
+          }}
+        >
+          {t.mainTabs.meals}
+        </button>
+      </div>
+
       <div className="flex shrink-0 items-center gap-2">
         <div
           className="flex min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-1.5"
@@ -329,11 +383,47 @@ export function SuperfoodsPanel() {
               onClick={() => setFilterOpen((v) => !v)}
               aria-label={filterChrome.ariaLabel}
               className="flex h-6 w-6 items-center justify-center"
-              style={{ color: activeFilter ? 'var(--accent-strong)' : '#000000' }}
+              style={{ color: activeFilter || activeMealTime ? 'var(--accent-strong)' : '#000000' }}
             >
               <FilterIcon className="h-3.5 w-3.5" />
             </button>
-            {filterOpen && (
+            {filterOpen && mainTab === 'meals' && (
+              <div
+                className="absolute end-0 top-8 z-20 flex flex-col gap-1 rounded-2xl p-1.5"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 10px 20px rgba(11,11,11,0.25), 0 4px 0 #000000' }}
+              >
+                <button
+                  onClick={() => {
+                    setActiveMealTime(null)
+                    setFilterOpen(false)
+                  }}
+                  className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                  style={{
+                    backgroundColor: !activeMealTime ? 'var(--accent-strong)' : 'transparent',
+                    color: !activeMealTime ? '#ffffff' : 'var(--text-primary)',
+                  }}
+                >
+                  {t.mealTimeAll}
+                </button>
+                {MEAL_TIMES.map((mealTime) => (
+                  <button
+                    key={mealTime}
+                    onClick={() => {
+                      setActiveMealTime((prev) => (prev === mealTime ? null : mealTime))
+                      setFilterOpen(false)
+                    }}
+                    className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                    style={{
+                      backgroundColor: activeMealTime === mealTime ? 'var(--accent-strong)' : 'transparent',
+                      color: activeMealTime === mealTime ? '#ffffff' : 'var(--text-primary)',
+                    }}
+                  >
+                    {t.mealTimes[mealTime]}
+                  </button>
+                ))}
+              </div>
+            )}
+            {filterOpen && mainTab === 'singleFood' && (
               <div
                 className="absolute end-0 top-8 z-20 flex flex-col gap-1 rounded-2xl p-1.5"
                 style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 10px 20px rgba(11,11,11,0.25), 0 4px 0 #000000' }}
@@ -386,16 +476,35 @@ export function SuperfoodsPanel() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <FoodGrid
-          items={filteredFoods}
-          lang={lang}
-          featuredSuperfoodId={featuredSuperfoodId}
-          savedIds={savedIds}
-          onSelectHero={setSelected}
-          onToggleSave={toggleSaved}
-          emptyLabel={t.noItemsInCategory}
-        />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {mainTab === 'meals' && savedMeals.length > 0 && (
+          <div className="flex shrink-0 flex-col gap-1.5 pb-2" style={{ maxHeight: '38%' }}>
+            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
+              {t.savedMealsTitle}
+            </span>
+            <div className="thin-scroll flex flex-col gap-2 overflow-y-auto">
+              {savedMeals.map((meal) => (
+                <SavedMealCard
+                  key={meal.name}
+                  meal={meal}
+                  removeAriaLabel={ft.removeAriaLabel}
+                  onRemove={() => removeSavedMeal(meal.name)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="min-h-0 flex-1">
+          <FoodGrid
+            items={filteredFoods}
+            lang={lang}
+            featuredSuperfoodId={featuredSuperfoodId}
+            savedIds={savedIds}
+            onSelectHero={setSelected}
+            onToggleSave={toggleSaved}
+            emptyLabel={t.noItemsInCategory}
+          />
+        </div>
       </div>
 
       {selected && (

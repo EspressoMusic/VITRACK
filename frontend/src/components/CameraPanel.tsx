@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import type { MealEntry, NutrientAmounts, NutrientId } from '../types'
-import { analyzeFoodImage, analyzeFoodText, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
+import { createPortal } from 'react-dom'
+import type { IdentifiedFood, MealEntry, NutrientAmounts, NutrientId } from '../types'
+import { analyzeFoodImage, analyzeFoodText, analyzeFoodList, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
 import { addMeal, getMealsByDate } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
+import { MacroBar } from './MacroBar'
 import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -32,12 +34,15 @@ import {
 import { decodeBarcodeFromFrame, lookupProductByBarcode } from '../lib/barcode'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CAMERA_PANEL_STRINGS, type CameraPanelStrings } from '../lib/i18n/cameraPanel'
+import { ChevronDownIcon, CloseIcon } from './icons'
 
 type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result'
 
 const MAX_DIMENSION = 900
 const JPEG_QUALITY = 0.82
 const DETECTION_INTERVAL_MS = 400
+/** Foods shown inline before collapsing the rest behind a "+N more" expander. */
+const VISIBLE_FOOD_COUNT = 2
 
 function devLog(tag: string, message: string) {
   if (import.meta.env.DEV) console.log(`[${tag}] ${message}`)
@@ -308,6 +313,18 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [justSaved, setJustSaved] = useState(false)
   const [todayNutrients, setTodayNutrients] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
+  const [showAllFoods, setShowAllFoods] = useState(false)
+  const [editingPortions, setEditingPortions] = useState(false)
+  const [editedFoods, setEditedFoods] = useState<IdentifiedFood[]>([])
+  const [recalculating, setRecalculating] = useState(false)
+  const [recalcError, setRecalcError] = useState<string | null>(null)
+
+  // A fresh result (new scan/lookup) always starts with the food list collapsed and not in edit mode.
+  useEffect(() => {
+    setShowAllFoods(false)
+    setEditingPortions(false)
+    setRecalcError(null)
+  }, [result])
 
   // Loaded fresh each time the result screen appears so the "what's left today" modal reflects
   // meals already logged today, not just this scanned item in isolation.
@@ -784,6 +801,31 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     setStage('camera')
   }
 
+  function startEditingPortions() {
+    if (!result) return
+    setEditedFoods(result.foods.map((f) => ({ ...f })))
+    setRecalcError(null)
+    setEditingPortions(true)
+  }
+
+  function updateEditedPortion(index: number, portion: string) {
+    setEditedFoods((prev) => prev.map((f, i) => (i === index ? { ...f, portion } : f)))
+  }
+
+  async function applyEditedQuantities() {
+    setRecalculating(true)
+    setRecalcError(null)
+    try {
+      const res = await analyzeFoodList(editedFoods, lang)
+      setResult(res)
+      setEditingPortions(false)
+    } catch (err) {
+      setRecalcError(err instanceof AnalyzeError ? err.message : t.analyzeUnreachable)
+    } finally {
+      setRecalculating(false)
+    }
+  }
+
   return (
     <div className="relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pb-16 pt-5">
       {stage === 'camera' && scanErrorMsg && (
@@ -1080,16 +1122,41 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
                 {t.result.noFoodRecognized}
               </span>
             ) : (
-              result.foods.map((f, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <span className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                    {f.name}
-                  </span>
-                  <span className="text-base font-medium leading-tight" style={{ color: 'var(--text-muted)' }}>
-                    {f.portion}
-                  </span>
+              <>
+                <div className="flex flex-row flex-wrap items-start justify-center gap-x-4 gap-y-1">
+                  {result.foods.slice(0, VISIBLE_FOOD_COUNT).map((f, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                      <span className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        {f.name}
+                      </span>
+                      <span className="text-base font-medium leading-tight" style={{ color: 'var(--text-muted)' }}>
+                        {f.portion}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))
+                <div className="mt-1 flex items-center gap-1.5">
+                  {result.foods.length > VISIBLE_FOOD_COUNT && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFoods(true)}
+                      className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-transform active:translate-y-0.5 active:shadow-none"
+                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
+                    >
+                      {t.result.moreFoodsButton(result.foods.length - VISIBLE_FOOD_COUNT)}
+                      <ChevronDownIcon className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={startEditingPortions}
+                    className="rounded-full px-3 py-1 text-xs font-semibold transition-transform active:translate-y-0.5 active:shadow-none"
+                    style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
+                  >
+                    {t.result.editQuantities}
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
@@ -1104,6 +1171,13 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
             className="thin-scroll mx-auto flex max-h-[48vh] min-h-0 w-[88%] flex-1 flex-col gap-1.5 overflow-y-auto rounded-3xl p-2"
             style={{ backgroundColor: '#e5c184', border: '4px solid #000000', boxShadow: '0 10px 26px rgba(11,11,11,0.16)' }}
           >
+            {result.foods.length > 0 && isMacroTrackingEnabled() && (
+              <div className="flex flex-col gap-1.5">
+                <MacroBar id="proteinG" amount={result.macros?.proteinG ?? 0} riseDelayMs={0} />
+                <MacroBar id="carbsG" amount={result.macros?.carbsG ?? 0} riseDelayMs={90} />
+                <MacroBar id="fatG" amount={result.macros?.fatG ?? 0} riseDelayMs={180} />
+              </div>
+            )}
             {result.foods.length === 0 ? (
               <div className="flex flex-col gap-2">
                 <FoodAutocomplete
@@ -1171,6 +1245,128 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           onClose={() => setSelectedNutrient(null)}
         />
       )}
+
+      {showAllFoods && result && result.foods.length > VISIBLE_FOOD_COUNT &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => setShowAllFoods(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex max-h-[70vh] w-full max-w-md flex-col gap-2 overflow-hidden rounded-2xl p-4"
+              style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
+            >
+              <div className="relative flex shrink-0 items-center justify-center pb-1">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {t.result.remainingFoodsTitle}
+                </span>
+                <button
+                  onClick={() => setShowAllFoods(false)}
+                  aria-label={t.result.closeAriaLabel}
+                  className="absolute end-0 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-primary)' }}
+                >
+                  <CloseIcon className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
+                {result.foods.slice(VISIBLE_FOOD_COUNT).map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-xl px-2.5 py-2"
+                    style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                  >
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{f.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{f.portion}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {editingPortions && result &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => !recalculating && setEditingPortions(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex max-h-[80vh] w-full max-w-md flex-col gap-2 overflow-hidden rounded-2xl p-4"
+              style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
+            >
+              <div className="relative flex shrink-0 items-center justify-center pb-1">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {t.result.editQuantitiesTitle}
+                </span>
+                <button
+                  onClick={() => !recalculating && setEditingPortions(false)}
+                  aria-label={t.result.closeAriaLabel}
+                  className="absolute end-0 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-primary)' }}
+                >
+                  <CloseIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              {recalcError && (
+                <p
+                  className="shrink-0 rounded-lg px-3 py-2 text-center text-xs font-medium"
+                  style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
+                >
+                  {recalcError}
+                </p>
+              )}
+
+              <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
+                {editedFoods.map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2"
+                    style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {f.name}
+                    </span>
+                    <input
+                      type="text"
+                      value={f.portion}
+                      onChange={(e) => updateEditedPortion(i, e.target.value)}
+                      disabled={recalculating}
+                      className="w-28 shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-medium"
+                      style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-1 flex shrink-0 gap-2">
+                <button
+                  onClick={applyEditedQuantities}
+                  disabled={recalculating}
+                  className="flex-[2] rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--accent)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
+                >
+                  {recalculating ? t.result.calculating : t.result.updateQuantities}
+                </button>
+                <button
+                  onClick={() => setEditingPortions(false)}
+                  disabled={recalculating}
+                  className="flex-1 rounded-full py-2.5 text-sm font-medium disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
+                >
+                  {t.result.cancel}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

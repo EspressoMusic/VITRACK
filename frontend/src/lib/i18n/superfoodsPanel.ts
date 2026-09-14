@@ -1,5 +1,5 @@
 import type { Lang } from './lang'
-import type { SuperfoodCategory } from '../superfoods'
+import type { MealTime, SuperfoodCategory } from '../superfoods'
 import type { NutrientId } from '../../types'
 
 /** A run of plain text, or a mention of a tracked nutrient that can be tapped for an explanation. */
@@ -66,6 +66,28 @@ export const SUPERFOOD_CONTENT: Record<Lang, Record<string, SuperfoodContent>> =
     cashews: { name: 'Cashews', power: 'Helps your heart and bones 🥜', benefit: ['Rich in ', { nutrient: 'magnesium', label: 'magnesium' }, ', which supports strong heart and bones.'] },
     pistachios: { name: 'Pistachios', power: 'Helps your heart health 💚', benefit: ['Packed with ', { nutrient: 'potassium', label: 'potassium' }, ' and healthy fat that support heart health.'] },
     sunflowerSeeds: { name: 'Sunflower Seeds', power: 'Helps your skin health 🌻', benefit: ['Rich in ', { nutrient: 'vitaminE', label: 'vitamin E' }, ', an antioxidant that supports skin health.'] },
+
+    salmonQuinoaBowl: { name: 'Salmon & Quinoa Bowl', power: 'Helps build muscle and keep your heart healthy 💪', benefit: ['A balanced plate with lean protein, healthy fat, and whole grains that give your body steady energy.'] },
+    greekYogurtParfait: { name: 'Greek Yogurt Parfait', power: 'Helps keep your bones and gut healthy 🦴', benefit: ['A mix of ', { nutrient: 'calcium', label: 'calcium' }, ' from the yogurt and antioxidants from the berries that support strong bones and a healthy gut.'] },
+    chickenSweetPotatoPlate: { name: 'Chicken & Sweet Potato Plate', power: 'Helps build and repair your muscles 💪', benefit: ['Lean protein alongside slow-release carbs and a vitamin-rich veggie that give your muscles what they need to grow.'] },
+    oatmealBananaBowl: { name: 'Oatmeal with Banana', power: 'Gives you steady energy all morning ⚡', benefit: ['Fiber from the oats and ', { nutrient: 'potassium', label: 'potassium' }, ' from the banana that give you energy that lasts.'] },
+    veggieOmeletteAvocado: { name: 'Veggie Omelette with Avocado', power: 'Helps your heart and brain 🧠', benefit: ['Complete protein from the eggs and healthy fat from the avocado that support heart and brain health.'] },
+    lentilSoupWholegrain: { name: 'Lentil Soup with Whole Grain Bread', power: 'Helps keep you full and your gut healthy 🌾', benefit: ['Rich in plant protein and fiber, plus ', { nutrient: 'iron', label: 'iron' }, ' from the lentils.'] },
+    quinoaChickpeaSalad: { name: 'Quinoa & Chickpea Salad', power: 'Helps keep your energy steady all day ⏳', benefit: ['A complete plant protein from the quinoa and chickpeas that keeps you full with steady energy.'] },
+    tunaSaladBowl: { name: 'Tuna Salad Bowl', power: 'Helps your brain and heart 🐟', benefit: ['Packed with lean protein and omega-3 from the tuna, alongside vitamin-rich leafy greens.'] },
+    turkeyVeggieWrap: { name: 'Turkey & Veggie Wrap', power: 'Helps keep you full and energized 💪', benefit: ['Lean protein from the turkey with fresh vegetables for fullness without feeling heavy.'] },
+    proteinSmoothieBowl: { name: 'Protein Smoothie Bowl', power: 'Helps you recover after a workout 💪', benefit: ['A mix of protein and fresh fruit that helps your muscles recover faster.'] },
+    eggWhiteVeggieScramble: { name: 'Egg White Veggie Scramble', power: 'Gives you lean protein to start your day 💪', benefit: ['Egg whites and colorful veggies that give you protein without excess fat, plus vitamins to start the day right.'] },
+    cottageCheeseBerryBowl: { name: 'Cottage Cheese & Berry Bowl', power: 'Helps keep you full between meals 🧀', benefit: ['Slow-digesting protein from the cottage cheese and antioxidants from the berries that keep hunger away.'] },
+    steakVeggieStirFry: { name: 'Steak & Veggie Stir-Fry', power: 'Helps build muscle and keep your iron levels up 🥩', benefit: ['Rich in protein and ', { nutrient: 'iron', label: 'iron' }, ' from the steak, alongside colorful veggies packed with vitamins.'] },
+    chickenRiceBowl: { name: 'Chicken & Rice Bowl', power: 'Gives you steady energy and muscle fuel 🍛', benefit: ['Lean protein from the chicken and slow-release carbs from the rice that keep you full and energized.'] },
+    bananaPeanutButterToast: { name: 'Banana Peanut Butter Toast', power: 'Refuels your muscles after a workout 💪', benefit: ['Fast carbs from the banana and protein from the peanut butter that help your muscles recover quickly.'] },
+    chocolateProteinShake: { name: 'Chocolate Protein Shake', power: 'Helps your muscles recover fast after training 🍫', benefit: ['A quick hit of protein your muscles can use right after a workout, with a touch of carbs to refill your energy.'] },
+    shakshukaWithBread: { name: 'Shakshuka with Bread', power: 'Gives you protein and veggies to start strong 🍳', benefit: ['Eggs poached in a spiced tomato sauce with bread on the side, giving you protein and vitamins in one pan.'] },
+    beefBroccoliBowl: { name: 'Beef & Broccoli Bowl', power: 'Gives your muscles protein and iron to grow 💪', benefit: ['Lean beef and broccoli over rice — protein and ', { nutrient: 'iron', label: 'iron' }, ' for your muscles, with vitamin C from the broccoli.'] },
+    hummusPitaPlate: { name: 'Hummus & Pita Plate', power: 'Helps keep you full with plant protein 🌿', benefit: ['Chickpea hummus with whole wheat pita and fresh veggies — plant protein and fiber that keep you full.'] },
+    riceCakesWithAlmondButter: { name: 'Rice Cakes with Almond Butter', power: 'Gives you a quick, light energy boost ⚡', benefit: ['Light carbs from the rice cakes and healthy fat from the almond butter for quick, easy energy.'] },
+    recoveryChocolateMilk: { name: 'Chocolate Recovery Milk', power: 'Helps your muscles recover after a workout 🧃', benefit: ['A classic post-workout mix of protein and carbs that helps refuel your muscles fast.'] },
   },
   he: {
     avocado: { name: 'אבוקדו', power: 'עוזר לשמור על לב בריא ❤️', benefit: ['עשיר ב', { nutrient: 'potassium', label: 'אשלגן' }, ' ובשומן בריא שעשוי לעזור לשמור על רמת כולסטרול תקינה.'] },
@@ -116,6 +138,28 @@ export const SUPERFOOD_CONTENT: Record<Lang, Record<string, SuperfoodContent>> =
     cashews: { name: 'קשיו', power: 'עוזר ללב ולעצמות חזקים 🥜', benefit: ['עשיר ב', { nutrient: 'magnesium', label: 'מגנזיום' }, ', שתומך בלב ובעצמות חזקים.'] },
     pistachios: { name: 'פיסטוקים', power: 'עוזרים לבריאות הלב 💚', benefit: ['עמוסים ב', { nutrient: 'potassium', label: 'אשלגן' }, ' ובשומן בריא שתומכים בבריאות הלב.'] },
     sunflowerSeeds: { name: 'גרעיני חמנייה', power: 'עוזרים לעור בריא 🌻', benefit: ['עשירים ב', { nutrient: 'vitaminE', label: 'ויטמין E' }, ', נוגד חמצון שתומך בעור בריא.'] },
+
+    salmonQuinoaBowl: { name: 'קערת סלמון וקינואה', power: 'עוזרת לבנות שריר וללב בריא 💪', benefit: ['ארוחה מאוזנת עם חלבון רזה, שומן בריא ודגן מלא, שנותנת לגוף שלך אנרגיה יציבה.'] },
+    greekYogurtParfait: { name: 'יוגורט יווני עם פירות יער', power: 'עוזר לעצמות ולמעיים בריאים 🦴', benefit: ['שילוב של ', { nutrient: 'calcium', label: 'סידן' }, ' מהיוגורט ונוגדי חמצון מהפירות, שתומכים בעצמות חזקות ובמעיים בריאים.'] },
+    chickenSweetPotatoPlate: { name: 'חזה עוף עם בטטה וברוקולי', power: 'בונה ומשקם את השרירים שלך 💪', benefit: ['חלבון רזה לצד פחמימה איטית וירק עשיר בוויטמינים, שנותנים לשרירים שלך את מה שהם צריכים כדי לגדול.'] },
+    oatmealBananaBowl: { name: 'שיבולת שועל עם בננה', power: 'נותנת לך אנרגיה יציבה לכל הבוקר ⚡', benefit: ['סיבים תזונתיים משיבולת השועל ו', { nutrient: 'potassium', label: 'אשלגן' }, ' מהבננה, שנותנים לך אנרגיה שנשארת לאורך זמן.'] },
+    veggieOmeletteAvocado: { name: 'חביתת ירקות עם אבוקדו', power: 'עוזרת ללב ולמוח שלך 🧠', benefit: ['חלבון מלא מהביצים ושומן בריא מהאבוקדו, שעוזרים לבריאות הלב והמוח שלך.'] },
+    lentilSoupWholegrain: { name: 'מרק עדשים עם לחם מלא', power: 'עוזר לשובע ולמעיים בריאים 🌾', benefit: ['עשיר בחלבון צמחי ובסיבים תזונתיים, ובתוספת ', { nutrient: 'iron', label: 'ברזל' }, ' מהעדשים.'] },
+    quinoaChickpeaSalad: { name: 'סלט קינואה וחומוס', power: 'עוזר לאנרגיה יציבה לאורך היום ⏳', benefit: ['חלבון צמחי מלא מהקינואה והחומוס, שנותן לך שובע ואנרגיה יציבה.'] },
+    tunaSaladBowl: { name: 'סלט טונה עם ירקות עלים', power: 'עוזר למוח וללב שלך 🐟', benefit: ['עמוס בחלבון רזה ובאומגה 3 מהטונה, לצד ירקות עלים עשירים בוויטמינים.'] },
+    turkeyVeggieWrap: { name: 'רול הודו עם ירקות', power: 'עוזר לשובע ולאנרגיה לאורך היום 💪', benefit: ['חלבון רזה מההודו לצד ירקות טריים, שנותנים שובע בלי כבדות.'] },
+    proteinSmoothieBowl: { name: 'קערת סמוזי חלבון', power: 'עוזרת להתאוששות אחרי אימון 💪', benefit: ['שילוב של חלבון ופירות טריים, שעוזר לשרירים שלך להתאושש מהר יותר.'] },
+    eggWhiteVeggieScramble: { name: 'חביתת חלבונים עם ירקות', power: 'נותנת לך חלבון רזה להתחלת היום 💪', benefit: ['חלבוני ביצה וירקות צבעוניים, שנותנים לך חלבון בלי שומן מיותר וויטמינים להתחלה טובה של היום.'] },
+    cottageCheeseBerryBowl: { name: 'קוטג׳ עם פירות יער', power: 'עוזר לשובע בין הארוחות 🧀', benefit: ['חלבון שמתעכל לאט מהקוטג׳ ונוגדי חמצון מפירות היער, שעוזרים לך להישאר שבע לאורך זמן.'] },
+    steakVeggieStirFry: { name: 'סטייק עם ירקות מוקפצים', power: 'עוזר לבנות שריר ולשמור על רמת ברזל 🥩', benefit: ['עשיר ב', { nutrient: 'iron', label: 'ברזל' }, ' ובחלבון מהסטייק, לצד ירקות צבעוניים עמוסים בוויטמינים.'] },
+    chickenRiceBowl: { name: 'קערת עוף עם אורז', power: 'נותנת לך אנרגיה יציבה ודלק לשרירים 🍛', benefit: ['חלבון רזה מהעוף ופחמימות שמשתחררות לאט מהאורז, שנותנים לך שובע ואנרגיה.'] },
+    bananaPeanutButterToast: { name: 'טוסט בננה וחמאת בוטנים', power: 'ממלא את השרירים שלך אחרי אימון 💪', benefit: ['פחמימות מהירות מהבננה וחלבון מחמאת הבוטנים, שעוזרים לשרירים שלך להתאושש מהר.'] },
+    chocolateProteinShake: { name: 'שייק חלבון שוקולד', power: 'עוזר לשרירים שלך להתאושש מהר אחרי אימון 🍫', benefit: ['מנת חלבון מהירה שהשרירים שלך יכולים להשתמש בה מיד אחרי אימון, בתוספת קצת פחמימות למילוי האנרגיה.'] },
+    shakshukaWithBread: { name: 'שקשוקה עם לחם', power: 'נותנת לך חלבון וירקות להתחלה חזקה 🍳', benefit: ['ביצים מבושלות ברוטב עגבניות מתובל, עם לחם בצד, שנותנים לך חלבון וויטמינים בארוחה אחת.'] },
+    beefBroccoliBowl: { name: 'קערת בקר וברוקולי', power: 'נותנת לשרירים שלך חלבון וברזל לצמיחה 💪', benefit: ['בקר רזה וברוקולי על אורז - חלבון ו', { nutrient: 'iron', label: 'ברזל' }, ' לשרירים שלך, בתוספת ויטמין C מהברוקולי.'] },
+    hummusPitaPlate: { name: 'חומוס עם פיתה', power: 'עוזר לשובע עם חלבון צמחי 🌿', benefit: ['חומוס מגרגירי חומוס עם פיתה מקמח מלא וירקות טריים - חלבון צמחי וסיבים ששומרים אותך שבע.'] },
+    riceCakesWithAlmondButter: { name: 'פריכיות אורז עם ממרח שקדים', power: 'נותנת לך בוסט אנרגיה קליל ומהיר ⚡', benefit: ['פחמימות קלות מהפריכיות ושומן בריא מממרח השקדים, לאנרגיה מהירה וקלה.'] },
+    recoveryChocolateMilk: { name: 'חלב שוקולד להתאוששות', power: 'עוזר לשרירים שלך להתאושש אחרי אימון 🧃', benefit: ['שילוב קלאסי של חלבון ופחמימות אחרי אימון, שעוזר למלא מחדש את השרירים שלך במהירות.'] },
   },
   ar: {
     avocado: { name: 'أفوكادو', power: 'يدعم صحة قلبك ❤️', benefit: ['غني ب', { nutrient: 'potassium', label: 'البوتاسيوم' }, ' والدهون الصحية التي قد تساعد في الحفاظ على مستوى كوليسترول صحي.'] },
@@ -166,6 +210,28 @@ export const SUPERFOOD_CONTENT: Record<Lang, Record<string, SuperfoodContent>> =
     cashews: { name: 'كاجو', power: 'يدعم قلبًا وعظامًا قوية 🥜', benefit: ['غني ب', { nutrient: 'magnesium', label: 'المغنيسيوم' }, '، الذي يدعم قلبًا وعظامًا قوية.'] },
     pistachios: { name: 'فستق', power: 'يدعم صحة قلبك 💚', benefit: ['غني ب', { nutrient: 'potassium', label: 'البوتاسيوم' }, ' والدهون الصحية التي تدعم صحة قلبك.'] },
     sunflowerSeeds: { name: 'بذور عباد الشمس', power: 'يدعم بشرة صحية 🌻', benefit: ['غنية ب', { nutrient: 'vitaminE', label: 'فيتامين E' }, '، مضاد أكسدة يدعم صحة بشرتك.'] },
+
+    salmonQuinoaBowl: { name: 'سلمون مع كينوا', power: 'يساعد على بناء العضلات وصحة القلب 💪', benefit: ['طبق متوازن يحتوي على بروتين قليل الدهن، ودهون صحية، وحبوب كاملة تمنح جسمك طاقة ثابتة.'] },
+    greekYogurtParfait: { name: 'زبادي يوناني مع توت', power: 'يدعم عظامًا وأمعاء صحية 🦴', benefit: ['مزيج من ', { nutrient: 'calcium', label: 'الكالسيوم' }, ' من الزبادي ومضادات الأكسدة من التوت يدعمان عظامًا قوية وأمعاء صحية.'] },
+    chickenSweetPotatoPlate: { name: 'صدر دجاج مع بطاطا حلوة وبروكلي', power: 'يبني ويصلح عضلاتك 💪', benefit: ['بروتين قليل الدهن إلى جانب كربوهيدرات بطيئة وخضار غني بالفيتامينات، يمنح عضلاتك ما تحتاجه للنمو.'] },
+    oatmealBananaBowl: { name: 'شوفان بالموز', power: 'يمنحك طاقة ثابتة طوال الصباح ⚡', benefit: ['ألياف من الشوفان و', { nutrient: 'potassium', label: 'البوتاسيوم' }, ' من الموز يمنحانك طاقة تدوم طويلاً.'] },
+    veggieOmeletteAvocado: { name: 'عجة خضار مع أفوكادو', power: 'مفيدة لقلبك ودماغك 🧠', benefit: ['بروتين كامل من البيض ودهون صحية من الأفوكادو تدعمان صحة القلب والدماغ.'] },
+    lentilSoupWholegrain: { name: 'شوربة عدس مع خبز كامل', power: 'تساعدك على الشبع وتدعم أمعاء صحية 🌾', benefit: ['غنية بالبروتين النباتي والألياف، بالإضافة إلى ', { nutrient: 'iron', label: 'الحديد' }, ' من العدس.'] },
+    quinoaChickpeaSalad: { name: 'سلطة كينوا وحمص', power: 'تساعد على طاقة ثابتة طوال اليوم ⏳', benefit: ['بروتين نباتي كامل من الكينوا والحمص يمنحك شبعًا وطاقة ثابتة.'] },
+    tunaSaladBowl: { name: 'سلطة تونة', power: 'مفيدة لدماغك وقلبك 🐟', benefit: ['غنية بالبروتين قليل الدهن وأوميغا 3 من التونة، إلى جانب خضار ورقية غنية بالفيتامينات.'] },
+    turkeyVeggieWrap: { name: 'راب ديك رومي مع خضار', power: 'يساعدك على الشبع والنشاط 💪', benefit: ['بروتين قليل الدهن من الديك الرومي مع خضار طازجة يمنحك شبعًا دون ثقل.'] },
+    proteinSmoothieBowl: { name: 'كوب سموذي بروتين', power: 'يساعدك على التعافي بعد التمرين 💪', benefit: ['مزيج من البروتين والفواكه الطازجة يساعد عضلاتك على التعافي بشكل أسرع.'] },
+    eggWhiteVeggieScramble: { name: 'عجة بياض البيض مع الخضار', power: 'يمنحك بروتينًا قليل الدهن لبدء يومك 💪', benefit: ['بياض بيض وخضار ملونة تمنحك بروتينًا دون دهون زائدة، بالإضافة إلى فيتامينات لبداية جيدة ليومك.'] },
+    cottageCheeseBerryBowl: { name: 'جبن قريش مع التوت', power: 'يساعدك على الشبع بين الوجبات 🧀', benefit: ['بروتين بطيء الهضم من الجبن القريش ومضادات أكسدة من التوت تساعدك على البقاء ممتلئًا لفترة أطول.'] },
+    steakVeggieStirFry: { name: 'ستيك مع خضار مقلية', power: 'يساعد على بناء العضلات والحفاظ على مستوى الحديد 🥩', benefit: ['غني بالبروتين والحديد من الستيك، إلى جانب خضار ملونة غنية بالفيتامينات.'] },
+    chickenRiceBowl: { name: 'وعاء دجاج مع أرز', power: 'يمنحك طاقة ثابتة ووقودًا لعضلاتك 🍛', benefit: ['بروتين قليل الدهن من الدجاج وكربوهيدرات بطيئة الإطلاق من الأرز، تمنحك شبعًا وطاقة.'] },
+    bananaPeanutButterToast: { name: 'توست الموز وزبدة الفول السوداني', power: 'يعيد تزويد عضلاتك بالطاقة بعد التمرين 💪', benefit: ['كربوهيدرات سريعة من الموز وبروتين من زبدة الفول السوداني تساعد عضلاتك على التعافي بسرعة.'] },
+    chocolateProteinShake: { name: 'مخفوق بروتين بالشوكولاتة', power: 'يساعد عضلاتك على التعافي بسرعة بعد التمرين 🍫', benefit: ['جرعة بروتين سريعة يمكن لعضلاتك الاستفادة منها مباشرة بعد التمرين، مع القليل من الكربوهيدرات لتجديد طاقتك.'] },
+    shakshukaWithBread: { name: 'شكشوكة مع خبز', power: 'تمنحك بروتينًا وخضارًا لبداية قوية 🍳', benefit: ['بيض مطهو في صلصة طماطم متبلة مع خبز، يمنحك بروتينًا وفيتامينات في طبق واحد.'] },
+    beefBroccoliBowl: { name: 'وعاء لحم بقري مع بروكلي', power: 'يمنح عضلاتك بروتينًا وحديدًا للنمو 💪', benefit: ['لحم بقري قليل الدهن وبروكلي على أرز - بروتين و', { nutrient: 'iron', label: 'حديد' }, ' لعضلاتك، بالإضافة إلى فيتامين C من البروكلي.'] },
+    hummusPitaPlate: { name: 'حمص مع خبز بيتا', power: 'يساعدك على الشبع ببروتين نباتي 🌿', benefit: ['حمص من الحمص مع خبز بيتا من القمح الكامل وخضار طازجة - بروتين نباتي وألياف تبقيك ممتلئًا.'] },
+    riceCakesWithAlmondButter: { name: 'فطائر أرز مع زبدة اللوز', power: 'يمنحك دفعة طاقة سريعة وخفيفة ⚡', benefit: ['كربوهيدرات خفيفة من فطائر الأرز ودهون صحية من زبدة اللوز، لطاقة سريعة وسهلة.'] },
+    recoveryChocolateMilk: { name: 'حليب الشوكولاتة للتعافي', power: 'يساعد عضلاتك على التعافي بعد التمرين 🧃', benefit: ['مزيج كلاسيكي من البروتين والكربوهيدرات بعد التمرين يساعد على إعادة تزويد عضلاتك بسرعة.'] },
   },
 }
 
@@ -179,40 +245,52 @@ interface SuperfoodsPanelChrome {
   unsave: string
   likedCategory: string
   savedMealsTitle: string
+  mainTabs: { singleFood: string; meals: string }
+  mealTimeAll: string
+  mealTimes: Record<MealTime, string>
 }
 
 export const SUPERFOODS_PANEL_CHROME: Record<Lang, SuperfoodsPanelChrome> = {
   en: {
     todaysSuperfood: "Today's Superfood",
     filterAll: 'All',
-    categories: { fruit: 'Fruits', vegetable: 'Veggies', protein: 'Protein', nuts: 'Nuts', superfood: 'Superfoods' },
+    categories: { fruit: 'Fruits', vegetable: 'Veggies', protein: 'Protein', nuts: 'Nuts', superfood: 'Superfoods', meal: 'Meals' },
     noItemsInCategory: 'Nothing in this category yet.',
     searchPlaceholder: 'Search food...',
     save: 'Save',
     unsave: 'Unsave',
     likedCategory: 'Foods I liked',
     savedMealsTitle: 'Saved meals',
+    mainTabs: { singleFood: 'Single Foods', meals: 'Meals' },
+    mealTimeAll: 'All',
+    mealTimes: { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack', postWorkout: 'Post-Workout' },
   },
   he: {
     todaysSuperfood: 'מאכל העל של היום',
     filterAll: 'הכל',
-    categories: { fruit: 'פירות', vegetable: 'ירקות', protein: 'חלבון', nuts: 'אגוזים', superfood: 'סופר-פודים' },
+    categories: { fruit: 'פירות', vegetable: 'ירקות', protein: 'חלבון', nuts: 'אגוזים', superfood: 'סופר-פודים', meal: 'ארוחות' },
     noItemsInCategory: 'אין עדיין פריטים בקטגוריה הזו.',
     searchPlaceholder: 'חיפוש מזון...',
     save: 'שמירה',
     unsave: 'הסרה מהשמורים',
     likedCategory: 'מאכלים שאהבתי',
     savedMealsTitle: 'ארוחות שמורות',
+    mainTabs: { singleFood: 'מאכלים', meals: 'ארוחות' },
+    mealTimeAll: 'הכל',
+    mealTimes: { breakfast: 'בוקר', lunch: 'צהריים', dinner: 'ערב', snack: 'נשנוש', postWorkout: 'אחרי אימון' },
   },
   ar: {
     todaysSuperfood: 'الطعام الخارق لليوم',
     filterAll: 'الكل',
-    categories: { fruit: 'فواكه', vegetable: 'خضروات', protein: 'بروتين', nuts: 'مكسرات', superfood: 'أطعمة خارقة' },
+    categories: { fruit: 'فواكه', vegetable: 'خضروات', protein: 'بروتين', nuts: 'مكسرات', superfood: 'أطعمة خارقة', meal: 'وجبات' },
     noItemsInCategory: 'لا توجد عناصر في هذه الفئة بعد.',
     searchPlaceholder: 'ابحث عن طعام...',
     save: 'حفظ',
     unsave: 'إزالة الحفظ',
     likedCategory: 'الأطعمة التي أعجبتني',
     savedMealsTitle: 'وجبات محفوظة',
+    mainTabs: { singleFood: 'أطعمة فردية', meals: 'وجبات' },
+    mealTimeAll: 'الكل',
+    mealTimes: { breakfast: 'فطور', lunch: 'غداء', dinner: 'عشاء', snack: 'وجبة خفيفة', postWorkout: 'بعد التمرين' },
   },
 }

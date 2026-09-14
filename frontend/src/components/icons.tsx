@@ -400,3 +400,11 @@ export function ExpandIcon({ className, style, strokeWidth }: IconProps) {
     </svg>
   )
 }
+
+export function ChevronDownIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}

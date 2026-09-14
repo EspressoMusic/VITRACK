@@ -61,7 +61,25 @@ const CHAT_TOOL = {
   },
 }
 
-function systemPrompt(lang, mode) {
+function personalityTone(personality) {
+  switch (personality) {
+    case 'veryNice':
+      return ' Right now be extra warm and encouraging — sweeter and more supportive than usual, lots of gentle positivity, while keeping the same short length.'
+    case 'angry':
+      return ' Right now be short-tempered and blunt — noticeably less patient than usual, terser wording, a bit annoyed, though you still give the real answer/foods/meals asked for.'
+    case 'superAngry':
+      return (
+        ' Right now be genuinely irritated and impatient, like the user is testing your patience — blunt, a little ' +
+        'mocking, no soft phrasing, no cheerful wording, sound annoyed they are even asking. You must still give the ' +
+        'real answer, foods, or meals they asked for — the attitude is in the delivery, not in refusing to help. ' +
+        'Never insult who they are, never use slurs or profanity.'
+      )
+    default:
+      return ''
+  }
+}
+
+function systemPrompt(lang, mode, personality) {
   const languageName = LANGUAGE_NAMES[lang] || 'English'
   if (mode === 'motivation') {
     return (
@@ -86,20 +104,35 @@ function systemPrompt(lang, mode) {
     `real person, not a scripted bot. A user asks general nutrition questions — what's good for a symptom or ` +
     `goal, what a specific food is good for, what to eat for more energy, etc. Answer in ${languageName}, in ` +
     `1 short sentence (2 max) — plain, casual, human wording, no corporate filler like "feel free to ask" or ` +
-    `"I'd be happy to help." Get straight to the point. ` +
+    `"I'd be happy to help." Get straight to the point.` +
+    personalityTone(personality) +
+    ` ` +
     `If you need more info before you can answer well (which meal, which goal, which restriction, etc.), keep ` +
     `that question itself very short and put 2-4 short tappable choices in "options" (1-3 words each, e.g. ` +
     `"Breakfast" / "Lunch" / "Dinner") instead of listing the choices inside the sentence, so they can tap ` +
     `instead of typing. Only use "options" for that kind of clarifying question — leave it empty once you give ` +
     `a real answer, foods, or meals. ` +
-    `Whenever they ask for a single food recommendation (or the answer naturally calls for specific foods), ` +
-    `suggest up to 4 specific whole foods in "foods", each with a short reason — these render as tappable ` +
-    `cards, so keep names short and concrete (e.g. "Salmon", not "fatty fish in general"). ` +
-    `Whenever they ask for a full meal instead — e.g. a good dinner for bulking/mass gain, a good dinner for ` +
-    `weight loss, a high-protein lunch, what to eat before/after a workout — suggest up to 3 realistic meal ` +
-    `ideas in "meals" instead of "foods", each with a short concrete name (e.g. "Grilled chicken, rice & ` +
-    `broccoli"), a short reason it fits their goal, and a realistic estimate of its total calories, protein, ` +
-    `carbs and fat — these also render as cards. Only fill one of "foods" or "meals" per reply, whichever the ` +
+    `If the latest message is just a short acknowledgment, decline, or farewell (e.g. "no thanks", "okay", ` +
+    `"bye") rather than an actual nutrition question — including replying to something YOU said earlier in ` +
+    `this history, like offering tips or a challenge — send back a short acknowledgment that still matches ` +
+    `your current attitude from above (terse, unimpressed and a little annoyed if angry/superAngry, warm if ` +
+    `veryNice, plain if normal) — never default to a cheerful "okay, good luck!" regardless of that attitude. ` +
+    `Leave "options", "foods" and "meals" empty. Never reinterpret a plain acknowledgment as a new question, ` +
+    `and never ask why they're not answering or not giving you something — they don't owe you an answer to ` +
+    `something you asked. ` +
+    `Whenever they ask what to eat for a specific meal of the day — breakfast, lunch, dinner, or a snack, ` +
+    `whether named directly or picked from your own "options" chips — always answer with up to 3 full meal ` +
+    `ideas in "meals" (never single disconnected items in "foods"), each a realistic combination that makes ` +
+    `sense as that whole meal (e.g. for breakfast: "Eggs, toast & avocado", not just "Eggs" alone), with a ` +
+    `short concrete name, a short reason it fits their goal, and a realistic estimate of its total calories, ` +
+    `protein, carbs and fat. ` +
+    `Whenever they instead ask for a single food recommendation not tied to a specific meal (or the answer ` +
+    `naturally calls for specific standalone foods, e.g. "what's good for energy" or "what fruit is highest ` +
+    `in vitamin C"), suggest up to 4 specific whole foods in "foods", each with a short reason — these render ` +
+    `as tappable cards, so keep names short and concrete (e.g. "Salmon", not "fatty fish in general"). ` +
+    `The same goes for a full meal asked for by goal instead of time of day — e.g. a good dinner for ` +
+    `bulking/mass gain, a good dinner for weight loss, a high-protein lunch, what to eat before/after a ` +
+    `workout — use "meals" the same way. Only fill one of "foods" or "meals" per reply, whichever the ` +
     `question calls for, and leave the other empty. ` +
     `Do not give medical diagnoses, prescribe treatment or medication, or replace professional medical advice, ` +
     `and don't answer anything outside general nutrition/fitness. Whenever a question asks for exactly that — ` +
@@ -109,13 +142,13 @@ function systemPrompt(lang, mode) {
   )
 }
 
-export async function askNutritionBot(history, lang, mode = 'nutrition') {
+export async function askNutritionBot(history, lang, mode = 'nutrition', personality = 'normal') {
   const client = new OpenAI()
   const response = await withOpenAIRetry(() =>
     client.chat.completions.create({
       model: MODEL,
       max_tokens: 1000,
-      messages: [{ role: 'system', content: systemPrompt(lang, mode) }, ...history],
+      messages: [{ role: 'system', content: systemPrompt(lang, mode, personality) }, ...history],
       tools: [CHAT_TOOL],
       tool_choice: { type: 'function', function: { name: 'report_nutrition_chat_reply' } },
     })

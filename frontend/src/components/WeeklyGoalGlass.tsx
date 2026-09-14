@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 export function WeeklyGoalGlass({
   percent,
   onClick,
@@ -12,6 +14,7 @@ export function WeeklyGoalGlass({
   const lightFill = clamped < 45
   const Container = onClick ? 'button' : 'div'
   const scale = size / 96
+  const gradId = useId()
 
   return (
     <Container
@@ -26,30 +29,42 @@ export function WeeklyGoalGlass({
         boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.12)',
       }}
     >
-      <div
-        className="absolute inset-x-0 bottom-0 transition-[height] duration-700 ease-out"
-        style={{
-          height: `${clamped}%`,
-          background: 'linear-gradient(180deg, #a3e8fb 0%, #5fc9f3 45%, #0ea5e9 100%)',
-        }}
-      >
-        <div className="liquid-wave-layer absolute inset-x-0 top-0" aria-hidden>
-          <svg viewBox="0 0 400 20" preserveAspectRatio="none" className="liquid-wave-svg block h-4 w-[200%]">
+      {/* Water level as a real wavy-top fill (not a flat block with a decal on it): the whole
+       *  body is drawn by two scrolling sine paths, so the surface actually ripples. */}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#a3e8fb" />
+            <stop offset="45%" stopColor="#5fc9f3" />
+            <stop offset="100%" stopColor="#0ea5e9" />
+          </linearGradient>
+        </defs>
+        <g style={{ transform: `translateY(${100 - clamped}px)`, transition: 'transform 700ms cubic-bezier(0.22,1,0.36,1)' }}>
+          <g transform="translate(-13, 2)">
+            <g className="liquid-wave-drift-back">
+              <path
+                d="M-50,0 Q-37.5,5 -25,0 T0,0 T25,0 T50,0 T75,0 T100,0 T125,0 T150,0 L150,120 L-50,120 Z"
+                fill={`url(#${gradId})`}
+                opacity={0.5}
+              />
+            </g>
+          </g>
+          <g className="liquid-wave-drift-front">
             <path
-              d="M0 10 C 50 20, 150 0, 200 10 C 250 20, 350 0, 400 10 L400 20 L0 20 Z"
-              fill="rgba(255,255,255,0.55)"
+              d="M-50,0 Q-37.5,4 -25,0 T0,0 T25,0 T50,0 T75,0 T100,0 T125,0 T150,0 L150,120 L-50,120 Z"
+              fill={`url(#${gradId})`}
             />
-          </svg>
-        </div>
-        <div className="liquid-wave-layer liquid-wave-layer-2 absolute inset-x-0 top-0" aria-hidden>
-          <svg viewBox="0 0 400 20" preserveAspectRatio="none" className="liquid-wave-svg block h-3 w-[200%]">
             <path
-              d="M0 12 C 60 2, 140 22, 200 12 C 260 2, 340 22, 400 12 L400 20 L0 20 Z"
-              fill="rgba(255,255,255,0.3)"
+              d="M-50,0 Q-37.5,4 -25,0 T0,0 T25,0 T50,0 T75,0 T100,0 T125,0 T150,0"
+              fill="none"
+              stroke="rgba(255,255,255,0.85)"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
             />
-          </svg>
-        </div>
-      </div>
+          </g>
+        </g>
+      </svg>
 
       {/* soft ambient highlight, like light diffusing across curved glass */}
       <div

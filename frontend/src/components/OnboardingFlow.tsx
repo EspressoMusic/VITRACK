@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ActivityLevel, DietType, NutrientAmounts, OnboardingProfile, Sex, WeightGoal } from '../types'
 import { computeNutrientGoals } from '../lib/goals'
 import { completeOnboarding } from '../lib/profile'
@@ -577,6 +577,7 @@ function MiniNutrientRow({ id, percent }: { id: 'vitaminC' | 'vitaminD'; percent
  *  gloss highlight and gradient fill, just resized to fit the onboarding phone mockup. */
 function MiniWeeklyGoalGlass({ percent }: { percent: number }) {
   const lightFill = percent < 45
+  const gradId = useId()
   return (
     <div
       className="relative mx-auto flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full"
@@ -586,16 +587,31 @@ function MiniWeeklyGoalGlass({ percent }: { percent: number }) {
         boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.08), 0 2px 10px rgba(0,0,0,0.12)',
       }}
     >
-      <div
-        className="absolute inset-x-0 bottom-0"
-        style={{ height: `${percent}%`, background: 'linear-gradient(180deg, #a3e8fb 0%, #5fc9f3 45%, #0ea5e9 100%)' }}
-      >
-        <div className="liquid-wave-layer absolute inset-x-0 top-0" aria-hidden>
-          <svg viewBox="0 0 400 20" preserveAspectRatio="none" className="liquid-wave-svg block h-3 w-[200%]">
-            <path d="M0 10 C 50 20, 150 0, 200 10 C 250 20, 350 0, 400 10 L400 20 L0 20 Z" fill="rgba(255,255,255,0.55)" />
-          </svg>
-        </div>
-      </div>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#a3e8fb" />
+            <stop offset="45%" stopColor="#5fc9f3" />
+            <stop offset="100%" stopColor="#0ea5e9" />
+          </linearGradient>
+        </defs>
+        <g style={{ transform: `translateY(${100 - percent}px)`, transition: 'transform 700ms cubic-bezier(0.22,1,0.36,1)' }}>
+          <g className="liquid-wave-drift-front">
+            <path
+              d="M-50,0 Q-37.5,4 -25,0 T0,0 T25,0 T50,0 T75,0 T100,0 T125,0 T150,0 L150,120 L-50,120 Z"
+              fill={`url(#${gradId})`}
+            />
+            <path
+              d="M-50,0 Q-37.5,4 -25,0 T0,0 T25,0 T50,0 T75,0 T100,0 T125,0 T150,0"
+              fill="none"
+              stroke="rgba(255,255,255,0.85)"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+        </g>
+      </svg>
       <div
         aria-hidden
         className="pointer-events-none absolute -start-2 top-3 h-14 w-6 rounded-full"

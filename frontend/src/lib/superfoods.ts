@@ -1,8 +1,22 @@
 import type { NutrientScores } from './nutrientBuckets'
 
-export type SuperfoodCategory = 'fruit' | 'vegetable' | 'protein' | 'nuts' | 'superfood'
+export type SuperfoodCategory = 'fruit' | 'vegetable' | 'protein' | 'nuts' | 'superfood' | 'meal'
 
-export const SUPERFOOD_CATEGORIES: SuperfoodCategory[] = ['fruit', 'vegetable', 'protein', 'nuts', 'superfood']
+export const SUPERFOOD_CATEGORIES: SuperfoodCategory[] = ['fruit', 'vegetable', 'protein', 'nuts', 'superfood', 'meal']
+
+/** Which time of day a `meal`-category item is meant for — used by the meals tab's filter chips. */
+export type MealTime = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'postWorkout'
+
+export const MEAL_TIMES: MealTime[] = ['breakfast', 'lunch', 'dinner', 'snack', 'postWorkout']
+
+/** Shown next to the meal-time label on a meal's detail card. */
+export const MEAL_TIME_EMOJI: Record<MealTime, string> = {
+  breakfast: '🌅',
+  lunch: '☀️',
+  dinner: '🌙',
+  snack: '🍎',
+  postWorkout: '💪',
+}
 
 /** The single most notable nutrient of a food, shown on its card as a real amount instead of
  *  an abstract score — e.g. salmon shows "22g Protein", carrots show "835mcg Vitamin A". */
@@ -27,6 +41,8 @@ export interface SuperfoodDef {
   nutrients: NutrientScores
   /** Real per-100g amount of this food's standout nutrient, shown on its card. */
   headline: NutrientHeadline
+  /** Set only for `category: 'meal'` items — which time of day they're meant for. */
+  mealTime?: MealTime
 }
 
 export const SUPERFOODS: SuperfoodDef[] = [
@@ -78,6 +94,28 @@ export const SUPERFOODS: SuperfoodDef[] = [
   { id: 'cashews', emoji: '🌙', imageSrc: null, category: 'nuts', nutrients: { fats: 7, protein: 6, carbs: 4 }, headline: { kind: 'fats', amount: 44, unit: 'g' } },
   { id: 'pistachios', emoji: '🫛', imageSrc: null, category: 'nuts', nutrients: { fats: 7, protein: 6, vitamins: 4 }, headline: { kind: 'fats', amount: 45, unit: 'g' } },
   { id: 'sunflowerSeeds', emoji: '🌻', imageSrc: null, category: 'nuts', nutrients: { fats: 8, protein: 5, vitamins: 7 }, headline: { kind: 'fats', amount: 51, unit: 'g' } },
+
+  { id: 'salmonQuinoaBowl', emoji: '🍱', imageSrc: '/icons/meals/salmonQuinoaBowl.png', category: 'meal', mealTime: 'dinner', nutrients: { protein: 8, fats: 6, carbs: 5, vitamins: 5 }, headline: { kind: 'protein', amount: 34, unit: 'g' } },
+  { id: 'greekYogurtParfait', emoji: '🍨', imageSrc: '/icons/meals/greekYogurtParfait.png', category: 'meal', mealTime: 'breakfast', nutrients: { protein: 6, carbs: 5, vitamins: 4 }, headline: { kind: 'protein', amount: 18, unit: 'g' } },
+  { id: 'chickenSweetPotatoPlate', emoji: '🍗', imageSrc: '/icons/meals/chickenSweetPotatoPlate.png', category: 'meal', mealTime: 'dinner', nutrients: { protein: 9, carbs: 6, vitamins: 7 }, headline: { kind: 'protein', amount: 38, unit: 'g' } },
+  { id: 'oatmealBananaBowl', emoji: '🥣', imageSrc: '/icons/meals/oatmealBananaBowl.png', category: 'meal', mealTime: 'breakfast', nutrients: { carbs: 8, protein: 3, vitamins: 4 }, headline: { kind: 'carbs', amount: 52, unit: 'g' } },
+  { id: 'veggieOmeletteAvocado', emoji: '🍳', imageSrc: null, category: 'meal', mealTime: 'breakfast', nutrients: { protein: 7, fats: 7, vitamins: 6 }, headline: { kind: 'protein', amount: 20, unit: 'g' } },
+  { id: 'lentilSoupWholegrain', emoji: '🍲', imageSrc: null, category: 'meal', mealTime: 'lunch', nutrients: { protein: 6, carbs: 7, vitamins: 5 }, headline: { kind: 'protein', amount: 16, unit: 'g' } },
+  { id: 'quinoaChickpeaSalad', emoji: '🥗', imageSrc: null, category: 'meal', mealTime: 'lunch', nutrients: { protein: 6, carbs: 6, vitamins: 6 }, headline: { kind: 'protein', amount: 14, unit: 'g' } },
+  { id: 'tunaSaladBowl', emoji: '🥙', imageSrc: null, category: 'meal', mealTime: 'lunch', nutrients: { protein: 9, fats: 4, vitamins: 5 }, headline: { kind: 'protein', amount: 30, unit: 'g' } },
+  { id: 'turkeyVeggieWrap', emoji: '🌯', imageSrc: null, category: 'meal', mealTime: 'snack', nutrients: { protein: 7, carbs: 5, vitamins: 4 }, headline: { kind: 'protein', amount: 25, unit: 'g' } },
+  { id: 'proteinSmoothieBowl', emoji: '🥤', imageSrc: null, category: 'meal', mealTime: 'postWorkout', nutrients: { protein: 7, carbs: 6, vitamins: 6 }, headline: { kind: 'protein', amount: 22, unit: 'g' } },
+  { id: 'eggWhiteVeggieScramble', emoji: '🥘', imageSrc: null, category: 'meal', mealTime: 'breakfast', nutrients: { protein: 8, fats: 3, vitamins: 6 }, headline: { kind: 'protein', amount: 24, unit: 'g' } },
+  { id: 'cottageCheeseBerryBowl', emoji: '🍶', imageSrc: null, category: 'meal', mealTime: 'snack', nutrients: { protein: 7, carbs: 5, vitamins: 4 }, headline: { kind: 'protein', amount: 20, unit: 'g' } },
+  { id: 'steakVeggieStirFry', emoji: '🥩', imageSrc: null, category: 'meal', mealTime: 'dinner', nutrients: { protein: 9, fats: 5, vitamins: 6 }, headline: { kind: 'protein', amount: 36, unit: 'g' } },
+  { id: 'chickenRiceBowl', emoji: '🍛', imageSrc: null, category: 'meal', mealTime: 'lunch', nutrients: { protein: 8, carbs: 7, vitamins: 5 }, headline: { kind: 'protein', amount: 32, unit: 'g' } },
+  { id: 'bananaPeanutButterToast', emoji: '🍞', imageSrc: null, category: 'meal', mealTime: 'postWorkout', nutrients: { carbs: 7, protein: 5, fats: 5 }, headline: { kind: 'carbs', amount: 45, unit: 'g' } },
+  { id: 'chocolateProteinShake', emoji: '🍫', imageSrc: null, category: 'meal', mealTime: 'postWorkout', nutrients: { protein: 9, carbs: 4 }, headline: { kind: 'protein', amount: 28, unit: 'g' } },
+  { id: 'shakshukaWithBread', emoji: '🫕', imageSrc: null, category: 'meal', mealTime: 'breakfast', nutrients: { protein: 6, carbs: 5, vitamins: 6 }, headline: { kind: 'protein', amount: 18, unit: 'g' } },
+  { id: 'beefBroccoliBowl', emoji: '🥢', imageSrc: null, category: 'meal', mealTime: 'dinner', nutrients: { protein: 8, carbs: 6, vitamins: 6 }, headline: { kind: 'protein', amount: 33, unit: 'g' } },
+  { id: 'hummusPitaPlate', emoji: '🫓', imageSrc: null, category: 'meal', mealTime: 'lunch', nutrients: { protein: 5, carbs: 7, vitamins: 5 }, headline: { kind: 'protein', amount: 12, unit: 'g' } },
+  { id: 'riceCakesWithAlmondButter', emoji: '🍘', imageSrc: null, category: 'meal', mealTime: 'snack', nutrients: { carbs: 6, fats: 6, protein: 3 }, headline: { kind: 'carbs', amount: 28, unit: 'g' } },
+  { id: 'recoveryChocolateMilk', emoji: '🧃', imageSrc: null, category: 'meal', mealTime: 'postWorkout', nutrients: { protein: 6, carbs: 6 }, headline: { kind: 'protein', amount: 8, unit: 'g' } },
 ]
 
 /** Same superfood for everyone on a given calendar day, rotating deterministically —
