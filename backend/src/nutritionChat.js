@@ -21,7 +21,7 @@ const CHAT_TOOL = {
         options: {
           type: 'array',
           description:
-            'Up to 4 short tappable choice labels (1-3 words each, e.g. "Breakfast", "Lunch", "Dinner", "Snack") to offer when "reply" is a clarifying question you need answered before giving a real answer — lets the user tap instead of typing. Empty array whenever "reply" is already a direct answer, or whenever "foods"/"meals" is used instead.',
+            'Up to 4 short tappable choice labels (1-3 words each, e.g. "Breakfast", "Lunch", "Dinner", "Snack" — translate these into the reply language, never leave them in English) to offer when "reply" is a clarifying question you need answered before giving a real answer — lets the user tap instead of typing. Empty array whenever "reply" is already a direct answer, or whenever "foods"/"meals" is used instead.',
           items: { type: 'string' },
         },
         foods: {
@@ -51,8 +51,25 @@ const CHAT_TOOL = {
               proteinG: { type: 'number', description: 'Estimated grams of protein.' },
               carbsG: { type: 'number', description: 'Estimated grams of carbs.' },
               fatG: { type: 'number', description: 'Estimated grams of fat.' },
+              recipe: {
+                type: 'object',
+                description: 'A simple recipe for this exact meal — a short ingredient list and a few easy, beginner-friendly prep steps.',
+                properties: {
+                  ingredients: {
+                    type: 'array',
+                    description: 'Short ingredient list with rough quantities, in the reply language including the unit (e.g. "200g chicken breast" in English, but "200 גרם חזה עוף" in Hebrew — never leave the unit in Latin letters when answering in another language).',
+                    items: { type: 'string' },
+                  },
+                  steps: {
+                    type: 'array',
+                    description: 'Short, simple step-by-step prep instructions, easy for a beginner cook to follow.',
+                    items: { type: 'string' },
+                  },
+                },
+                required: ['ingredients', 'steps'],
+              },
             },
-            required: ['name', 'emoji', 'tip', 'calories', 'proteinG', 'carbsG', 'fatG'],
+            required: ['name', 'emoji', 'tip', 'calories', 'proteinG', 'carbsG', 'fatG', 'recipe'],
           },
         },
       },
@@ -109,9 +126,10 @@ function systemPrompt(lang, mode, personality) {
     ` ` +
     `If you need more info before you can answer well (which meal, which goal, which restriction, etc.), keep ` +
     `that question itself very short and put 2-4 short tappable choices in "options" (1-3 words each, e.g. ` +
-    `"Breakfast" / "Lunch" / "Dinner") instead of listing the choices inside the sentence, so they can tap ` +
-    `instead of typing. Only use "options" for that kind of clarifying question — leave it empty once you give ` +
-    `a real answer, foods, or meals. ` +
+    `"Breakfast" / "Lunch" / "Dinner", but written in ${languageName} — never leave "options" in English when ` +
+    `answering in another language) instead of listing the choices inside the sentence, so they can tap instead ` +
+    `of typing. Only use "options" for that kind of clarifying question — leave it empty once you give a real ` +
+    `answer, foods, or meals. ` +
     `If the latest message is just a short acknowledgment, decline, or farewell (e.g. "no thanks", "okay", ` +
     `"bye") rather than an actual nutrition question — including replying to something YOU said earlier in ` +
     `this history, like offering tips or a challenge — send back a short acknowledgment that still matches ` +
@@ -125,11 +143,16 @@ function systemPrompt(lang, mode, personality) {
     `ideas in "meals" (never single disconnected items in "foods"), each a realistic combination that makes ` +
     `sense as that whole meal (e.g. for breakfast: "Eggs, toast & avocado", not just "Eggs" alone), with a ` +
     `short concrete name, a short reason it fits their goal, and a realistic estimate of its total calories, ` +
-    `protein, carbs and fat. ` +
+    `protein, carbs and fat. Include a simple recipe too — a short ingredient list with rough quantities and a ` +
+    `few short, easy prep steps anyone can follow. ` +
     `Whenever they instead ask for a single food recommendation not tied to a specific meal (or the answer ` +
     `naturally calls for specific standalone foods, e.g. "what's good for energy" or "what fruit is highest ` +
     `in vitamin C"), suggest up to 4 specific whole foods in "foods", each with a short reason — these render ` +
     `as tappable cards, so keep names short and concrete (e.g. "Salmon", not "fatty fish in general"). ` +
+    `Whenever "foods" or "meals" is filled in, keep "reply" itself to one very short intro clause (e.g. "Here ` +
+    `are a few ideas") — never restate the item names, reasons, calories, macros, or recipe steps as text in ` +
+    `"reply", since the cards already show all of that; repeating it there just duplicates the same ` +
+    `information twice. ` +
     `The same goes for a full meal asked for by goal instead of time of day — e.g. a good dinner for ` +
     `bulking/mass gain, a good dinner for weight loss, a high-protein lunch, what to eat before/after a ` +
     `workout — use "meals" the same way. Only fill one of "foods" or "meals" per reply, whichever the ` +
@@ -167,6 +190,13 @@ export async function askNutritionBot(history, lang, mode = 'nutrition', persona
   }
 
   const toNumber = (n) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0)
+  const toStringList = (arr) =>
+    Array.isArray(arr)
+      ? arr
+          .filter((s) => typeof s === 'string' && s.trim())
+          .map((s) => s.trim())
+          .slice(0, 10)
+      : []
 
   return {
     reply: typeof parsed.reply === 'string' && parsed.reply.trim() ? parsed.reply.trim() : '...',
@@ -198,6 +228,10 @@ export async function askNutritionBot(history, lang, mode = 'nutrition', persona
             proteinG: toNumber(m.proteinG),
             carbsG: toNumber(m.carbsG),
             fatG: toNumber(m.fatG),
+            recipe: {
+              ingredients: toStringList(m.recipe?.ingredients),
+              steps: toStringList(m.recipe?.steps),
+            },
           }))
       : [],
   }

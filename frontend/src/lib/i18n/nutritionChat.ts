@@ -26,6 +26,8 @@ export interface NutritionChatStrings {
   challengeSuggestPrompt: string
   confirmChallengeOption: string
   differentChallengeOption: string
+  recipeIngredients: string
+  recipeSteps: string
   personality: {
     heading: string
     description: string
@@ -91,6 +93,8 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     challengeSuggestPrompt: "How about this challenge: '{challenge}'?",
     confirmChallengeOption: "Yes, let's do it",
     differentChallengeOption: 'Suggest a different one',
+    recipeIngredients: 'Ingredients',
+    recipeSteps: 'How to make it',
     personality: {
       heading: 'Bot personality',
       description: 'Choose how the bot reacts when you log something unhealthy.',
@@ -147,6 +151,8 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     challengeSuggestPrompt: "מה דעתך על האתגר '{challenge}'?",
     confirmChallengeOption: 'כן, בוא נתחיל',
     differentChallengeOption: 'תציע לי אתגר אחר',
+    recipeIngredients: 'מרכיבים',
+    recipeSteps: 'איך מכינים',
     personality: {
       heading: 'אישיות הבוט',
       description: 'בחרו איך הבוט יגיב כשתתעדו משהו לא בריא.',
@@ -203,6 +209,8 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     challengeSuggestPrompt: "ما رأيك بتحدي '{challenge}'؟",
     confirmChallengeOption: 'نعم، لنبدأ',
     differentChallengeOption: 'اقترح تحديًا آخر',
+    recipeIngredients: 'المكونات',
+    recipeSteps: 'طريقة التحضير',
     personality: {
       heading: 'شخصية البوت',
       description: 'اختر كيف يتفاعل البوت عندما تسجل شيئًا غير صحي.',

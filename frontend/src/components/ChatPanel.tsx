@@ -8,6 +8,7 @@ import { getSavedMeals, saveMeal, unsaveMeal, type SavedMeal } from '../lib/save
 import { getSavedChatFoods, saveChatFood, unsaveChatFood, type SavedChatFood } from '../lib/savedChatFoods'
 import { getBotPersonality, setBotPersonality, type BotPersonality } from '../lib/botPersonality'
 import { getTodaysBotMood, type BotMoodStatus } from '../lib/botMood'
+import { getChatHistory, setChatHistory, type ChatTurn } from '../lib/chatHistory'
 import { consumePendingChallengeAnnounce, consumePendingChallengeCompleted } from '../lib/challengeAnnounce'
 import { shouldSendCheckIn, markCheckInSent } from '../lib/botCheckIn'
 import { CHALLENGE_TEMPLATES, CHALLENGE_TEMPLATE_IDS, type ChallengeTemplateId } from '../lib/nutritionChallengeTemplates'
@@ -15,6 +16,7 @@ import { addWorkout } from '../lib/db'
 import { todayKey } from '../lib/date'
 import type { WorkoutEntry } from '../types'
 import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
+import { MACRO_LABELS } from '../lib/i18n/macros'
 import { SendIcon, StarIcon, BotIcon, CloseIcon } from './icons'
 import { MacroSummaryRow } from './MacroSummaryRow'
 import { BotPersonalityModal } from './BotPersonalityModal'
@@ -192,53 +194,204 @@ function ChatFoodGrid({
   )
 }
 
-/** A full meal suggestion — richer than ChatFoodCard, so it carries its own macro breakdown via
- *  the same MacroSummaryRow used by scan results and the meal detail modal. The card itself is
- *  not a click target (a stray tap while scrolling the chat must not silently send a message on
- *  the user's behalf) — the star in the corner is the only action, saving it into favorites. */
+/** A full meal suggestion, styled as the same portrait tile as ChatFoodCard (2 per row) instead
+ *  of a full-width card dominated by a giant calorie number — that number only belongs in the
+ *  detail view below, which also carries the recipe. Tapping the tile opens that detail; the
+ *  star stays a separate action so saving/unsaving never also opens it. */
 function ChatMealCard({
+  meal,
+  saved,
+  onToggleSave,
+  onOpenDetail,
+  saveLabel,
+  unsaveLabel,
+  caloriesLabel,
+}: {
+  meal: ChatMealSuggestion
+  saved: boolean
+  onToggleSave: () => void
+  onOpenDetail: () => void
+  saveLabel: string
+  unsaveLabel: string
+  caloriesLabel: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpenDetail}
+      className="relative flex w-full shrink-0 flex-col items-center justify-start gap-0.5 rounded-xl px-1.5 py-2.5 text-center transition active:translate-y-0.5"
+      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+    >
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSave()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation()
+            e.preventDefault()
+            onToggleSave()
+          }
+        }}
+        aria-label={saved ? unsaveLabel : saveLabel}
+        aria-pressed={saved}
+        className="absolute end-1 top-1 flex h-5 w-5 items-center justify-center"
+        style={{ color: saved ? 'var(--accent)' : 'var(--text-secondary)' }}
+      >
+        <StarIcon className="h-3.5 w-3.5" filled={saved} />
+      </span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center text-2xl" aria-hidden>
+        {meal.emoji}
+      </span>
+      <span className="line-clamp-2 w-full text-[11px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+        {meal.name}
+      </span>
+      {meal.tip && (
+        <span className="line-clamp-2 flex min-h-[2.2em] w-full items-center justify-center text-[9px] font-bold leading-tight" style={{ color: 'var(--accent-strong)' }}>
+          {meal.tip}
+        </span>
+      )}
+      <span className="mt-0.5 text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
+        {Math.round(meal.calories)} <span className="text-[8px] font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>{caloriesLabel}</span>
+      </span>
+    </button>
+  )
+}
+
+/** Groups the bot's meal suggestions the same way ChatFoodGrid groups foods — a 2-column grid
+ *  of portrait tiles instead of one full-width card per meal. */
+function ChatMealGrid({
+  meals,
+  savedMealNames,
+  onToggleSave,
+  onOpenDetail,
+  saveLabel,
+  unsaveLabel,
+  caloriesLabel,
+}: {
+  meals: ChatMealSuggestion[]
+  savedMealNames: Set<string>
+  onToggleSave: (meal: ChatMealSuggestion) => void
+  onOpenDetail: (meal: ChatMealSuggestion) => void
+  saveLabel: string
+  unsaveLabel: string
+  caloriesLabel: string
+}) {
+  return (
+    <div className="grid w-full max-w-[92%] grid-cols-2 gap-1.5 rounded-2xl p-2" style={{ backgroundColor: CHAT_WALLPAPER }}>
+      {meals.map((meal, mi) => (
+        <ChatMealCard
+          key={mi}
+          meal={meal}
+          saved={savedMealNames.has(meal.name)}
+          onToggleSave={() => onToggleSave(meal)}
+          onOpenDetail={() => onOpenDetail(meal)}
+          saveLabel={saveLabel}
+          unsaveLabel={unsaveLabel}
+          caloriesLabel={caloriesLabel}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Detail popup for a tapped meal tile — same visual language as ChatFoodDetailModal, plus the
+ *  full calorie/macro breakdown (via MacroSummaryRow) and the recipe the bot suggested, since
+ *  that's too much to fit in the compact grid tile itself. Header (emoji/name/close/star) stays
+ *  fixed; only the recipe body scrolls internally if it runs long, matching every other bounded
+ *  scroll area in this app — the page itself never scrolls. */
+function ChatMealDetailModal({
   meal,
   saved,
   onToggleSave,
   saveLabel,
   unsaveLabel,
+  ingredientsLabel,
+  stepsLabel,
+  onClose,
 }: {
   meal: ChatMealSuggestion
   saved: boolean
   onToggleSave: () => void
   saveLabel: string
   unsaveLabel: string
+  ingredientsLabel: string
+  stepsLabel: string
+  onClose: () => void
 }) {
-  return (
-    <div
-      className="relative flex w-full max-w-[92%] flex-col gap-1.5 rounded-2xl p-2 text-start"
-      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
-    >
-      <button
-        type="button"
-        onClick={onToggleSave}
-        aria-label={saved ? unsaveLabel : saveLabel}
-        aria-pressed={saved}
-        className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full"
-        style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: saved ? 'var(--accent-strong)' : 'var(--text-primary)' }}
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" role="dialog" aria-modal="true">
+      <div
+        className="modal-backdrop-enter absolute inset-0"
+        style={{ backgroundColor: 'rgba(80,80,80,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        onClick={onClose}
+      />
+      <div
+        className="modal-card-enter relative z-10 flex max-h-[80vh] w-full max-w-xs flex-col items-center gap-2 rounded-3xl p-4 text-center"
+        style={{ backgroundColor: 'var(--surface-cream)', border: '4px solid #1a1a19', boxShadow: '0 14px 30px rgba(11,11,11,0.22), 0 4px 0 #1a1a19' }}
       >
-        <StarIcon className="h-3 w-3" filled={saved} />
-      </button>
-      <div className="flex items-center gap-1.5 px-0.5 pe-7">
-        <span className="text-base leading-none" aria-hidden>
+        <button
+          onClick={onToggleSave}
+          aria-label={saved ? unsaveLabel : saveLabel}
+          aria-pressed={saved}
+          className="absolute start-3 top-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: saved ? 'var(--accent)' : 'var(--text-primary)' }}
+        >
+          <StarIcon className="h-3.5 w-3.5" filled={saved} />
+        </button>
+        <button
+          onClick={onClose}
+          aria-label={meal.name}
+          className="absolute end-3 top-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(0,0,0,0.08)', color: 'var(--text-primary)' }}
+        >
+          <CloseIcon className="h-3.5 w-3.5" />
+        </button>
+        <span className="pt-1 text-4xl" aria-hidden>
           {meal.emoji}
         </span>
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
           {meal.name}
-        </span>
+        </h2>
+
+        <div className="thin-scroll flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto pe-1">
+          {meal.tip && (
+            <p className="text-xs leading-snug" style={{ color: 'var(--text-secondary)' }}>
+              {meal.tip}
+            </p>
+          )}
+          <MacroSummaryRow macros={{ calories: meal.calories, carbsG: meal.carbsG, fatG: meal.fatG, proteinG: meal.proteinG }} />
+          {meal.recipe.ingredients.length > 0 && (
+            <div className="w-full text-start">
+              <h3 className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                {ingredientsLabel}
+              </h3>
+              <ul className="ms-4 list-disc text-xs leading-snug" style={{ color: 'var(--text-primary)' }}>
+                {meal.recipe.ingredients.map((ingredient, i) => (
+                  <li key={i}>{ingredient}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {meal.recipe.steps.length > 0 && (
+            <div className="w-full text-start">
+              <h3 className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                {stepsLabel}
+              </h3>
+              <ol className="ms-4 list-decimal text-xs leading-snug" style={{ color: 'var(--text-primary)' }}>
+                {meal.recipe.steps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
       </div>
-      {meal.tip && (
-        <p className="px-0.5 text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-          {meal.tip}
-        </p>
-      )}
-      <MacroSummaryRow macros={{ calories: meal.calories, carbsG: meal.carbsG, fatG: meal.fatG, proteinG: meal.proteinG }} />
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -379,28 +532,15 @@ function SavedChatItemsModal({
   )
 }
 
-interface ChatTurn {
-  role: 'user' | 'assistant'
-  content: string
-  options?: string[]
-  foods?: ChatFoodSuggestion[]
-  meals?: ChatMealSuggestion[]
-  /** Rendered in the bot's angry red styling instead of the normal bubble. */
-  angry?: boolean
-  /** Set when "options" is a confirm/different-one choice for this locally-generated challenge
-   *  suggestion, so picking one of those options is handled locally instead of being sent to
-   *  the nutrition Q&A bot (which knows nothing about challenges and would just answer as if
-   *  asked a food question). */
-  challengeSuggestionId?: ChallengeTemplateId
-}
-
 /** The nutrition bot, shown as its own tab (replaces the old workouts tab) so it's always
  *  reachable instead of living behind an overlay trigger. */
 export function ChatPanel() {
   const { lang, dir } = useLanguage()
   const t = NUTRITION_CHAT_STRINGS[lang]
   const st = SUPERFOODS_PANEL_CHROME[lang]
-  const [turns, setTurns] = useState<ChatTurn[]>([{ role: 'assistant', content: t.greeting }])
+  // Restored from localStorage (see chatHistory.ts) so switching tabs — which remounts this
+  // component — doesn't wipe the conversation; falls back to the greeting after 48h of inactivity.
+  const [turns, setTurns] = useState<ChatTurn[]>(() => getChatHistory() ?? [{ role: 'assistant', content: t.greeting }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>(() => getSavedMeals())
@@ -409,10 +549,23 @@ export function ChatPanel() {
   const [showPersonalityModal, setShowPersonalityModal] = useState(false)
   const [showSavedItems, setShowSavedItems] = useState(false)
   const [detailFood, setDetailFood] = useState<ChatFoodSuggestion | null>(null)
+  const [detailMeal, setDetailMeal] = useState<ChatMealSuggestion | null>(null)
   const [mood, setMood] = useState<BotMoodStatus | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const savedMealNames = new Set(savedMeals.map((m) => m.name))
   const savedChatFoodNames = new Set(savedChatFoods.map((f) => f.name))
+
+  // Tracks whether this instance is still mounted, so an in-flight sendMessage that resolves
+  // after a tab switch (which unmounts this component) persists its reply straight to storage
+  // instead of calling setTurns — React silently drops state updates on unmounted components,
+  // which otherwise swallows the bot's reply entirely.
+  const mountedRef = useRef(true)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   // Re-read fresh each time the chat tab is opened (this component remounts on tab switch),
   // so the angry state always reflects today's latest food log and challenge status.
@@ -518,11 +671,26 @@ export function ChatPanel() {
     if (el) el.scrollTop = el.scrollHeight
   }, [turns, loading])
 
+  useEffect(() => {
+    setChatHistory(turns)
+  }, [turns])
+
   async function sendMessage(text: string) {
     if (!text || loading) return
     const next: ChatTurn[] = [...turns, { role: 'user', content: text }]
     setTurns(next)
     setLoading(true)
+
+    function appendReply(reply: ChatTurn) {
+      if (mountedRef.current) {
+        setTurns((prev) => [...prev, reply])
+      } else {
+        // Component unmounted (tab switch) while the request was in flight — write straight to
+        // storage so the reply is there next time the chat tab remounts, instead of being lost.
+        setChatHistory([...(getChatHistory() ?? next), reply])
+      }
+    }
+
     try {
       const res = await askNutritionBot(
         next.map(({ role, content }) => ({ role, content })),
@@ -530,14 +698,11 @@ export function ChatPanel() {
         'nutrition',
         personality
       )
-      setTurns((prev) => [...prev, { role: 'assistant', content: res.reply, options: res.options, foods: res.foods, meals: res.meals }])
+      appendReply({ role: 'assistant', content: res.reply, options: res.options, foods: res.foods, meals: res.meals })
     } catch (err) {
-      setTurns((prev) => [
-        ...prev,
-        { role: 'assistant', content: err instanceof AnalyzeError ? err.message : t.errorMessage },
-      ])
+      appendReply({ role: 'assistant', content: err instanceof AnalyzeError ? err.message : t.errorMessage })
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -614,18 +779,15 @@ export function ChatPanel() {
                 />
               )}
               {turn.meals && turn.meals.length > 0 && (
-                <div className="flex w-full max-w-[92%] flex-col gap-2">
-                  {turn.meals.map((meal, mi) => (
-                    <ChatMealCard
-                      key={mi}
-                      meal={meal}
-                      saved={savedMealNames.has(meal.name)}
-                      onToggleSave={() => toggleSavedMeal(meal)}
-                      saveLabel={st.save}
-                      unsaveLabel={st.unsave}
-                    />
-                  ))}
-                </div>
+                <ChatMealGrid
+                  meals={turn.meals}
+                  savedMealNames={savedMealNames}
+                  onToggleSave={toggleSavedMeal}
+                  onOpenDetail={setDetailMeal}
+                  saveLabel={st.save}
+                  unsaveLabel={st.unsave}
+                  caloriesLabel={MACRO_LABELS[lang].calories}
+                />
               )}
             </div>
           ))}
@@ -687,6 +849,19 @@ export function ChatPanel() {
           saveLabel={st.save}
           unsaveLabel={st.unsave}
           onClose={() => setDetailFood(null)}
+        />
+      )}
+
+      {detailMeal && (
+        <ChatMealDetailModal
+          meal={detailMeal}
+          saved={savedMealNames.has(detailMeal.name)}
+          onToggleSave={() => toggleSavedMeal(detailMeal)}
+          saveLabel={st.save}
+          unsaveLabel={st.unsave}
+          ingredientsLabel={t.recipeIngredients}
+          stepsLabel={t.recipeSteps}
+          onClose={() => setDetailMeal(null)}
         />
       )}
 

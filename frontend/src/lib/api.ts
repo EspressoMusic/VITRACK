@@ -119,6 +119,11 @@ export interface ChatFoodSuggestion {
   tip: string
 }
 
+export interface ChatMealRecipe {
+  ingredients: string[]
+  steps: string[]
+}
+
 export interface ChatMealSuggestion {
   name: string
   emoji: string
@@ -127,6 +132,7 @@ export interface ChatMealSuggestion {
   proteinG: number
   carbsG: number
   fatG: number
+  recipe: ChatMealRecipe
 }
 
 export interface ChatReply {
