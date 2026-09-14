@@ -29,7 +29,7 @@ import { installButtonClickSounds } from './lib/sound'
 import { getTodaysBotMood } from './lib/botMood'
 import { getBotPersonality } from './lib/botPersonality'
 import { shouldShowBotAlertToast, markBotAlertToastSeen } from './lib/botAlertToastSeen'
-import { peekShouldSendCheckIn } from './lib/botCheckIn'
+import { peekShouldSendCheckIn, markCheckInSent } from './lib/botCheckIn'
 import {
   peekPendingChallengeAnnounce,
   peekPendingChallengeCompleted,
@@ -101,6 +101,9 @@ function AppShell() {
       } else if (completedChallenge && shouldShowChallengeToast('completed', completedChallenge)) {
         setToastAlert({ kind: 'challengeCompleted', challengeName: completedChallenge })
         markChallengeToastSeen('completed', completedChallenge)
+      } else if (checkInPending) {
+        setToastAlert({ kind: 'checkIn' })
+        markCheckInSent()
       }
     })
   }, [refreshSignal, authLoading, tab])

@@ -13,6 +13,7 @@ export type BotAlertPayload =
   | { kind: 'angry'; mood: BotMoodStatus }
   | { kind: 'challengeStarted'; challengeName: string }
   | { kind: 'challengeCompleted'; challengeName: string }
+  | { kind: 'checkIn' }
 
 function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)]
@@ -44,7 +45,10 @@ export function BotAlertToast({
     if (alert.kind === 'challengeStarted') {
       return pickRandom(isGrumpy ? t.challengeStartedGrumpy : t.challengeStartedGentle).replace('{challenge}', alert.challengeName)
     }
-    return pickRandom(isGrumpy ? t.challengeCompletedGrumpy : t.challengeCompletedGentle).replace('{challenge}', alert.challengeName)
+    if (alert.kind === 'challengeCompleted') {
+      return pickRandom(isGrumpy ? t.challengeCompletedGrumpy : t.challengeCompletedGentle).replace('{challenge}', alert.challengeName)
+    }
+    return pickRandom(isGrumpy ? t.checkInGrumpy : t.checkInGentle)
   })
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
@@ -84,7 +88,7 @@ export function BotAlertToast({
 
   return (
     <div
-      className="absolute inset-x-3 top-3 z-40 flex flex-col gap-2 rounded-2xl p-3"
+      className="absolute inset-x-8 top-3 z-40 flex flex-col gap-2 rounded-2xl p-3"
       style={{ backgroundColor: '#e5c184', border: '2.5px solid #000000', boxShadow: '0 4px 0 #000000' }}
     >
       <div className="flex items-start gap-2">
