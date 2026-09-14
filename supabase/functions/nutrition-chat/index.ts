@@ -30,7 +30,10 @@ const CHAT_TOOL = {
         },
         foods: {
           type: 'array',
-          description: 'Up to 4 specific single foods that fit the conversation, most relevant first. Empty array if none fit, or if "meals" is used instead.',
+          description:
+            'Up to 4 specific single foods that fit the conversation, most relevant first. Empty array if none fit, ' +
+            'or if "meals" is used instead — in particular, always empty whenever the question is about a specific ' +
+            'meal of the day (breakfast/lunch/dinner/snack), since that always uses "meals" instead.',
           items: {
             type: 'object',
             properties: {
@@ -113,9 +116,10 @@ function systemPrompt(lang: string, mode: string, personality: string): string {
     ` ` +
     `If you need more info before you can answer well (which meal, which goal, which restriction, etc.), keep ` +
     `that question itself very short and put 2-4 short tappable choices in "options" (1-3 words each, e.g. ` +
-    `"Breakfast" / "Lunch" / "Dinner") instead of listing the choices inside the sentence, so they can tap ` +
-    `instead of typing. Only use "options" for that kind of clarifying question — leave it empty once you give ` +
-    `a real answer, foods, or meals. ` +
+    `"Breakfast" / "Lunch" / "Dinner" / "Snack") instead of listing the choices inside the sentence, so they can ` +
+    `tap instead of typing. When the choices are meal times, always offer all four — breakfast, lunch, dinner ` +
+    `AND snack — never drop snack from the list. Only use "options" for that kind of clarifying question — leave ` +
+    `it empty once you give a real answer, foods, or meals. ` +
     `If the latest message is just a short acknowledgment, decline, or farewell (e.g. "no thanks", "okay", ` +
     `"bye") rather than an actual nutrition question — including replying to something YOU said earlier in ` +
     `this history, like offering tips or a challenge — send back a short acknowledgment that still matches ` +
@@ -125,11 +129,15 @@ function systemPrompt(lang: string, mode: string, personality: string): string {
     `and never ask why they're not answering or not giving you something — they don't owe you an answer to ` +
     `something you asked. ` +
     `Whenever they ask what to eat for a specific meal of the day — breakfast, lunch, dinner, or a snack, ` +
-    `whether named directly or picked from your own "options" chips — always answer with up to 3 full meal ` +
-    `ideas in "meals" (never single disconnected items in "foods"), each a realistic combination that makes ` +
-    `sense as that whole meal (e.g. for breakfast: "Eggs, toast & avocado", not just "Eggs" alone), with a ` +
-    `short concrete name, a short reason it fits their goal, and a realistic estimate of its total calories, ` +
-    `protein, carbs and fat. ` +
+    `whether named directly or picked from your own "options" chips — this is a MEAL question, not a food ` +
+    `question: you MUST use "meals" and leave "foods" empty. This applies even to a bare one-word reply like ` +
+    `just "breakfast" — that alone always means "what should I eat for breakfast", never "suggest single ` +
+    `breakfast foods". Answer with up to 3 full meal ideas in "meals", each a realistic combination that makes ` +
+    `sense as that whole meal (e.g. for breakfast: "Eggs, toast & avocado", NOT single disconnected items like ` +
+    `"Eggs" / "Yogurt" / "Oatmeal" each on their own), with a short concrete name, a short reason it fits their ` +
+    `goal, and a realistic estimate of its total calories, protein, carbs and fat. Use "foods" only when they ` +
+    `ask for a single ingredient or food type with no meal-time attached (e.g. "what's a good source of ` +
+    `protein"). ` +
     `Whenever they instead ask for a single food recommendation not tied to a specific meal (or the answer ` +
     `naturally calls for specific standalone foods, e.g. "what's good for energy" or "what fruit is highest ` +
     `in vitamin C"), suggest up to 4 specific whole foods in "foods", each with a short reason — these render ` +
