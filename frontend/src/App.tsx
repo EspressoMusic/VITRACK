@@ -71,41 +71,59 @@ function AppShell() {
     // Also reruns on tab change: panels like CalendarPanel mutate data without bumping
     // refreshSignal, so without this the nav badge can go stale relative to the panel the
     // user is actually looking at.
-    Promise.all([getAllMeals(), getAllWorkouts(), getTodaysBotMood()]).then(([meals, workouts, mood]) => {
-      const { loggedDayCount, ranked, weeklyCompletion } = computeWeeklyInsights(meals, workouts)
-      const deficientCount = ranked.filter((r) => coverageStatus(r.percent) !== 'good').length
-      maybeNotifyVitaminStatus({ weeklyCompletion, deficientCount, loggedDayCount })
-      setWeeklyCompletion(weeklyCompletion)
-      // Same "something to be upset about" condition ChatPanel uses to turn the header red —
-      // mirrored here so the chat tab icon can flag it while the user is on a different tab.
-      const isAngryMood = getBotPersonality() === 'superAngry' && (!!mood.junkFoodName || mood.challengeBroken)
-      // Challenge start/completion greetings are queued by CalendarPanel as one-shot flags for
-      // ChatPanel to consume on next open (see challengeAnnounce.ts) — peeked (not consumed)
-      // here too, so the bot icon/toast can flag them before the user ever opens chat.
-      const startedChallenge = peekPendingChallengeAnnounce()
-      const completedChallenge = peekPendingChallengeCompleted()
-      // Unprompted check-ins (see botCheckIn.ts) are the third source of a bot-initiated message
-      // besides these two — peeked the same way so the badge doesn't miss them.
-      const checkInPending = tab !== 'chat' && peekShouldSendCheckIn()
-      setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge || checkInPending)
-      // Pop the heads-up card at most once per distinct trigger so it doesn't reappear on every
-      // tab switch while the same thing (junk food, broken challenge, pending greeting) stands.
-      if (tab === 'chat') {
-        // already in the panel — nothing to surface over itself
-      } else if (isAngryMood && shouldShowBotAlertToast(mood)) {
-        setToastAlert({ kind: 'angry', mood })
-        markBotAlertToastSeen(mood)
-      } else if (startedChallenge && shouldShowChallengeToast('started', startedChallenge)) {
-        setToastAlert({ kind: 'challengeStarted', challengeName: startedChallenge })
-        markChallengeToastSeen('started', startedChallenge)
-      } else if (completedChallenge && shouldShowChallengeToast('completed', completedChallenge)) {
-        setToastAlert({ kind: 'challengeCompleted', challengeName: completedChallenge })
-        markChallengeToastSeen('completed', completedChallenge)
-      } else if (checkInPending) {
-        setToastAlert({ kind: 'checkIn' })
-        markCheckInSent()
-      }
-    })
+    Promise.all([getAllMeals(), getAllWorkouts()])
+      .then(([meals, workouts]) => {
+        const { loggedDayCount, ranked, weeklyCompletion } = computeWeeklyInsights(meals, workouts)
+        const deficientCount = ranked.filter((r) => coverageStatus(r.percent) !== 'good').length
+        maybeNotifyVitaminStatus({ weeklyCompletion, deficientCount, loggedDayCount })
+        setWeeklyCompletion(weeklyCompletion)
+      })
+      .catch(() => {
+        // Insights are a nice-to-have read — a failed fetch here must not take down the
+        // bot-alert effect below, which used to share this same promise chain.
+      })
+  }, [refreshSignal, authLoading, tab])
+
+  useEffect(() => {
+    if (authLoading) return
+    // Challenge start/completion greetings are queued by CalendarPanel as one-shot flags for
+    // ChatPanel to consume on next open (see challengeAnnounce.ts) — peeked (not consumed)
+    // here too, so the bot icon/toast can flag them before the user ever opens chat. Read
+    // synchronously so a slow or failed network call below can never cause these to be missed.
+    const startedChallenge = peekPendingChallengeAnnounce()
+    const completedChallenge = peekPendingChallengeCompleted()
+    // Unprompted check-ins (see botCheckIn.ts) are the third source of a bot-initiated message
+    // besides these two — peeked the same way so the badge doesn't miss them.
+    const checkInPending = tab !== 'chat' && peekShouldSendCheckIn()
+
+    getTodaysBotMood()
+      .then((mood) => ({
+        mood,
+        // Same "something to be upset about" condition ChatPanel uses to turn the header red —
+        // mirrored here so the chat tab icon can flag it while the user is on a different tab.
+        isAngryMood: getBotPersonality() === 'superAngry' && (!!mood.junkFoodName || mood.challengeBroken),
+      }))
+      .catch(() => ({ mood: null, isAngryMood: false }))
+      .then(({ mood, isAngryMood }) => {
+        setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge || checkInPending)
+        // Pop the heads-up card at most once per distinct trigger so it doesn't reappear on every
+        // tab switch while the same thing (junk food, broken challenge, pending greeting) stands.
+        if (tab === 'chat') {
+          // already in the panel — nothing to surface over itself
+        } else if (isAngryMood && mood && shouldShowBotAlertToast(mood)) {
+          setToastAlert({ kind: 'angry', mood })
+          markBotAlertToastSeen(mood)
+        } else if (startedChallenge && shouldShowChallengeToast('started', startedChallenge)) {
+          setToastAlert({ kind: 'challengeStarted', challengeName: startedChallenge })
+          markChallengeToastSeen('started', startedChallenge)
+        } else if (completedChallenge && shouldShowChallengeToast('completed', completedChallenge)) {
+          setToastAlert({ kind: 'challengeCompleted', challengeName: completedChallenge })
+          markChallengeToastSeen('completed', completedChallenge)
+        } else if (checkInPending) {
+          setToastAlert({ kind: 'checkIn' })
+          markCheckInSent()
+        }
+      })
   }, [refreshSignal, authLoading, tab])
 
   // Opening the chat tab means the user is now "in the panel" — dismiss the heads-up card so

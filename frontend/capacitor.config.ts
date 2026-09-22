@@ -12,10 +12,6 @@ const config: CapacitorConfig = {
     backgroundColor: '#fde3a3',
     contentInset: 'never',
   },
-  server: {
-    url: 'http://localhost:5173',
-    cleartext: true,
-  },
   plugins: {
     SplashScreen: {
       backgroundColor: '#fde3a3',
