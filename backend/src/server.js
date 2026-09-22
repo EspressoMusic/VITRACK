@@ -70,7 +70,7 @@ app.post('/api/nutrition-chat', async (req, res) => {
     })
   }
 
-  const { messages, lang, mode, personality } = req.body || {}
+  const { messages, lang, mode, personality, calorieGoal, proteinGoal } = req.body || {}
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Request body must include a non-empty "messages" array.' })
   }
@@ -79,8 +79,11 @@ app.post('/api/nutrition-chat', async (req, res) => {
     .filter((m) => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string')
     .slice(-10)
 
+  const resolvedCalorieGoal = typeof calorieGoal === 'number' && calorieGoal > 0 ? Math.round(calorieGoal) : 2000
+  const resolvedProteinGoal = typeof proteinGoal === 'number' && proteinGoal > 0 ? Math.round(proteinGoal) : 90
+
   try {
-    const result = await askNutritionBot(history, lang || 'en', mode, personality)
+    const result = await askNutritionBot(history, lang || 'en', mode, personality, resolvedCalorieGoal, resolvedProteinGoal)
     res.json(result)
   } catch (err) {
     console.error('Nutrition chat failed:', err)

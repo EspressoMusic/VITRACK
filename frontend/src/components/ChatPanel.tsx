@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NUTRITION_CHAT_STRINGS } from '../lib/i18n/nutritionChat'
 import { SUPERFOODS_PANEL_CHROME } from '../lib/i18n/superfoodsPanel'
-import { askNutritionBot, AnalyzeError, type ChatFoodSuggestion, type ChatMealSuggestion } from '../lib/api'
+import { askNutritionBot, AnalyzeError, type ChatDayPlan, type ChatFoodSuggestion, type ChatMealSuggestion } from '../lib/api'
+import { macroTargetFor } from '../lib/macros'
 import { getSavedMeals, saveMeal, unsaveMeal, type SavedMeal } from '../lib/savedMeals'
 import { getSavedChatFoods, saveChatFood, unsaveChatFood, type SavedChatFood } from '../lib/savedChatFoods'
 import { getBotPersonality, setBotPersonality, type BotPersonality } from '../lib/botPersonality'
@@ -294,6 +295,90 @@ function ChatMealGrid({
           caloriesLabel={caloriesLabel}
         />
       ))}
+    </div>
+  )
+}
+
+/** A full day's schedule — breakfast, lunch, dinner and snacks, each as its own labeled row of
+ *  the same 2-per-row meal tiles ChatMealGrid uses — plus a totals bar comparing the plan's
+ *  summed calories/protein against the user's daily goal. Shown instead of ChatMealGrid when
+ *  the bot returns a "dayPlan" rather than a flat "meals" list. */
+function ChatDayPlanView({
+  plan,
+  savedMealNames,
+  onToggleSave,
+  onOpenDetail,
+  saveLabel,
+  unsaveLabel,
+  caloriesLabel,
+  proteinLabel,
+  slotLabels,
+  totalLabel,
+  targetCalories,
+  targetProteinG,
+}: {
+  plan: ChatDayPlan
+  savedMealNames: Set<string>
+  onToggleSave: (meal: ChatMealSuggestion) => void
+  onOpenDetail: (meal: ChatMealSuggestion) => void
+  saveLabel: string
+  unsaveLabel: string
+  caloriesLabel: string
+  proteinLabel: string
+  slotLabels: { breakfast: string; lunch: string; dinner: string; snacks: string }
+  totalLabel: string
+  targetCalories: number
+  targetProteinG: number
+}) {
+  const slots = (
+    [
+      ['breakfast', slotLabels.breakfast, plan.breakfast],
+      ['lunch', slotLabels.lunch, plan.lunch],
+      ['dinner', slotLabels.dinner, plan.dinner],
+      ['snacks', slotLabels.snacks, plan.snacks],
+    ] as const
+  ).filter(([, , meals]) => meals.length > 0)
+
+  const allMeals = [...plan.breakfast, ...plan.lunch, ...plan.dinner, ...plan.snacks]
+  const totalCalories = allMeals.reduce((sum, m) => sum + m.calories, 0)
+  const totalProteinG = allMeals.reduce((sum, m) => sum + m.proteinG, 0)
+
+  return (
+    <div className="flex w-full max-w-[92%] flex-col gap-2 rounded-2xl p-2" style={{ backgroundColor: CHAT_WALLPAPER }}>
+      {slots.map(([key, label, meals]) => (
+        <div key={key} className="flex flex-col gap-1">
+          <span className="px-0.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--accent-strong)' }}>
+            {label}
+          </span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {meals.map((meal, mi) => (
+              <ChatMealCard
+                key={mi}
+                meal={meal}
+                saved={savedMealNames.has(meal.name)}
+                onToggleSave={() => onToggleSave(meal)}
+                onOpenDetail={() => onOpenDetail(meal)}
+                saveLabel={saveLabel}
+                unsaveLabel={unsaveLabel}
+                caloriesLabel={caloriesLabel}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+      <div
+        className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 rounded-xl px-2 py-1.5 text-center text-[10px] font-bold"
+        style={{ backgroundColor: 'var(--surface-cream)', color: 'var(--text-primary)' }}
+      >
+        <span>{totalLabel}:</span>
+        <span>
+          {Math.round(totalCalories)}/{Math.round(targetCalories)} {caloriesLabel}
+        </span>
+        <span>·</span>
+        <span>
+          {Math.round(totalProteinG)}/{Math.round(targetProteinG)} {proteinLabel}
+        </span>
+      </div>
     </div>
   )
 }
@@ -692,13 +777,15 @@ export function ChatPanel() {
     }
 
     try {
+      const goals = { calories: macroTargetFor('calories'), proteinG: macroTargetFor('proteinG') }
       const res = await askNutritionBot(
         next.map(({ role, content }) => ({ role, content })),
         lang,
         'nutrition',
-        personality
+        personality,
+        goals
       )
-      appendReply({ role: 'assistant', content: res.reply, options: res.options, foods: res.foods, meals: res.meals })
+      appendReply({ role: 'assistant', content: res.reply, options: res.options, foods: res.foods, meals: res.meals, dayPlan: res.dayPlan })
     } catch (err) {
       appendReply({ role: 'assistant', content: err instanceof AnalyzeError ? err.message : t.errorMessage })
     } finally {
@@ -789,6 +876,28 @@ export function ChatPanel() {
                   caloriesLabel={MACRO_LABELS[lang].calories}
                 />
               )}
+              {turn.dayPlan &&
+                turn.dayPlan.breakfast.length + turn.dayPlan.lunch.length + turn.dayPlan.dinner.length + turn.dayPlan.snacks.length > 0 && (
+                  <ChatDayPlanView
+                    plan={turn.dayPlan}
+                    savedMealNames={savedMealNames}
+                    onToggleSave={toggleSavedMeal}
+                    onOpenDetail={setDetailMeal}
+                    saveLabel={st.save}
+                    unsaveLabel={st.unsave}
+                    caloriesLabel={MACRO_LABELS[lang].calories}
+                    proteinLabel={MACRO_LABELS[lang].proteinG}
+                    slotLabels={{
+                      breakfast: t.dayPlanBreakfast,
+                      lunch: t.dayPlanLunch,
+                      dinner: t.dayPlanDinner,
+                      snacks: t.dayPlanSnacks,
+                    }}
+                    totalLabel={t.dayPlanTotal}
+                    targetCalories={macroTargetFor('calories')}
+                    targetProteinG={macroTargetFor('proteinG')}
+                  />
+                )}
             </div>
           ))}
           {loading && (

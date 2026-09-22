@@ -135,24 +135,38 @@ export interface ChatMealSuggestion {
   recipe: ChatMealRecipe
 }
 
+/** A full day's worth of meals — one breakfast/lunch/dinner plus 1-2 snacks — as suggested by
+ *  the bot when asked to plan/organize the whole day at once, rather than a single meal. */
+export interface ChatDayPlan {
+  breakfast: ChatMealSuggestion[]
+  lunch: ChatMealSuggestion[]
+  dinner: ChatMealSuggestion[]
+  snacks: ChatMealSuggestion[]
+}
+
 export interface ChatReply {
   reply: string
   options: string[]
   foods: ChatFoodSuggestion[]
   meals: ChatMealSuggestion[]
+  dayPlan: ChatDayPlan
 }
 
 /** General nutrition Q&A for the Superfoods chat — sends the running conversation and gets
  *  back a conversational reply plus any specific foods worth showing as tappable cards.
  *  Pass mode: 'motivation' to get the workout-motivation coach persona instead (used by the
  *  Motivation Corner chat), which never returns food suggestions. `personality` shifts the
- *  reply's tone (nutrition mode only) to match the user's chosen bot personality. */
+ *  reply's tone (nutrition mode only) to match the user's chosen bot personality. `goals` (the
+ *  user's daily calorie/protein targets) lets the bot size a full-day plan to fit them when asked. */
 export async function askNutritionBot(
   messages: ChatMessage[],
   lang: string,
   mode: 'nutrition' | 'motivation' = 'nutrition',
-  personality: string = 'normal'
+  personality: string = 'normal',
+  goals?: { calories: number; proteinG: number }
 ): Promise<ChatReply> {
-  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang, mode, personality })
-  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang, mode, personality })
+  const calorieGoal = goals?.calories
+  const proteinGoal = goals?.proteinG
+  if (useSupabase) return invokeEdgeFunction<ChatReply>('nutrition-chat', { messages, lang, mode, personality, calorieGoal, proteinGoal })
+  return postLocal<ChatReply>('/api/nutrition-chat', { messages, lang, mode, personality, calorieGoal, proteinGoal })
 }

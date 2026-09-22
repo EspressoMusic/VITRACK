@@ -9,6 +9,39 @@ const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
 const LANGUAGE_NAMES = { en: 'English', he: 'Hebrew', ar: 'Arabic' }
 
+// Shared shape for one full meal idea — used both by "meals" (single meal-of-day answers) and
+// by each slot inside "dayPlan" (a full day's schedule), so the schema isn't duplicated 5x.
+const MEAL_ITEM_SCHEMA = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', description: 'Short meal name in the reply language, e.g. "Grilled chicken, rice & broccoli".' },
+    emoji: { type: 'string', description: 'Single emoji best representing this meal.' },
+    tip: { type: 'string', description: 'One short clause on why this meal fits their goal, e.g. "high protein to support muscle growth".' },
+    calories: { type: 'number', description: 'Realistic estimated total calories for this meal.' },
+    proteinG: { type: 'number', description: 'Estimated grams of protein.' },
+    carbsG: { type: 'number', description: 'Estimated grams of carbs.' },
+    fatG: { type: 'number', description: 'Estimated grams of fat.' },
+    recipe: {
+      type: 'object',
+      description: 'A simple recipe for this exact meal — a short ingredient list and a few easy, beginner-friendly prep steps.',
+      properties: {
+        ingredients: {
+          type: 'array',
+          description: 'Short ingredient list with rough quantities, in the reply language including the unit (e.g. "200g chicken breast" in English, but "200 גרם חזה עוף" in Hebrew — never leave the unit in Latin letters when answering in another language).',
+          items: { type: 'string' },
+        },
+        steps: {
+          type: 'array',
+          description: 'Short, simple step-by-step prep instructions, easy for a beginner cook to follow.',
+          items: { type: 'string' },
+        },
+      },
+      required: ['ingredients', 'steps'],
+    },
+  },
+  required: ['name', 'emoji', 'tip', 'calories', 'proteinG', 'carbsG', 'fatG', 'recipe'],
+}
+
 const CHAT_TOOL = {
   type: 'function',
   function: {
@@ -21,12 +54,12 @@ const CHAT_TOOL = {
         options: {
           type: 'array',
           description:
-            'Up to 4 short tappable choice labels (1-3 words each, e.g. "Breakfast", "Lunch", "Dinner", "Snack" — translate these into the reply language, never leave them in English) to offer when "reply" is a clarifying question you need answered before giving a real answer — lets the user tap instead of typing. Empty array whenever "reply" is already a direct answer, or whenever "foods"/"meals" is used instead.',
+            'Up to 4 short tappable choice labels (1-3 words each, e.g. "Breakfast", "Lunch", "Dinner", "Snack" — translate these into the reply language, never leave them in English) to offer when "reply" is a clarifying question you need answered before giving a real answer — lets the user tap instead of typing. Empty array whenever "reply" is already a direct answer, or whenever "foods"/"meals"/"dayPlan" is used instead.',
           items: { type: 'string' },
         },
         foods: {
           type: 'array',
-          description: 'Up to 4 specific single foods that fit the conversation, most relevant first. Empty array if none fit, or if "meals" is used instead.',
+          description: 'Up to 4 specific single foods that fit the conversation, most relevant first. Empty array if none fit, or if "meals"/"dayPlan" is used instead.',
           items: {
             type: 'object',
             properties: {
@@ -40,40 +73,26 @@ const CHAT_TOOL = {
         meals: {
           type: 'array',
           description:
-            'Up to 3 full meal ideas when the user asks for a whole meal rather than a single food — e.g. a good dinner for bulking/mass gain, a good dinner for weight loss, a high-protein lunch, etc. Empty array if none fit, or if "foods" is used instead.',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Short meal name in the reply language, e.g. "Grilled chicken, rice & broccoli".' },
-              emoji: { type: 'string', description: 'Single emoji best representing this meal.' },
-              tip: { type: 'string', description: 'One short clause on why this meal fits their goal, e.g. "high protein to support muscle growth".' },
-              calories: { type: 'number', description: 'Realistic estimated total calories for this meal.' },
-              proteinG: { type: 'number', description: 'Estimated grams of protein.' },
-              carbsG: { type: 'number', description: 'Estimated grams of carbs.' },
-              fatG: { type: 'number', description: 'Estimated grams of fat.' },
-              recipe: {
-                type: 'object',
-                description: 'A simple recipe for this exact meal — a short ingredient list and a few easy, beginner-friendly prep steps.',
-                properties: {
-                  ingredients: {
-                    type: 'array',
-                    description: 'Short ingredient list with rough quantities, in the reply language including the unit (e.g. "200g chicken breast" in English, but "200 גרם חזה עוף" in Hebrew — never leave the unit in Latin letters when answering in another language).',
-                    items: { type: 'string' },
-                  },
-                  steps: {
-                    type: 'array',
-                    description: 'Short, simple step-by-step prep instructions, easy for a beginner cook to follow.',
-                    items: { type: 'string' },
-                  },
-                },
-                required: ['ingredients', 'steps'],
-              },
-            },
-            required: ['name', 'emoji', 'tip', 'calories', 'proteinG', 'carbsG', 'fatG', 'recipe'],
+            'Up to 3 full meal ideas when the user asks for a whole meal rather than a single food — e.g. a good dinner for bulking/mass gain, a good dinner for weight loss, a high-protein lunch, etc. Empty array if none fit, or if "foods"/"dayPlan" is used instead.',
+          items: MEAL_ITEM_SCHEMA,
+        },
+        dayPlan: {
+          type: 'object',
+          description:
+            'A full day of eating — one breakfast, one lunch, one dinner, and 1-2 snacks — filled in ONLY when the ' +
+            'user asks you to plan or organize their WHOLE DAY of eating at once (a full day\'s menu/schedule), not ' +
+            'for a single meal or food question. Leave every array inside empty otherwise, and leave "meals"/"foods" ' +
+            'empty whenever this is filled.',
+          properties: {
+            breakfast: { type: 'array', description: 'Exactly 1 item when filling dayPlan, otherwise empty.', items: MEAL_ITEM_SCHEMA },
+            lunch: { type: 'array', description: 'Exactly 1 item when filling dayPlan, otherwise empty.', items: MEAL_ITEM_SCHEMA },
+            dinner: { type: 'array', description: 'Exactly 1 item when filling dayPlan, otherwise empty.', items: MEAL_ITEM_SCHEMA },
+            snacks: { type: 'array', description: '1-2 items when filling dayPlan, otherwise empty.', items: MEAL_ITEM_SCHEMA },
           },
+          required: ['breakfast', 'lunch', 'dinner', 'snacks'],
         },
       },
-      required: ['reply', 'options', 'foods', 'meals'],
+      required: ['reply', 'options', 'foods', 'meals', 'dayPlan'],
     },
   },
 }
@@ -96,7 +115,7 @@ function personalityTone(personality) {
   }
 }
 
-function systemPrompt(lang, mode, personality) {
+function systemPrompt(lang, mode, personality, calorieGoal, proteinGoal) {
   const languageName = LANGUAGE_NAMES[lang] || 'English'
   if (mode === 'motivation') {
     return (
@@ -124,6 +143,8 @@ function systemPrompt(lang, mode, personality) {
     `"I'd be happy to help." Get straight to the point.` +
     personalityTone(personality) +
     ` ` +
+    `The user's daily target is about ${calorieGoal} calories and ${proteinGoal}g of protein — keep this in mind ` +
+    `for anything meal-related, especially when sizing a "dayPlan" below. ` +
     `If you need more info before you can answer well (which meal, which goal, which restriction, etc.), keep ` +
     `that question itself very short and put 2-4 short tappable choices in "options" (1-3 words each, e.g. ` +
     `"Breakfast" / "Lunch" / "Dinner", but written in ${languageName} — never leave "options" in English when ` +
@@ -135,7 +156,7 @@ function systemPrompt(lang, mode, personality) {
     `this history, like offering tips or a challenge — send back a short acknowledgment that still matches ` +
     `your current attitude from above (terse, unimpressed and a little annoyed if angry/superAngry, warm if ` +
     `veryNice, plain if normal) — never default to a cheerful "okay, good luck!" regardless of that attitude. ` +
-    `Leave "options", "foods" and "meals" empty. Never reinterpret a plain acknowledgment as a new question, ` +
+    `Leave "options", "foods", "meals" and "dayPlan" empty. Never reinterpret a plain acknowledgment as a new question, ` +
     `and never ask why they're not answering or not giving you something — they don't owe you an answer to ` +
     `something you asked. ` +
     `Whenever they ask what to eat for a specific meal of the day — breakfast, lunch, dinner, or a snack, ` +
@@ -149,14 +170,23 @@ function systemPrompt(lang, mode, personality) {
     `naturally calls for specific standalone foods, e.g. "what's good for energy" or "what fruit is highest ` +
     `in vitamin C"), suggest up to 4 specific whole foods in "foods", each with a short reason — these render ` +
     `as tappable cards, so keep names short and concrete (e.g. "Salmon", not "fatty fish in general"). ` +
-    `Whenever "foods" or "meals" is filled in, keep "reply" itself to one very short intro clause (e.g. "Here ` +
-    `are a few ideas") — never restate the item names, reasons, calories, macros, or recipe steps as text in ` +
+    `Whenever they instead ask you to plan or organize their WHOLE DAY of eating at once — a full day's menu or ` +
+    `schedule covering breakfast, lunch, dinner AND snacks together, not just one meal (e.g. "plan my whole day", ` +
+    `"build me a menu for today", "organize all my meals for the day") — this is a DAY PLAN question: fill ` +
+    `"dayPlan" instead of "meals"/"foods" with exactly one breakfast, one lunch, one dinner, and 1-2 snacks ` +
+    `(never skip snacks), each using the same short name/emoji/tip/calories/proteinG/carbsG/fatG/recipe fields as ` +
+    `a single meal. Size these together so the combined calories and combined protein across the whole day land ` +
+    `close to the daily target given above (within about 10%), with snacks smaller than the main meals. This is ` +
+    `different from a single meal-of-day question above — only use "dayPlan" when they're clearly asking for the ` +
+    `whole day at once, not one meal. ` +
+    `Whenever "foods", "meals" or "dayPlan" is filled in, keep "reply" itself to one very short intro clause (e.g. ` +
+    `"Here are a few ideas") — never restate the item names, reasons, calories, macros, or recipe steps as text in ` +
     `"reply", since the cards already show all of that; repeating it there just duplicates the same ` +
     `information twice. ` +
     `The same goes for a full meal asked for by goal instead of time of day — e.g. a good dinner for ` +
     `bulking/mass gain, a good dinner for weight loss, a high-protein lunch, what to eat before/after a ` +
-    `workout — use "meals" the same way. Only fill one of "foods" or "meals" per reply, whichever the ` +
-    `question calls for, and leave the other empty. ` +
+    `workout — use "meals" the same way. Only fill one of "foods", "meals" or "dayPlan" per reply, whichever the ` +
+    `question calls for, and leave the other two empty. ` +
     `Do not give medical diagnoses, prescribe treatment or medication, or replace professional medical advice, ` +
     `and don't answer anything outside general nutrition/fitness. Whenever a question asks for exactly that — ` +
     `a diagnosis, a medication or dosage call, or any topic you're not allowed to advise on — say plainly and ` +
@@ -165,13 +195,13 @@ function systemPrompt(lang, mode, personality) {
   )
 }
 
-export async function askNutritionBot(history, lang, mode = 'nutrition', personality = 'normal') {
+export async function askNutritionBot(history, lang, mode = 'nutrition', personality = 'normal', calorieGoal = 2000, proteinGoal = 90) {
   const client = new OpenAI()
   const response = await withOpenAIRetry(() =>
     client.chat.completions.create({
       model: MODEL,
       max_tokens: 1000,
-      messages: [{ role: 'system', content: systemPrompt(lang, mode, personality) }, ...history],
+      messages: [{ role: 'system', content: systemPrompt(lang, mode, personality, calorieGoal, proteinGoal) }, ...history],
       tools: [CHAT_TOOL],
       tool_choice: { type: 'function', function: { name: 'report_nutrition_chat_reply' } },
     })
@@ -198,6 +228,26 @@ export async function askNutritionBot(history, lang, mode = 'nutrition', persona
           .slice(0, 10)
       : []
 
+  const mapMeals = (raw, max) =>
+    Array.isArray(raw)
+      ? raw
+          .filter((m) => typeof m?.name === 'string' && m.name.trim())
+          .slice(0, max)
+          .map((m) => ({
+            name: m.name.trim(),
+            emoji: typeof m.emoji === 'string' && m.emoji ? m.emoji : '🍽️',
+            tip: typeof m.tip === 'string' ? m.tip.trim() : '',
+            calories: toNumber(m.calories),
+            proteinG: toNumber(m.proteinG),
+            carbsG: toNumber(m.carbsG),
+            fatG: toNumber(m.fatG),
+            recipe: {
+              ingredients: toStringList(m.recipe?.ingredients),
+              steps: toStringList(m.recipe?.steps),
+            },
+          }))
+      : []
+
   return {
     reply: typeof parsed.reply === 'string' && parsed.reply.trim() ? parsed.reply.trim() : '...',
     options: Array.isArray(parsed.options)
@@ -216,23 +266,12 @@ export async function askNutritionBot(history, lang, mode = 'nutrition', persona
             tip: typeof f.tip === 'string' ? f.tip.trim() : '',
           }))
       : [],
-    meals: Array.isArray(parsed.meals)
-      ? parsed.meals
-          .filter((m) => typeof m?.name === 'string' && m.name.trim())
-          .slice(0, 3)
-          .map((m) => ({
-            name: m.name.trim(),
-            emoji: typeof m.emoji === 'string' && m.emoji ? m.emoji : '🍽️',
-            tip: typeof m.tip === 'string' ? m.tip.trim() : '',
-            calories: toNumber(m.calories),
-            proteinG: toNumber(m.proteinG),
-            carbsG: toNumber(m.carbsG),
-            fatG: toNumber(m.fatG),
-            recipe: {
-              ingredients: toStringList(m.recipe?.ingredients),
-              steps: toStringList(m.recipe?.steps),
-            },
-          }))
-      : [],
+    meals: mapMeals(parsed.meals, 3),
+    dayPlan: {
+      breakfast: mapMeals(parsed.dayPlan?.breakfast, 1),
+      lunch: mapMeals(parsed.dayPlan?.lunch, 1),
+      dinner: mapMeals(parsed.dayPlan?.dinner, 1),
+      snacks: mapMeals(parsed.dayPlan?.snacks, 2),
+    },
   }
 }

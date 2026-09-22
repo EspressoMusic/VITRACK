@@ -28,6 +28,11 @@ export interface NutritionChatStrings {
   differentChallengeOption: string
   recipeIngredients: string
   recipeSteps: string
+  dayPlanBreakfast: string
+  dayPlanLunch: string
+  dayPlanDinner: string
+  dayPlanSnacks: string
+  dayPlanTotal: string
   personality: {
     heading: string
     description: string
@@ -46,7 +51,7 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     sendAriaLabel: 'Send',
     closeAriaLabel: 'Close',
     errorMessage: 'Something went wrong. Please try again.',
-    greeting: 'Hi! Ask me anything about food or nutrition 🙂',
+    greeting: 'Hi! Ask me anything about food, or tell me to plan your whole day 🙂',
     startButton: 'Ask the bot 💬',
     expandAriaLabel: 'Expand',
     collapseAriaLabel: 'Collapse',
@@ -95,6 +100,11 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     differentChallengeOption: 'Suggest a different one',
     recipeIngredients: 'Ingredients',
     recipeSteps: 'How to make it',
+    dayPlanBreakfast: 'Breakfast',
+    dayPlanLunch: 'Lunch',
+    dayPlanDinner: 'Dinner',
+    dayPlanSnacks: 'Snacks',
+    dayPlanTotal: 'Day total',
     personality: {
       heading: 'Bot personality',
       description: 'Choose how the bot reacts when you log something unhealthy.',
@@ -111,7 +121,7 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     sendAriaLabel: 'שליחה',
     closeAriaLabel: 'סגירה',
     errorMessage: 'משהו השתבש. נסו שוב.',
-    greeting: 'היי! אפשר לשאול אותי כל דבר על אוכל ותזונה 🙂',
+    greeting: 'היי! אפשר לשאול אותי כל דבר על אוכל, או לבקש שאסדר לך תפריט ליום שלם 🙂',
     startButton: 'שאל את הבוט 💬',
     expandAriaLabel: 'הגדלה',
     collapseAriaLabel: 'הקטנה',
@@ -153,6 +163,11 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     differentChallengeOption: 'תציע לי אתגר אחר',
     recipeIngredients: 'מרכיבים',
     recipeSteps: 'איך מכינים',
+    dayPlanBreakfast: 'ארוחת בוקר',
+    dayPlanLunch: 'ארוחת צהריים',
+    dayPlanDinner: 'ארוחת ערב',
+    dayPlanSnacks: 'נשנושים',
+    dayPlanTotal: 'סה"כ ליום',
     personality: {
       heading: 'אישיות הבוט',
       description: 'בחרו איך הבוט יגיב כשתתעדו משהו לא בריא.',
@@ -169,7 +184,7 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     sendAriaLabel: 'إرسال',
     closeAriaLabel: 'إغلاق',
     errorMessage: 'حدث خطأ ما. حاول مرة أخرى.',
-    greeting: 'مرحبًا! اسألني أي شيء عن الطعام والتغذية 🙂',
+    greeting: 'مرحبًا! اسألني أي شيء عن الطعام، أو اطلب مني تنظيم قائمة ليوم كامل 🙂',
     startButton: 'اسأل البوت 💬',
     expandAriaLabel: 'تكبير',
     collapseAriaLabel: 'تصغير',
@@ -211,6 +226,11 @@ export const NUTRITION_CHAT_STRINGS: Record<Lang, NutritionChatStrings> = {
     differentChallengeOption: 'اقترح تحديًا آخر',
     recipeIngredients: 'المكونات',
     recipeSteps: 'طريقة التحضير',
+    dayPlanBreakfast: 'الفطور',
+    dayPlanLunch: 'الغداء',
+    dayPlanDinner: 'العشاء',
+    dayPlanSnacks: 'وجبات خفيفة',
+    dayPlanTotal: 'إجمالي اليوم',
     personality: {
       heading: 'شخصية البوت',
       description: 'اختر كيف يتفاعل البوت عندما تسجل شيئًا غير صحي.',

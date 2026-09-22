@@ -1,4 +1,4 @@
-import type { ChatFoodSuggestion, ChatMealSuggestion } from './api'
+import type { ChatDayPlan, ChatFoodSuggestion, ChatMealSuggestion } from './api'
 import type { ChallengeTemplateId } from './nutritionChallengeTemplates'
 
 export interface ChatTurn {
@@ -7,6 +7,9 @@ export interface ChatTurn {
   options?: string[]
   foods?: ChatFoodSuggestion[]
   meals?: ChatMealSuggestion[]
+  /** A full-day meal schedule (breakfast/lunch/dinner/snacks), shown instead of "meals" when the
+   *  user asked the bot to plan the whole day at once. */
+  dayPlan?: ChatDayPlan
   /** Rendered in the bot's angry red styling instead of the normal bubble. */
   angry?: boolean
   /** Set when "options" is a confirm/different-one choice for this locally-generated challenge
