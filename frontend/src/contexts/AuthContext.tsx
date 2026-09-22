@@ -239,7 +239,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const width = Math.round(container.getBoundingClientRect().width) || 320
         window.google!.accounts.id.renderButton(container, { type: 'standard', width })
       })
-      .catch((err) => console.error('Google sign-in button failed to render:', err))
+      .catch((err) => {
+        // Branded widget failed to load/init (blocked script, unauthorized origin, FedCM
+        // unsupported on this browser, etc.) — without this, the button silently does
+        // nothing on click forever since nothing else is wired to it.
+        console.error('Google sign-in button failed to render:', err)
+        container.style.pointerEvents = 'auto'
+        container.onclick = () => {
+          supabase!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+        }
+      })
   }, [])
 
   async function signOut() {
