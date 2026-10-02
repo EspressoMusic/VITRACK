@@ -3,6 +3,7 @@ import type { Lang } from './lang'
 interface SettingsPanelStrings {
   title: string
   closeAriaLabel: string
+  openCalendarLabel: string
   account: {
     heading: string
     signOut: string
@@ -65,6 +66,7 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
   en: {
     title: 'Settings',
     closeAriaLabel: 'Close settings',
+    openCalendarLabel: 'Challenges & Calendar',
     account: {
       heading: 'Account',
       signOut: 'Sign out',
@@ -125,6 +127,7 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
   he: {
     title: 'הגדרות',
     closeAriaLabel: 'סגירת ההגדרות',
+    openCalendarLabel: 'יומן ואתגרים',
     account: {
       heading: 'חשבון',
       signOut: 'התנתקות',
@@ -185,6 +188,7 @@ export const SETTINGS_PANEL_STRINGS: Record<Lang, SettingsPanelStrings> = {
   ar: {
     title: 'الإعدادات',
     closeAriaLabel: 'إغلاق الإعدادات',
+    openCalendarLabel: 'التقويم والتحديات',
     account: {
       heading: 'الحساب',
       signOut: 'تسجيل الخروج',

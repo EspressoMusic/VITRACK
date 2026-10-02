@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -38,23 +38,21 @@ import {
 } from './lib/challengeAnnounce'
 import { BotAlertToast, type BotAlertPayload } from './components/BotAlertToast'
 
-// Lazy-loaded so the food-detection model (TensorFlow.js + COCO-SSD, several MB) ships in its
-// own chunk instead of blocking the initial app bundle for users who haven't reached this tab yet.
-const CameraPanel = lazy(() => import('./components/CameraPanel').then((m) => ({ default: m.CameraPanel })))
+// Temporarily disabled (bot heads-up toasts: angry rants, challenge greetings, water check-ins) —
+// flip back to true to restore. Underlying seen/sent bookkeeping still runs untouched below.
+const BOT_ALERT_TOASTS_ENABLED = false
 
 function AppShell() {
   const { lang } = useLanguage()
   const { loading: authLoading } = useAuth()
-  const [tab, setTab] = useState<Tab>('camera')
+  const [tab, setTab] = useState<Tab>('chat')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [weeklyCompletion, setWeeklyCompletion] = useState(0)
-  const [botAlert, setBotAlert] = useState(false)
   const [toastAlert, setToastAlert] = useState<BotAlertPayload | null>(null)
   const bumpRefresh = () => setRefreshSignal((n) => n + 1)
 
   const panelBg = {
-    camera: 'background-camera',
     calendar: 'background-plain',
     insights: 'background-insights',
     superfoods: 'background-plain',
@@ -105,7 +103,6 @@ function AppShell() {
       }))
       .catch(() => ({ mood: null, isAngryMood: false }))
       .then(({ mood, isAngryMood }) => {
-        setBotAlert(isAngryMood || !!startedChallenge || !!completedChallenge || checkInPending)
         // Pop the heads-up card at most once per distinct trigger so it doesn't reappear on every
         // tab switch while the same thing (junk food, broken challenge, pending greeting) stands.
         if (tab === 'chat') {
@@ -139,18 +136,13 @@ function AppShell() {
     >
       <main className="relative min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
-          {tab === 'camera' && (
-            <Suspense fallback={null}>
-              <CameraPanel onLogged={bumpRefresh} />
-            </Suspense>
-          )}
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} onChallengeUpdate={bumpRefresh} />}
-          {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} />}
+          {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} onLogged={bumpRefresh} />}
           {tab === 'superfoods' && <SuperfoodsPanel />}
           {tab === 'chat' && <ChatPanel />}
         </div>
 
-        {tab !== 'calendar' && tab !== 'superfoods' && tab !== 'chat' && !settingsOpen && (
+        {tab === 'insights' && !settingsOpen && (
           <button
             onClick={() => setSettingsOpen((open) => !open)}
             aria-label={navT.settings}
@@ -167,10 +159,14 @@ function AppShell() {
             onClose={() => setSettingsOpen(false)}
             onDataCleared={bumpRefresh}
             onNutrientModeChange={bumpRefresh}
+            onOpenCalendar={() => {
+              setTab('calendar')
+              setSettingsOpen(false)
+            }}
           />
         )}
 
-        {toastAlert && (
+        {BOT_ALERT_TOASTS_ENABLED && toastAlert && (
           <BotAlertToast
             alert={toastAlert}
             personality={getBotPersonality()}
@@ -192,7 +188,6 @@ function AppShell() {
         }}
         settingsActive={settingsOpen}
         insightsPercent={weeklyCompletion}
-        chatAlert={botAlert && tab !== 'chat'}
       />
     </div>
   )

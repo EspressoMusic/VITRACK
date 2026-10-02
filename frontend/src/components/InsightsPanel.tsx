@@ -1,33 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { MealEntry, NutrientId, WorkoutEntry } from '../types'
+import type { MealEntry, WorkoutEntry } from '../types'
 import { getAllMeals, getAllWorkouts } from '../lib/db'
 import { todayKey } from '../lib/date'
-import { coverageStatus } from '../lib/nutrients'
 import { computeWeeklyInsights } from '../lib/insights'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
-import { MACRO_LABELS } from '../lib/i18n/macros'
-import { CategoryRow } from './CategoryRow'
-import { NutrientDetailModal } from './NutrientDetailModal'
-import { MissingToGoalModal } from './MissingToGoalModal'
-import { NutrientBreakdownModal } from './NutrientBreakdownModal'
-import { WeeklyGoalGlass } from './WeeklyGoalGlass'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CheckIcon, CloseIcon } from './icons'
 
 const LAST_NO_DEFICIENCIES_REWARD_KEY = 'vitrack:lastNoDeficienciesReward'
 
-export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
+// Lazy-loaded so the food-detection model (TensorFlow.js + COCO-SSD, several MB) ships in its
+// own chunk instead of blocking the initial app bundle for users who haven't reached this tab yet.
+const CameraPanel = lazy(() => import('./CameraPanel').then((m) => ({ default: m.CameraPanel })))
+
+export function InsightsPanel({ refreshSignal, onLogged }: { refreshSignal: number; onLogged: () => void }) {
   const { lang } = useLanguage()
   const t = INSIGHTS_PANEL_STRINGS[lang]
-  const macroLabels = MACRO_LABELS[lang]
   const [meals, setMeals] = useState<MealEntry[]>([])
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>([])
   const [loaded, setLoaded] = useState(false)
-  const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
-  const [missingOpen, setMissingOpen] = useState(false)
-  const [breakdownOpen, setBreakdownOpen] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [noDeficienciesOpen, setNoDeficienciesOpen] = useState(false)
   const confettiFired = useRef(false)
@@ -41,11 +34,8 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
     })
   }, [refreshSignal])
 
-  const { ranked, weeklyCompletion, vitaminsPercent, macros } = useMemo(
-    () => computeWeeklyInsights(meals, workouts),
-    [meals, workouts]
-  )
-  const deficient = ranked.filter((r) => coverageStatus(r.percent) !== 'good')
+  const { ranked, weeklyCompletion, macros } = useMemo(() => computeWeeklyInsights(meals, workouts), [meals, workouts])
+  const deficient = ranked.filter((r) => r.percent < 90)
 
   useEffect(() => {
     if (!confettiFired.current && meals.length > 0 && weeklyCompletion === 100) {
@@ -70,60 +60,13 @@ export function InsightsPanel({ refreshSignal }: { refreshSignal: number }) {
 
   if (!loaded) return null
 
-  if (meals.length === 0) {
-    return (
-      <div className="mx-auto flex h-full max-w-[75%] flex-col items-center gap-2 pt-12 text-center">
-        <WeeklyGoalGlass percent={0} size={200} />
-      </div>
-    )
-  }
-
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col px-4 pb-1">
+    <div className="mx-auto flex h-full max-w-md flex-col">
       {showConfetti && <ConfettiBurst />}
-      <div className="mx-auto mb-1 flex shrink-0 flex-col items-center gap-1.5 text-center">
-        <div className="mt-10">
-          <WeeklyGoalGlass percent={weeklyCompletion} onClick={() => setMissingOpen(true)} size={148} />
-        </div>
-      </div>
 
-      <div className="mx-auto flex w-[90%] min-h-0 flex-1 flex-col justify-center gap-2 px-1.5 pb-28 pt-1.5">
-        <CategoryRow name={macroLabels.proteinG} icon="🥩" percent={macros.proteinG.percent} />
-        <CategoryRow name={macroLabels.carbsG} icon="🌾" percent={macros.carbsG.percent} />
-        <CategoryRow name={macroLabels.fatG} icon="🥑" percent={macros.fatG.percent} />
-        <CategoryRow name={t.vitaminsLabel} icon="🍊" percent={vitaminsPercent} onClick={() => setBreakdownOpen(true)} />
-      </div>
-
-      {selectedNutrient && (
-        <NutrientDetailModal
-          id={selectedNutrient}
-          amount={ranked.find((r) => r.id === selectedNutrient)?.avgAmount ?? 0}
-          onClose={() => setSelectedNutrient(null)}
-        />
-      )}
-
-      {missingOpen && (
-        <MissingToGoalModal
-          items={ranked.filter((r) => r.percent < 100)}
-          hasData={ranked.length > 0}
-          onClose={() => setMissingOpen(false)}
-          onSelect={(id) => {
-            setMissingOpen(false)
-            setSelectedNutrient(id)
-          }}
-        />
-      )}
-
-      {breakdownOpen && (
-        <NutrientBreakdownModal
-          items={ranked}
-          onClose={() => setBreakdownOpen(false)}
-          onSelect={(id) => {
-            setBreakdownOpen(false)
-            setSelectedNutrient(id)
-          }}
-        />
-      )}
+      <Suspense fallback={null}>
+        <CameraPanel onLogged={onLogged} weeklyRanked={ranked} weeklyMacros={macros} />
+      </Suspense>
 
       {noDeficienciesOpen &&
         createPortal(

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MEAL_TIME_EMOJI, MEAL_TIMES, SUPERFOODS, superfoodOfTheDay, type MealTime, type SuperfoodDef } from '../lib/superfoods'
+import { MEAL_PURPOSE_EMOJI, MEAL_PURPOSES, SUPERFOOD_CATEGORIES, SUPERFOODS, superfoodOfTheDay, type MealPurpose, type SuperfoodCategory, type SuperfoodDef } from '../lib/superfoods'
 import { todayKey } from '../lib/date'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { Lang } from '../lib/i18n/lang'
@@ -11,9 +11,12 @@ import { NUTRIENT_BUCKETS, type NutrientBucket } from '../lib/nutrientBuckets'
 import { getSavedSuperfoodIds, setSavedSuperfoodIds } from '../lib/savedSuperfoods'
 import { getSavedMeals, unsaveMeal, type SavedMeal } from '../lib/savedMeals'
 import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
-import type { NutrientId } from '../types'
-import { CloseIcon, FilterIcon, SearchIcon, StarIcon } from './icons'
+import { getAllMeals } from '../lib/db'
+import { resolveFoodEmoji } from '../lib/foodEmoji'
+import type { MealEntry, NutrientId } from '../types'
+import { CloseIcon, FilterIcon, StarIcon } from './icons'
 import { SavedMealCard } from './FavoritesPanel'
+import { MealDetailModal } from './MealDetailModal'
 
 function NutrientInfoModal({ id, onClose }: { id: NutrientId; onClose: () => void }) {
   const { lang } = useLanguage()
@@ -149,12 +152,12 @@ export function SuperfoodDetailModal({
         >
           {content.power}
         </span>
-        {food.category === 'meal' && food.mealTime && (
+        {food.category === 'meal' && food.mealPurpose && (
           <span
             className="rounded-full px-3 py-1 text-xs font-bold"
             style={{ backgroundColor: 'var(--surface-1)', color: 'var(--text-primary)', border: '1.5px solid #1a1a19' }}
           >
-            {t.mealTimes[food.mealTime]} {MEAL_TIME_EMOJI[food.mealTime]}
+            {t.mealPurposes[food.mealPurpose]} {MEAL_PURPOSE_EMOJI[food.mealPurpose]}
           </span>
         )}
         <SuperfoodBenefit parts={content.benefit} onSelectNutrient={setSelectedNutrient} />
@@ -266,22 +269,27 @@ function FoodGrid({
 }
 
 export function SuperfoodsPanel() {
-  const { lang, dir } = useLanguage()
+  const { lang } = useLanguage()
   const [selected, setSelected] = useState<SuperfoodDef | null>(null)
   const [mainTab, setMainTab] = useState<'singleFood' | 'meals'>('singleFood')
-  const [activeFilter, setActiveFilter] = useState<NutrientBucket | 'superfood' | 'liked' | null>(null)
-  const [activeMealTime, setActiveMealTime] = useState<MealTime | null>(null)
+  const [activeFilter, setActiveFilter] = useState<NutrientBucket | SuperfoodCategory | 'liked' | null>(null)
+  const [activeMealPurpose, setActiveMealPurpose] = useState<MealPurpose | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [search, setSearch] = useState('')
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set(getSavedSuperfoodIds()))
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>(() => getSavedMeals())
+  const [recentMeals, setRecentMeals] = useState<MealEntry[]>([])
+  const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
   const filterZoneRef = useRef<HTMLDivElement>(null)
   const filterChrome = NUTRIENT_FILTER_CHROME[lang]
   const t = SUPERFOODS_PANEL_CHROME[lang]
   const ft = FAVORITES_PANEL_STRINGS[lang]
 
-  const today = todayKey()
-  const featuredSuperfoodId = useMemo(() => superfoodOfTheDay(today).id, [today])
+  useEffect(() => {
+    getAllMeals().then((meals) => {
+      const sorted = [...meals].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      setRecentMeals(sorted.slice(0, 8))
+    })
+  }, [])
 
   const toggleSaved = (id: string) => {
     setSavedIds((prev) => {
@@ -298,24 +306,25 @@ export function SuperfoodsPanel() {
     setSavedMeals(getSavedMeals())
   }
 
+  const featuredSuperfoodId = useMemo(() => superfoodOfTheDay(todayKey()).id, [])
+
   const filteredFoods = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const isNutrientBucket = (v: typeof activeFilter): v is NutrientBucket => (NUTRIENT_BUCKETS as string[]).includes(v ?? '')
     return SUPERFOODS.filter((food) => (mainTab === 'meals' ? food.category === 'meal' : food.category !== 'meal'))
       .filter((food) => {
-        if (mainTab === 'meals') return !activeMealTime || food.mealTime === activeMealTime
+        if (mainTab === 'meals') return !activeMealPurpose || food.mealPurpose === activeMealPurpose
         if (!activeFilter) return true
-        if (activeFilter === 'superfood') return food.category === 'superfood'
         if (activeFilter === 'liked') return savedIds.has(food.id)
-        return food.nutrients[activeFilter] !== undefined
+        if (isNutrientBucket(activeFilter)) return food.nutrients[activeFilter] !== undefined
+        return food.category === activeFilter
       })
-      .filter((food) => !query || SUPERFOOD_CONTENT[lang][food.id].name.toLowerCase().includes(query))
       .sort((a, b) => {
         const savedDiff = Number(savedIds.has(b.id)) - Number(savedIds.has(a.id))
         if (savedDiff !== 0) return savedDiff
-        if (mainTab === 'meals' || !activeFilter || activeFilter === 'superfood' || activeFilter === 'liked') return 0
+        if (mainTab === 'meals' || !isNutrientBucket(activeFilter)) return 0
         return (b.nutrients[activeFilter] ?? 0) - (a.nutrients[activeFilter] ?? 0)
       })
-  }, [activeFilter, activeMealTime, mainTab, search, lang, savedIds])
+  }, [activeFilter, activeMealPurpose, mainTab, savedIds])
 
   useEffect(() => {
     if (!filterOpen) return
@@ -329,150 +338,166 @@ export function SuperfoodsPanel() {
   }, [filterOpen])
 
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pt-4">
-      <div
-        className="flex shrink-0 items-center gap-1 self-center rounded-full p-1"
-        style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
-      >
-        <button
-          onClick={() => {
-            setMainTab('singleFood')
-            setActiveMealTime(null)
-          }}
-          className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-bold transition"
-          style={{
-            backgroundColor: mainTab === 'singleFood' ? 'var(--accent-strong)' : 'transparent',
-            color: mainTab === 'singleFood' ? '#ffffff' : 'var(--text-primary)',
-          }}
-        >
-          {t.mainTabs.singleFood}
-        </button>
-        <button
-          onClick={() => {
-            setMainTab('meals')
-            setActiveFilter(null)
-          }}
-          className="whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-bold transition"
-          style={{
-            backgroundColor: mainTab === 'meals' ? 'var(--accent-strong)' : 'transparent',
-            color: mainTab === 'meals' ? '#ffffff' : 'var(--text-primary)',
-          }}
-        >
-          {t.mainTabs.meals}
-        </button>
-      </div>
+    <div className="relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 pt-14">
+      {recentMeals.length > 0 && (
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
+            {t.recentlyEatenTitle}
+          </span>
+          <div className="grid grid-cols-4 gap-1.5">
+            {recentMeals.map((meal) => (
+              <button
+                key={meal.id}
+                onClick={() => setSelectedMeal(meal)}
+                aria-label={meal.foods[0]?.name ?? t.recentlyEatenTitle}
+                className="relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg px-1 transition-transform active:translate-y-0.5 active:shadow-none"
+                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
+              >
+                <span className="text-2xl leading-none">{resolveFoodEmoji(meal.foods[0]?.name)}</span>
+                <span className="w-full truncate text-center text-[9px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                  {meal.foods[0]?.name ?? ''}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center justify-center gap-2">
         <div
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-1.5"
+          className="flex items-center gap-1 rounded-full p-1"
           style={{ backgroundColor: 'var(--surface-cream)', border: '3px solid #000000', boxShadow: '0 3px 0 #000000' }}
         >
-          <SearchIcon className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-secondary)' }} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            aria-label={t.searchPlaceholder}
-            dir={dir}
-            lang={lang}
-            className="min-w-0 flex-1 bg-transparent text-[12px] outline-none"
-            style={{ color: 'var(--text-primary)' }}
-          />
-          <div ref={filterZoneRef} className="relative shrink-0">
-            <button
-              onClick={() => setFilterOpen((v) => !v)}
-              aria-label={filterChrome.ariaLabel}
-              className="flex h-6 w-6 items-center justify-center"
-              style={{ color: activeFilter || activeMealTime ? 'var(--accent-strong)' : '#000000' }}
-            >
-              <FilterIcon className="h-3.5 w-3.5" />
-            </button>
-            {filterOpen && mainTab === 'meals' && (
+          <button
+            onClick={() => {
+              setMainTab('singleFood')
+              setActiveMealPurpose(null)
+            }}
+            className="whitespace-nowrap rounded-full px-4 py-1.5 text-[12px] font-bold"
+            style={{
+              backgroundColor: mainTab === 'singleFood' ? 'var(--accent-strong)' : 'transparent',
+              color: mainTab === 'singleFood' ? '#ffffff' : 'var(--text-primary)',
+            }}
+          >
+            {t.mainTabs.singleFood}
+          </button>
+          <button
+            onClick={() => {
+              setMainTab('meals')
+              setActiveFilter(null)
+            }}
+            className="whitespace-nowrap rounded-full px-4 py-1.5 text-[12px] font-bold"
+            style={{
+              backgroundColor: mainTab === 'meals' ? 'var(--accent-strong)' : 'transparent',
+              color: mainTab === 'meals' ? '#ffffff' : 'var(--text-primary)',
+            }}
+          >
+            {t.mainTabs.meals}
+          </button>
+        </div>
+
+        <div ref={filterZoneRef} className="relative shrink-0">
+          <button
+            onClick={() => setFilterOpen((v) => !v)}
+            aria-label={filterChrome.ariaLabel}
+            className="flex h-9 w-9 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: 'var(--surface-cream)',
+              border: '3px solid #000000',
+              boxShadow: '0 3px 0 #000000',
+              color: activeFilter || activeMealPurpose ? 'var(--accent-strong)' : '#000000',
+            }}
+          >
+            <FilterIcon className="h-3.5 w-3.5" />
+          </button>
+          {filterOpen && (
               <div
                 className="absolute end-0 top-8 z-20 flex flex-col gap-1 rounded-2xl p-1.5"
                 style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 10px 20px rgba(11,11,11,0.25), 0 4px 0 #000000' }}
               >
-                <button
-                  onClick={() => {
-                    setActiveMealTime(null)
-                    setFilterOpen(false)
-                  }}
-                  className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
-                  style={{
-                    backgroundColor: !activeMealTime ? 'var(--accent-strong)' : 'transparent',
-                    color: !activeMealTime ? '#ffffff' : 'var(--text-primary)',
-                  }}
-                >
-                  {t.mealTimeAll}
-                </button>
-                {MEAL_TIMES.map((mealTime) => (
-                  <button
-                    key={mealTime}
-                    onClick={() => {
-                      setActiveMealTime((prev) => (prev === mealTime ? null : mealTime))
-                      setFilterOpen(false)
-                    }}
-                    className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
-                    style={{
-                      backgroundColor: activeMealTime === mealTime ? 'var(--accent-strong)' : 'transparent',
-                      color: activeMealTime === mealTime ? '#ffffff' : 'var(--text-primary)',
-                    }}
-                  >
-                    {t.mealTimes[mealTime]}
-                  </button>
-                ))}
+                {mainTab === 'meals' ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setActiveMealPurpose(null)
+                        setFilterOpen(false)
+                      }}
+                      className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                      style={{
+                        backgroundColor: !activeMealPurpose ? 'var(--accent-strong)' : 'transparent',
+                        color: !activeMealPurpose ? '#ffffff' : 'var(--text-primary)',
+                      }}
+                    >
+                      {t.mealPurposeAll}
+                    </button>
+                    {MEAL_PURPOSES.map((mealPurpose) => (
+                      <button
+                        key={mealPurpose}
+                        onClick={() => {
+                          setActiveMealPurpose((prev) => (prev === mealPurpose ? null : mealPurpose))
+                          setFilterOpen(false)
+                        }}
+                        className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                        style={{
+                          backgroundColor: activeMealPurpose === mealPurpose ? 'var(--accent-strong)' : 'transparent',
+                          color: activeMealPurpose === mealPurpose ? '#ffffff' : 'var(--text-primary)',
+                        }}
+                      >
+                        {t.mealPurposes[mealPurpose]}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {NUTRIENT_BUCKETS.map((bucket) => (
+                      <button
+                        key={bucket}
+                        onClick={() => {
+                          setActiveFilter((prev) => (prev === bucket ? null : bucket))
+                          setFilterOpen(false)
+                        }}
+                        className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                        style={{
+                          backgroundColor: activeFilter === bucket ? 'var(--accent-strong)' : 'transparent',
+                          color: activeFilter === bucket ? '#ffffff' : 'var(--text-primary)',
+                        }}
+                      >
+                        {filterChrome.labels[bucket]}
+                      </button>
+                    ))}
+                    {SUPERFOOD_CATEGORIES.filter((category) => category !== 'meal').map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          setActiveFilter((prev) => (prev === category ? null : category))
+                          setFilterOpen(false)
+                        }}
+                        className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                        style={{
+                          backgroundColor: activeFilter === category ? 'var(--accent-strong)' : 'transparent',
+                          color: activeFilter === category ? '#ffffff' : 'var(--text-primary)',
+                        }}
+                      >
+                        {t.categories[category]}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setActiveFilter((prev) => (prev === 'liked' ? null : 'liked'))
+                        setFilterOpen(false)
+                      }}
+                      className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
+                      style={{
+                        backgroundColor: activeFilter === 'liked' ? 'var(--accent-strong)' : 'transparent',
+                        color: activeFilter === 'liked' ? '#ffffff' : 'var(--text-primary)',
+                      }}
+                    >
+                      {t.likedCategory}
+                    </button>
+                  </>
+                )}
               </div>
             )}
-            {filterOpen && mainTab === 'singleFood' && (
-              <div
-                className="absolute end-0 top-8 z-20 flex flex-col gap-1 rounded-2xl p-1.5"
-                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 10px 20px rgba(11,11,11,0.25), 0 4px 0 #000000' }}
-              >
-                {NUTRIENT_BUCKETS.map((bucket) => (
-                  <button
-                    key={bucket}
-                    onClick={() => {
-                      setActiveFilter((prev) => (prev === bucket ? null : bucket))
-                      setFilterOpen(false)
-                    }}
-                    className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
-                    style={{
-                      backgroundColor: activeFilter === bucket ? 'var(--accent-strong)' : 'transparent',
-                      color: activeFilter === bucket ? '#ffffff' : 'var(--text-primary)',
-                    }}
-                  >
-                    {filterChrome.labels[bucket]}
-                  </button>
-                ))}
-                <button
-                  onClick={() => {
-                    setActiveFilter((prev) => (prev === 'superfood' ? null : 'superfood'))
-                    setFilterOpen(false)
-                  }}
-                  className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
-                  style={{
-                    backgroundColor: activeFilter === 'superfood' ? 'var(--accent-strong)' : 'transparent',
-                    color: activeFilter === 'superfood' ? '#ffffff' : 'var(--text-primary)',
-                  }}
-                >
-                  {t.categories.superfood}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveFilter((prev) => (prev === 'liked' ? null : 'liked'))
-                    setFilterOpen(false)
-                  }}
-                  className="whitespace-nowrap rounded-full px-3 py-1 text-start text-[11px] font-bold"
-                  style={{
-                    backgroundColor: activeFilter === 'liked' ? 'var(--accent-strong)' : 'transparent',
-                    color: activeFilter === 'liked' ? '#ffffff' : 'var(--text-primary)',
-                  }}
-                >
-                  {t.likedCategory}
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -515,6 +540,8 @@ export function SuperfoodsPanel() {
           onToggleSave={() => toggleSaved(selected.id)}
         />
       )}
+
+      {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
     </div>
   )
 }

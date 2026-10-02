@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { IdentifiedFood, MealEntry, NutrientAmounts, NutrientId } from '../types'
 import { analyzeFoodImage, analyzeFoodText, analyzeFoodList, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
@@ -10,9 +10,13 @@ import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
-import { EMPTY_NUTRIENTS, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, sumNutrients } from '../lib/nutrients'
+import { EMPTY_NUTRIENTS, coverageStatus, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, sumNutrients } from '../lib/nutrients'
 import { EMPTY_MACROS, isMacroTrackingEnabled } from '../lib/macros'
 import { MacroSummaryRow } from './MacroSummaryRow'
+import type { MacroInsight, RankedNutrient } from '../lib/insights'
+import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
+import { CORE_NUTRIENT_COLOR, MACRO_COLOR } from '../lib/nutrientColors'
+import { STATUS_VAR } from './StatusDot'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
 import {
@@ -46,6 +50,65 @@ const VISIBLE_FOOD_COUNT = 2
 
 function devLog(tag: string, message: string) {
   if (import.meta.env.DEV) console.log(`[${tag}] ${message}`)
+}
+
+/** The 8 core vitamins/minerals shown as rectangles orbiting the character on the home stage —
+ *  same curated set InsightsPanel used to show at a fixed 0% before real weekly data existed
+ *  here, and the same 8 ids CORE_NUTRIENT_COLOR defines a color for. */
+const ORBIT_VITAMIN_IDS: NutrientId[] = [
+  'vitaminC', 'vitaminD', 'calcium', 'vitaminA', 'vitaminB12', 'iron', 'vitaminB9', 'vitaminB6',
+]
+const ORBIT_MACROS: Array<{ id: 'proteinG' | 'carbsG' | 'fatG'; emoji: string }> = [
+  { id: 'proteinG', emoji: '🥩' },
+  { id: 'carbsG', emoji: '🌾' },
+  { id: 'fatG', emoji: '🥑' },
+]
+
+/** Position index `i` of `total` evenly around a circle, starting at 12 o'clock. */
+function orbitPosition(i: number, total: number, radiusPct: number) {
+  const angle = (-90 + (360 / total) * i) * (Math.PI / 180)
+  return { left: `${50 + radiusPct * Math.cos(angle)}%`, top: `${50 + radiusPct * Math.sin(angle)}%` }
+}
+
+// 64 frames extracted from the source idle video at 8fps, covering the full wave → rest →
+// belt-adjust motion. Playing forward then backward (ping-pong) guarantees a seamless loop —
+// the joint is always frame 1 meeting itself — without needing the source to loop cleanly.
+const IDLE_FRAME_COUNT = 64
+const IDLE_FRAME_ORDER = [
+  ...Array.from({ length: IDLE_FRAME_COUNT }, (_, i) => i + 1),
+  ...Array.from({ length: IDLE_FRAME_COUNT - 2 }, (_, i) => IDLE_FRAME_COUNT - 1 - i),
+]
+const IDLE_FRAME_MS = 125 // matches the 8fps the frames were extracted at
+
+/** Plays the extracted idle frames forward then backward (ping-pong) like a flipbook. */
+function IdleCharacter({ size = 192 }: { size?: number }) {
+  const [frameIdx, setFrameIdx] = useState(0)
+
+  useEffect(() => {
+    // Preload every frame once so the timer below never has to wait on a
+    // first-time network fetch mid-loop, which would show a blank/stale frame.
+    for (let n = 1; n <= IDLE_FRAME_COUNT; n++) {
+      const img = new Image()
+      img.src = `/character/idle-${n}.webp`
+    }
+  }, [])
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setFrameIdx((i) => (i + 1) % IDLE_FRAME_ORDER.length)
+    }, IDLE_FRAME_MS)
+    return () => window.clearTimeout(id)
+  }, [frameIdx])
+
+  return (
+    <div className="absolute" style={{ width: size, height: size, left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+      <img
+        src={`/character/idle-${IDLE_FRAME_ORDER[frameIdx]}.webp`}
+        alt=""
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+    </div>
+  )
 }
 
 function capitalize(s: string): string {
@@ -292,7 +355,17 @@ function drawDetections(canvas: HTMLCanvasElement, detections: FoodDetection[]) 
   }
 }
 
-export function CameraPanel({ onLogged }: { onLogged: () => void }) {
+export function CameraPanel({
+  onLogged,
+  weeklyRanked,
+  weeklyMacros,
+}: {
+  onLogged: () => void
+  /** Weekly per-nutrient coverage (worst-first) — feeds the vitamin rectangles orbiting the
+   *  character on the home stage. */
+  weeklyRanked: RankedNutrient[]
+  weeklyMacros: Record<'proteinG' | 'carbsG' | 'fatG', MacroInsight>
+}) {
   const { lang, dir } = useLanguage()
   const t = CAMERA_PANEL_STRINGS[lang]
   const [stage, setStage] = useState<Stage>('camera')
@@ -318,6 +391,23 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const [editedFoods, setEditedFoods] = useState<IdentifiedFood[]>([])
   const [recalculating, setRecalculating] = useState(false)
   const [recalcError, setRecalcError] = useState<string | null>(null)
+
+  // The orbit rectangles' *displayed* values — deliberately kept out of sync with the
+  // weeklyRanked/weeklyMacros props while any non-'camera' stage is up (identifying a photo,
+  // confirming, saving...), so that when the flow returns to the home stage after logging a
+  // meal, the fill bars visibly animate from the old percent to the new one instead of just
+  // popping in already-updated.
+  const [displayedRanked, setDisplayedRanked] = useState(weeklyRanked)
+  const [displayedMacros, setDisplayedMacros] = useState(weeklyMacros)
+  useEffect(() => {
+    if (stage !== 'camera') return
+    const id = requestAnimationFrame(() => {
+      setDisplayedRanked(weeklyRanked)
+      setDisplayedMacros(weeklyMacros)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [stage, weeklyRanked, weeklyMacros])
+  const rankedById = new Map(displayedRanked.map((r) => [r.id, r]))
 
   // A fresh result (new scan/lookup) always starts with the food list collapsed and not in edit mode.
   useEffect(() => {
@@ -371,7 +461,6 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
   const detectingRef = useRef(false)
   const barcodeDetectingRef = useRef(false)
   const barcodeAttemptedRef = useRef<Set<string>>(new Set())
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const resultScrollRef = useRef<HTMLDivElement>(null)
 
   // Slowly auto-scrolls the nutrient list downward so the user can see everything without
@@ -644,37 +733,6 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
     await analyzeCapturedPhoto(dataUrl)
   }
 
-  function handleUploadClick() {
-    fileInputRef.current?.click()
-  }
-
-  function handleFileSelected(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-
-    const objectUrl = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl)
-      let dataUrl: string
-      try {
-        dataUrl = downscaleToDataUrl(img, img.naturalWidth, img.naturalHeight)
-      } catch (err) {
-        devLog('capture', 'Uploaded image processing failed.')
-        setScanErrorMsg(t.scanErrors.readFailed)
-        return
-      }
-      devLog('capture', 'Uploaded photo ready for scanning.')
-      analyzeCapturedPhoto(dataUrl)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      setScanErrorMsg(t.scanErrors.readFailed)
-    }
-    img.src = objectUrl
-  }
-
   async function confirmFood(name: string, quantity: string) {
     setStage('analyzing')
     setAnalyzeErrorMsg(null)
@@ -836,27 +894,11 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
           {scanErrorMsg}
         </p>
       )}
-      {stage !== 'manual' && stage !== 'custom' && stage !== 'result' && (
+      {stage !== 'manual' && stage !== 'custom' && stage !== 'result' && stage !== 'camera' && (
         <div
           className={`relative mx-auto flex aspect-square shrink-0 items-center justify-center overflow-hidden rounded-2xl ${stage === 'quantity' ? 'w-[38%]' : 'w-[70%]'}`}
           style={{ backgroundColor: 'var(--surface-2)', border: '4px solid #000000' }}
         >
-          {stage === 'camera' && !cameraError && (
-            <>
-              <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-              <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
-            </>
-          )}
-          {stage === 'camera' && cameraError && (
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div
-                className="rounded-2xl px-4 py-3 text-center text-sm shadow-lg"
-                style={{ backgroundColor: 'var(--surface-1)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              >
-                {cameraError}
-              </div>
-            </div>
-          )}
           {(stage === 'identifying' ||
             stage === 'confirm' ||
             stage === 'quantity' ||
@@ -889,41 +931,117 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
       )}
 
       {stage === 'camera' && (
-        <div className="mx-auto flex w-[80%] flex-col items-center gap-3">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5">
+          <div className="flex w-full items-center justify-center gap-2.5">
+            <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
+              <div className="orbit-spin absolute inset-0">
+                {ORBIT_VITAMIN_IDS.map((id, i) => {
+                  const percent = Math.round(rankedById.get(id)?.percent ?? 0)
+                  const status = coverageStatus(percent)
+                  const pos = orbitPosition(i, ORBIT_VITAMIN_IDS.length, 47)
+                  return (
+                    <div key={id} className="absolute" style={{ left: pos.left, top: pos.top, transform: 'translate(-50%, -50%)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedNutrient(id)}
+                        className="orbit-counter-spin flex flex-col gap-1 rounded-lg px-1.5 py-1.5 text-start"
+                        style={{
+                          width: 64,
+                          backgroundColor: 'var(--surface-cream)',
+                          border: `2px solid ${STATUS_VAR[status]}`,
+                          boxShadow: '0 3px 8px rgba(26,26,25,0.14)',
+                        }}
+                      >
+                        <span className="min-w-0 truncate text-[7px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                          {NUTRIENT_CONTENT[lang][id].name}
+                        </span>
+                        <span className="text-[7px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
+                          {percent}%
+                        </span>
+                        <span className="block h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
+                          <span
+                            className="block h-full rounded-full transition-[width] duration-700"
+                            style={{ width: `${Math.min(100, percent)}%`, backgroundColor: CORE_NUTRIENT_COLOR[id] }}
+                          />
+                        </span>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <IdleCharacter size={122} />
+            </div>
+
+            <div
+              className="relative aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl"
+              style={{ maxWidth: 92, backgroundColor: 'var(--surface-2)', border: '4px solid #000000' }}
+            >
+              {!cameraError ? (
+                <>
+                  <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
+                  {/* Detection boxes/labels are drawn at the video's native resolution, which reads
+                   *  as oversized clutter shrunk into this small a viewfinder — kept mounted (so
+                   *  detection still runs and feeds stableDetection below) but not shown here. */}
+                  <canvas ref={canvasRef} className="hidden" />
+                </>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center p-1.5">
+                  <p className="text-center text-[8px] leading-snug" style={{ color: 'var(--text-primary)' }}>
+                    {cameraError}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex w-full max-w-[220px] items-stretch justify-center gap-1.5">
+            {ORBIT_MACROS.map(({ id, emoji }) => {
+              const percent = Math.round(displayedMacros[id].percent)
+              return (
+                <div
+                  key={id}
+                  className="flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5"
+                  style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
+                >
+                  <span className="text-sm leading-none" aria-hidden>
+                    {emoji}
+                  </span>
+                  <span className="text-[8px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {percent}%
+                  </span>
+                  <span className="block h-1 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
+                    <span
+                      className="block h-full rounded-full transition-[width] duration-700"
+                      style={{ width: `${Math.min(100, percent)}%`, backgroundColor: MACRO_COLOR[id] }}
+                    />
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
           {stableDetection && !cameraError && (
             <p className="text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               {foodEmoji(stableDetection.normalizedName)} {t.detectedSuffix(stableDetection.normalizedName)}
             </p>
           )}
-          <button
-            onClick={scanFood}
-            disabled={!!cameraError || !cameraReady}
-            className="w-3/4 rounded-full py-2 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
-            style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
-          >
-            {t.actions.scanFood}
-          </button>
-          <button
-            onClick={handleUploadClick}
-            className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
-            style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
-          >
-            {t.actions.uploadPhoto}
-          </button>
-          <button
-            onClick={() => setStage('manual')}
-            className="w-3/4 rounded-full py-2 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
-            style={{ border: '4px solid #1a1a19', color: 'var(--text-primary)', backgroundColor: '#fbedc3', boxShadow: '0 4px 0 #1a1a19' }}
-          >
-            {t.actions.logManually}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelected}
-            className="hidden"
-          />
+          <div className="flex w-[88%] flex-col items-center gap-2">
+            <button
+              onClick={scanFood}
+              disabled={!!cameraError || !cameraReady}
+              className="w-2/3 rounded-full py-3 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
+              style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
+            >
+              {t.actions.scanFood}
+            </button>
+            <button
+              onClick={() => setStage('manual')}
+              className="w-2/3 rounded-full py-2.5 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+              style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
+            >
+              {t.actions.logManually}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1238,10 +1356,14 @@ export function CameraPanel({ onLogged }: { onLogged: () => void }) {
         </div>
       )}
 
-      {selectedNutrient && result && (
+      {selectedNutrient && (
         <NutrientDetailModal
           id={selectedNutrient}
-          amount={todayNutrients[selectedNutrient] + result.nutrients[selectedNutrient]}
+          amount={
+            result
+              ? todayNutrients[selectedNutrient] + result.nutrients[selectedNutrient]
+              : rankedById.get(selectedNutrient)?.avgAmount ?? 0
+          }
           onClose={() => setSelectedNutrient(null)}
         />
       )}

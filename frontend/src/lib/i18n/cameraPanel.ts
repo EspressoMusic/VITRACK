@@ -13,7 +13,6 @@ export interface CameraPanelStrings {
   scanErrors: {
     noFrame: string
     captureFailed: string
-    readFailed: string
   }
   identify: {
     notRecognized: string
@@ -28,7 +27,6 @@ export interface CameraPanelStrings {
   detectedSuffix: (name: string) => string
   actions: {
     scanFood: string
-    uploadPhoto: string
     logManually: string
   }
   confirm: {
@@ -83,11 +81,10 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       namePlaceholder: 'Type a food name…',
       clearNameAriaLabel: 'Clear food name',
     },
-    cameraUnavailable: 'Camera unavailable or permission denied — use "Upload a photo" instead.',
+    cameraUnavailable: 'Camera unavailable or permission denied — use "Log manually" instead.',
     scanErrors: {
       noFrame: 'Could not capture a photo. Point the camera at the food and try again.',
       captureFailed: 'Could not capture a photo. Try again.',
-      readFailed: 'Could not read that photo. Try a different one.',
     },
     identify: {
       notRecognized: "Couldn't recognize the food.",
@@ -101,7 +98,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     detectedSuffix: (name) => `${name} detected`,
     actions: {
       scanFood: 'Scan Food',
-      uploadPhoto: 'Upload photo',
       logManually: 'Log manually',
     },
     confirm: {
@@ -161,11 +157,10 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       namePlaceholder: 'הקלד/י שם של מזון…',
       clearNameAriaLabel: 'ניקוי שם המזון',
     },
-    cameraUnavailable: 'המצלמה לא זמינה או שההרשאה נדחתה — השתמש/י ב"העלאת תמונה" במקום.',
+    cameraUnavailable: 'המצלמה לא זמינה או שההרשאה נדחתה — השתמש/י ב"רישום ידני" במקום.',
     scanErrors: {
       noFrame: 'לא ניתן היה לצלם תמונה. כוון/י את המצלמה אל האוכל ונסה/י שוב.',
       captureFailed: 'לא ניתן היה לצלם תמונה. נסה/י שוב.',
-      readFailed: 'לא ניתן היה לקרוא את התמונה. נסה/י תמונה אחרת.',
     },
     identify: {
       notRecognized: 'לא הצלחנו לזהות את המזון.',
@@ -179,7 +174,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     detectedSuffix: (name) => `זוהה ${name}`,
     actions: {
       scanFood: 'סריקת מזון',
-      uploadPhoto: 'העלאת תמונה',
       logManually: 'רישום ידני',
     },
     confirm: {
@@ -239,11 +233,10 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       namePlaceholder: 'اكتب اسم الطعام…',
       clearNameAriaLabel: 'مسح اسم الطعام',
     },
-    cameraUnavailable: 'الكاميرا غير متاحة أو تم رفض الإذن — استخدم "رفع صورة" بدلاً من ذلك.',
+    cameraUnavailable: 'الكاميرا غير متاحة أو تم رفض الإذن — استخدم "تسجيل يدوي" بدلاً من ذلك.',
     scanErrors: {
       noFrame: 'تعذّر التقاط صورة. وجّه الكاميرا نحو الطعام وحاول مرة أخرى.',
       captureFailed: 'تعذّر التقاط صورة. حاول مرة أخرى.',
-      readFailed: 'تعذّرت قراءة هذه الصورة. جرّب صورة أخرى.',
     },
     identify: {
       notRecognized: 'لم نتمكن من التعرف على الطعام.',
@@ -257,7 +250,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     detectedSuffix: (name) => `تم التعرّف على ${name}`,
     actions: {
       scanFood: 'مسح الطعام',
-      uploadPhoto: 'رفع صورة',
       logManually: 'تسجيل يدوي',
     },
     confirm: {

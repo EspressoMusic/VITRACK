@@ -15,7 +15,7 @@ import {
   setNotificationPref,
   requestNotificationPermission,
 } from '../lib/notifications'
-import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon } from './icons'
+import { DocumentIcon, LogOutIcon, StarIcon, TrashIcon, UserIcon, DownloadIcon, BellIcon, CalendarIcon } from './icons'
 import { GoogleConsentGate } from './GoogleConsentGate'
 import { LegalPanel } from './LegalPanel'
 import { SubscriptionManagePanel } from './SubscriptionManagePanel'
@@ -72,11 +72,14 @@ export function SettingsPanel({
   onClose,
   onDataCleared,
   onNutrientModeChange,
+  onOpenCalendar,
 }: {
   onClose: () => void
   onDataCleared: () => void
   /** Called after the vitamin/mineral focus toggle changes, so open screens refresh their lists. */
   onNutrientModeChange: () => void
+  /** Opens the challenges/calendar screen, which no longer has its own nav tab. */
+  onOpenCalendar: () => void
 }) {
   const { user, signOut, deleteAccount } = useAuth()
   const { lang, dir, setLang } = useLanguage()
@@ -170,6 +173,20 @@ export function SettingsPanel({
       aria-modal="true"
     >
       <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-5 pb-20 pt-12">
+          <button
+            type="button"
+            onClick={onOpenCalendar}
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-transform active:translate-y-1 active:shadow-none"
+            style={{
+              backgroundColor: 'var(--surface-cream)',
+              border: '2px solid #000000',
+              boxShadow: '0 2px 0 #000000',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <CalendarIcon className="h-4 w-4" strokeWidth={1.7} /> {t.openCalendarLabel}
+          </button>
+
           <SettingsSection label={t.account.heading} isOpen={openSection === 'account'} onToggle={() => toggleSection('account')}>
             {user && !user.is_anonymous ? (
               <div className="flex flex-col gap-2">

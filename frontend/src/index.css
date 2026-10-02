@@ -867,6 +867,29 @@ button:active {
   animation: chip-level-fill 5s ease-in-out infinite;
 }
 
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes orbit-counter-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.orbit-spin {
+  animation: orbit-spin 60s linear infinite;
+}
+.orbit-counter-spin {
+  animation: orbit-counter-spin 60s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
@@ -891,6 +914,8 @@ button:active {
   .power-on-flash,
   .vitamin-chip-drift,
   .chip-level-fill,
+  .orbit-spin,
+  .orbit-counter-spin,
   .bot-angry-shake {
     animation: none;
   }
