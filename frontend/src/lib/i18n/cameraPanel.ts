@@ -26,8 +26,22 @@ export interface CameraPanelStrings {
   /** Composes "<name> detected" — name is a live detector value, not translated. */
   detectedSuffix: (name: string) => string
   actions: {
+    addFood: string
     scanFood: string
     logManually: string
+    closeCamera: string
+    closeMenu: string
+  }
+  /** Label of the vitamins card in the stats row under the home-stage character. */
+  vitaminsCard: string
+  /** Title of the popup opened from the calories/protein cards, listing all 4 macros vs. today's goal. */
+  macrosPopupTitle: string
+  /** "<consumed> / <goal> <unit>" text shown inside each macro bar in that popup. */
+  macroValue: (consumed: number, goal: number, isCalories: boolean) => string
+  level: {
+    /** Tiny word above the number in the level badge. */
+    caption: string
+    ariaLabel: (level: number, xp: number, needed: number) => string
   }
   confirm: {
     isCorrect: string
@@ -60,9 +74,6 @@ export interface CameraPanelStrings {
     remainingFoodsTitle: string
     closeAriaLabel: string
     editQuantities: string
-    editQuantitiesTitle: string
-    updateQuantities: string
-    cancel: string
   }
   /** Shown instead of the nutrient list when the AI flags the food as junk/ultra-processed. One is picked at random. */
   junkFood: string[]
@@ -97,8 +108,18 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     },
     detectedSuffix: (name) => `${name} detected`,
     actions: {
+      addFood: 'Add food',
       scanFood: 'Scan Food',
       logManually: 'Log manually',
+      closeCamera: 'Close camera',
+      closeMenu: 'Close',
+    },
+    vitaminsCard: 'Vitamins',
+    macrosPopupTitle: "Today's intake",
+    macroValue: (consumed, goal, isCalories) => `${consumed.toLocaleString()} / ${goal.toLocaleString()} ${isCalories ? 'kcal' : 'g'}`,
+    level: {
+      caption: 'LEVEL',
+      ariaLabel: (level, xp, needed) => `Level ${level}, ${xp} of ${needed} XP`,
     },
     confirm: {
       isCorrect: 'Is this correct?',
@@ -130,9 +151,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       remainingFoodsTitle: 'Rest of the meal',
       closeAriaLabel: 'Close',
       editQuantities: 'Edit quantities',
-      editQuantitiesTitle: 'Edit quantities',
-      updateQuantities: 'Update',
-      cancel: 'Cancel',
     },
     junkFood: [
       "This is basically dessert wearing a food costume. The vitamins ran away screaming. 🏃💨",
@@ -173,8 +191,18 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     },
     detectedSuffix: (name) => `זוהה ${name}`,
     actions: {
+      addFood: 'הוספת אוכל',
       scanFood: 'סריקת מזון',
       logManually: 'רישום ידני',
+      closeCamera: 'סגירת המצלמה',
+      closeMenu: 'סגירה',
+    },
+    vitaminsCard: 'ויטמינים',
+    macrosPopupTitle: 'הצריכה של היום',
+    macroValue: (consumed, goal, isCalories) => `${consumed.toLocaleString()} / ${goal.toLocaleString()} ${isCalories ? 'קק"ל' : 'גר׳'}`,
+    level: {
+      caption: 'רמה',
+      ariaLabel: (level, xp, needed) => `רמה ${level}, ${xp} מתוך ${needed} XP`,
     },
     confirm: {
       isCorrect: 'זה נכון?',
@@ -206,9 +234,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       remainingFoodsTitle: 'שאר הארוחה',
       closeAriaLabel: 'סגירה',
       editQuantities: 'עריכת כמויות',
-      editQuantitiesTitle: 'עריכת כמויות',
-      updateQuantities: 'עדכון',
-      cancel: 'ביטול',
     },
     junkFood: [
       'זה בעיקר קינוח שמתחפש לארוחה. הויטמינים ברחו צורחים. 🏃💨',
@@ -249,8 +274,18 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
     },
     detectedSuffix: (name) => `تم التعرّف على ${name}`,
     actions: {
+      addFood: 'إضافة طعام',
       scanFood: 'مسح الطعام',
       logManually: 'تسجيل يدوي',
+      closeCamera: 'إغلاق الكاميرا',
+      closeMenu: 'إغلاق',
+    },
+    vitaminsCard: 'فيتامينات',
+    macrosPopupTitle: 'استهلاك اليوم',
+    macroValue: (consumed, goal, isCalories) => `${consumed.toLocaleString()} / ${goal.toLocaleString()} ${isCalories ? 'سعرة' : 'غ'}`,
+    level: {
+      caption: 'مستوى',
+      ariaLabel: (level, xp, needed) => `المستوى ${level}، ${xp} من ${needed} XP`,
     },
     confirm: {
       isCorrect: 'هل هذا صحيح؟',
@@ -282,9 +317,6 @@ export const CAMERA_PANEL_STRINGS: Record<Lang, CameraPanelStrings> = {
       remainingFoodsTitle: 'باقي الوجبة',
       closeAriaLabel: 'إغلاق',
       editQuantities: 'تعديل الكميات',
-      editQuantitiesTitle: 'تعديل الكميات',
-      updateQuantities: 'تحديث',
-      cancel: 'إلغاء',
     },
     junkFood: [
       'هذه في الأساس حلوى متنكرة كوجبة. الفيتامينات هربت صارخة. 🏃💨',

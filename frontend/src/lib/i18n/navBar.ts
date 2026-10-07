@@ -5,6 +5,7 @@ interface NavBarStrings {
   insights: string
   superfoods: string
   chat: string
+  farm: string
   settings: string
 }
 
@@ -14,6 +15,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'Insights',
     superfoods: 'Superfoods',
     chat: 'Bot',
+    farm: 'Farm',
     settings: 'Settings',
   },
   he: {
@@ -21,6 +23,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'התזונה שלי',
     superfoods: 'האוכל שלי',
     chat: 'בוט',
+    farm: 'החווה',
     settings: 'הגדרות',
   },
   ar: {
@@ -28,6 +31,7 @@ export const NAV_BAR_STRINGS: Record<Lang, NavBarStrings> = {
     insights: 'التحليلات',
     superfoods: 'الأطعمة الخارقة',
     chat: 'بوت',
+    farm: 'المزرعة',
     settings: 'الإعدادات',
   },
 }

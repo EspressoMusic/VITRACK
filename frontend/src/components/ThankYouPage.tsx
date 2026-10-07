@@ -14,8 +14,10 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
 
   return (
     <div
-      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-6 py-6"
+      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-6"
       style={{
+        paddingTop: 'calc(var(--safe-top) + 1.5rem)',
+        paddingBottom: 'calc(var(--safe-bottom) + 1.5rem)',
         backgroundColor: 'var(--surface-0)',
         backgroundImage: "url('/background-calendar.png?v=3')",
         backgroundSize: 'cover',

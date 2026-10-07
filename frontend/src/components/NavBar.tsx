@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { NAV_BAR_STRINGS } from '../lib/i18n/navBar'
-import { AppleIcon, BotIcon } from './icons'
+import { AppleIcon, BotIcon, FarmIcon } from './icons'
 
-export type Tab = 'calendar' | 'insights' | 'superfoods' | 'chat'
+export type Tab = 'calendar' | 'insights' | 'superfoods' | 'chat' | 'farm'
+
+// Temporarily hidden (chat tab, superfoods "ask bot" button) — flip back to true to restore.
+export const BOT_ENABLED = false
 
 function NavIcon({
   active,
@@ -63,15 +66,25 @@ export function NavBar({
   return (
     <nav
       className="absolute inset-x-0 bottom-0 z-20 flex justify-center"
-      style={{ backgroundColor: '#eec978', borderTop: '2px solid #000000' }}
+      // Pinned to the screen's bottom edge; the padding fills the home-indicator strip so the icons sit above it.
+      style={{ backgroundColor: '#eec978', borderTop: '2px solid #000000', paddingBottom: 'var(--safe-bottom)' }}
     >
       <div className="relative grid w-full max-w-md grid-cols-3 items-center">
-        <NavIcon
-          active={!settingsActive && active === 'chat'}
-          onClick={() => onChange('chat')}
-          ariaLabel={t.chat}
-          icon={<BotIcon className="h-full w-full" strokeWidth={1.7} />}
-        />
+        {BOT_ENABLED ? (
+          <NavIcon
+            active={!settingsActive && active === 'chat'}
+            onClick={() => onChange('chat')}
+            ariaLabel={t.chat}
+            icon={<BotIcon className="h-full w-full" strokeWidth={1.7} />}
+          />
+        ) : (
+          <NavIcon
+            active={!settingsActive && active === 'farm'}
+            onClick={() => onChange('farm')}
+            ariaLabel={t.farm}
+            icon={<FarmIcon className="h-full w-full" strokeWidth={1.7} />}
+          />
+        )}
 
         <div className="flex items-center justify-center py-1.5">
           <button

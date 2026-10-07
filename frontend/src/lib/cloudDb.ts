@@ -1,6 +1,6 @@
 import type { MealEntry } from '../types'
 import { supabase } from './supabase'
-import { getAllLocalMeals } from './db'
+import { type MealFoods, getAllLocalMeals } from './db'
 
 interface MealRow {
   id: string
@@ -70,6 +70,19 @@ export async function cloudGetMealsByDate(date: string): Promise<MealEntry[]> {
   const { data, error } = await supabase.from('meals').select('*').eq('date', date)
   if (error) throw error
   return (data as MealRow[]).map(fromRow)
+}
+
+export async function cloudGetMealFoodsBetween(from: string, to: string): Promise<MealFoods[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.from('meals').select('id, date, created_at, foods, is_junk_food').gte('date', from).lte('date', to)
+  if (error) throw error
+  return (data as Pick<MealRow, 'id' | 'date' | 'created_at' | 'foods' | 'is_junk_food'>[]).map((row) => ({
+    id: row.id,
+    date: row.date,
+    createdAt: row.created_at,
+    foods: row.foods,
+    isJunkFood: row.is_junk_food ?? undefined,
+  }))
 }
 
 export async function cloudClearAllMeals(userId: string): Promise<void> {

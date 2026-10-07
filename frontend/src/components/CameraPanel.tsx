@@ -1,21 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import type { IdentifiedFood, MealEntry, NutrientAmounts, NutrientId } from '../types'
+import type { IdentifiedFood, MacroAmounts, MacroId, MealEntry, NutrientAmounts, NutrientId } from '../types'
 import { analyzeFoodImage, analyzeFoodText, analyzeFoodList, AnalyzeError, type AnalyzeResult, type FoodIdentification } from '../lib/api'
-import { addMeal, getMealsByDate } from '../lib/db'
+import { addMeal } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { NutrientBar } from './NutrientBar'
 import { MacroBar } from './MacroBar'
+import { XpLevelBar } from './XpLevelBar'
 import { NutrientFillBar } from './NutrientFillBar'
 import { NutrientDetailModal } from './NutrientDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 import { CustomNutritionForm } from './CustomNutritionForm'
-import { EMPTY_NUTRIENTS, coverageStatus, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, sumNutrients } from '../lib/nutrients'
-import { EMPTY_MACROS, isMacroTrackingEnabled } from '../lib/macros'
+import { EMPTY_NUTRIENTS, coverageStatus, getVisibleNutrients, hasRespectableAmount, percentOfMealTarget, percentOfRda } from '../lib/nutrients'
+import { EMPTY_MACROS, isMacroTrackingEnabled, macroTargetFor, percentOfMacroGoal } from '../lib/macros'
+import { MACRO_LABELS } from '../lib/i18n/macros'
 import { MacroSummaryRow } from './MacroSummaryRow'
-import type { MacroInsight, RankedNutrient } from '../lib/insights'
-import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CORE_NUTRIENT_COLOR, MACRO_COLOR } from '../lib/nutrientColors'
+import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { STATUS_VAR } from './StatusDot'
 import { searchFoodNames } from '../lib/foodSuggestions'
 import { MANUAL_ENTRY_PHOTO, isManualEntryPhoto } from '../lib/mealPhoto'
@@ -38,7 +39,11 @@ import {
 import { decodeBarcodeFromFrame, lookupProductByBarcode } from '../lib/barcode'
 import { useLanguage } from '../contexts/LanguageContext'
 import { CAMERA_PANEL_STRINGS, type CameraPanelStrings } from '../lib/i18n/cameraPanel'
-import { ChevronDownIcon, CloseIcon } from './icons'
+import { CameraIcon, ChevronDownIcon, CloseIcon, PencilIcon } from './icons'
+import { AvatarView } from '../avatar/AvatarView'
+import { WardrobeModal } from '../avatar/WardrobeModal'
+import { WARDROBE_STRINGS } from '../lib/i18n/wardrobe'
+import { matchSuperfood } from '../lib/superfoods'
 
 type Stage = 'camera' | 'identifying' | 'confirm' | 'quantity' | 'manual' | 'custom' | 'analyzing' | 'result'
 
@@ -52,61 +57,186 @@ function devLog(tag: string, message: string) {
   if (import.meta.env.DEV) console.log(`[${tag}] ${message}`)
 }
 
-/** The 8 core vitamins/minerals shown as rectangles orbiting the character on the home stage —
- *  same curated set InsightsPanel used to show at a fixed 0% before real weekly data existed
- *  here, and the same 8 ids CORE_NUTRIENT_COLOR defines a color for. */
-const ORBIT_VITAMIN_IDS: NutrientId[] = [
+/** The 8 core vitamins/minerals averaged into the home stage's vitamins card (and listed in its
+ *  popup) — the same 8 ids CORE_NUTRIENT_COLOR defines a color for. */
+const CORE_VITAMIN_IDS: NutrientId[] = [
   'vitaminC', 'vitaminD', 'calcium', 'vitaminA', 'vitaminB12', 'iron', 'vitaminB9', 'vitaminB6',
 ]
-const ORBIT_MACROS: Array<{ id: 'proteinG' | 'carbsG' | 'fatG'; emoji: string }> = [
-  { id: 'proteinG', emoji: '🥩' },
-  { id: 'carbsG', emoji: '🌾' },
-  { id: 'fatG', emoji: '🥑' },
-]
 
-/** Position index `i` of `total` evenly around a circle, starting at 12 o'clock. */
-function orbitPosition(i: number, total: number, radiusPct: number) {
-  const angle = (-90 + (360 / total) * i) * (Math.PI / 180)
-  return { left: `${50 + radiusPct * Math.cos(angle)}%`, top: `${50 + radiusPct * Math.sin(angle)}%` }
+const STAT_MACRO_IDS: MacroId[] = ['calories', 'proteinG']
+/** All 4 macros, listed in the popup the calories/protein cards open. */
+const POPUP_MACRO_IDS: MacroId[] = ['calories', 'proteinG', 'carbsG', 'fatG']
+const STAT_MACRO_COLOR: Record<MacroId, string> = { calories: 'var(--accent)', ...MACRO_COLOR }
+/** After a meal is saved, the home stage first shows the old values for this long, so the fill
+ *  that follows is actually seen instead of happening while the screen is still appearing. */
+const STAT_FILL_DELAY_MS = 450
+
+/** The player's 3D character on the home stage — dragging spins it, tapping it opens the wardrobe. */
+function IdleCharacter({
+  size = 192,
+  lift = 0,
+  onClick,
+  ariaLabel,
+}: {
+  size?: number
+  lift?: number
+  onClick: () => void
+  ariaLabel: string
+}) {
+  // Not a <button>: its click would also fire at the end of a spin drag. AvatarView's onTap only
+  // fires for a real tap, so pointer taps go through it and the keyboard gets Enter/Space.
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        onClick()
+      }}
+      className="absolute"
+      style={{ width: size, height: size, left: '50%', top: `calc(50% - ${lift}px)`, transform: 'translate(-50%, -50%)' }}
+    >
+      {/* Brown disc behind the character, with a soft drop shadow. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          width: size * 0.92,
+          height: size * 0.92,
+          left: '50%',
+          // The character sits a little below the box center, so the disc does too.
+          top: `calc(50% + ${size * 0.045}px)`,
+          transform: 'translate(-50%, -50%)',
+          // Highlight kept off-center and small so the disc's top edge stays saturated against the pale page.
+          background: 'radial-gradient(circle at 40% 40%, #FFDF95 0%, #FACA5B 38%, #F2B649 70%, #E39C32 100%)',
+          boxShadow:
+            'inset 0 0 0 2px rgba(214,140,30,0.35), inset 0 -16px 30px rgba(150,85,10,0.38), 0 8px 22px rgba(90,60,30,0.22)',
+        }}
+      />
+      <AvatarView spinnable onTap={onClick} className="relative" />
+    </div>
+  )
 }
 
-// 64 frames extracted from the source idle video at 8fps, covering the full wave → rest →
-// belt-adjust motion. Playing forward then backward (ping-pong) guarantees a seamless loop —
-// the joint is always frame 1 meeting itself — without needing the source to loop cleanly.
-const IDLE_FRAME_COUNT = 64
-const IDLE_FRAME_ORDER = [
-  ...Array.from({ length: IDLE_FRAME_COUNT }, (_, i) => i + 1),
-  ...Array.from({ length: IDLE_FRAME_COUNT - 2 }, (_, i) => IDLE_FRAME_COUNT - 1 - i),
-]
-const IDLE_FRAME_MS = 125 // matches the 8fps the frames were extracted at
+// The home stage is laid out at this fixed size and scaled to fit by FitToBox.
+const STAGE_WIDTH = 360
+const STAGE_CHARACTER_SIZE = 380
+const STAGE_CHARACTER_BOX_HEIGHT = 360
 
-/** Plays the extracted idle frames forward then backward (ping-pong) like a flipbook. */
-function IdleCharacter({ size = 192 }: { size?: number }) {
-  const [frameIdx, setFrameIdx] = useState(0)
-
+/** One rectangle in the stats row under the character: a label, a fill bar and a value. */
+function StatCard({
+  label,
+  value,
+  percent,
+  barColor,
+  onClick,
+  compact = false,
+}: {
+  label: string
+  value?: string
+  percent: number
+  barColor: string
+  onClick?: () => void
+  /** Smaller rectangle for the vitamins popup list; the label never truncates. */
+  compact?: boolean
+}) {
+  // When the percent goes up (a meal was just logged), a "+N%" badge pops over the card while the bar fills.
+  const prevPercentRef = useRef(percent)
+  const [gain, setGain] = useState(0)
   useEffect(() => {
-    // Preload every frame once so the timer below never has to wait on a
-    // first-time network fetch mid-loop, which would show a blank/stale frame.
-    for (let n = 1; n <= IDLE_FRAME_COUNT; n++) {
-      const img = new Image()
-      img.src = `/character/idle-${n}.webp`
+    const diff = Math.round(percent - prevPercentRef.current)
+    prevPercentRef.current = percent
+    if (diff <= 0) {
+      setGain(0)
+      return
     }
-  }, [])
+    setGain(diff)
+    const id = setTimeout(() => setGain(0), 2200)
+    return () => clearTimeout(id)
+  }, [percent])
 
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      setFrameIdx((i) => (i + 1) % IDLE_FRAME_ORDER.length)
-    }, IDLE_FRAME_MS)
-    return () => window.clearTimeout(id)
-  }, [frameIdx])
+  const Tag = onClick ? 'button' : 'div'
+  return (
+    <Tag
+      {...(onClick ? { type: 'button' as const, onClick } : {})}
+      className={`relative flex w-full min-w-0 shrink-0 items-center rounded-2xl text-start ${compact ? 'gap-2 px-3 py-2' : 'gap-3 px-4 py-4'}`}
+      style={{
+        backgroundColor: 'var(--surface-cream)',
+        border: `2px solid ${STATUS_VAR[coverageStatus(percent)]}`,
+        boxShadow: '0 3px 8px rgba(26,26,25,0.14)',
+      }}
+    >
+      <span
+        className={`shrink-0 font-bold leading-tight ${compact ? 'w-[44%] whitespace-nowrap text-sm' : 'w-[38%] truncate text-base'}`}
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {label}
+      </span>
+      <span className={`relative block min-w-0 flex-1 overflow-hidden rounded-full ${compact ? 'h-5' : 'h-6'}`} style={{ backgroundColor: 'var(--surface-2)', border: '1.5px solid rgba(26,26,25,0.35)' }}>
+        <span
+          className="block h-full rounded-full transition-[width] duration-[1400ms] ease-out"
+          style={{ width: `${Math.min(100, percent)}%`, backgroundColor: barColor }}
+        />
+        {value && (
+          <span
+            className="absolute inset-0 flex items-center justify-center text-xs font-bold leading-none"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {value}
+          </span>
+        )}
+      </span>
+      {gain > 0 && (
+        <span
+          dir="ltr"
+          className="stat-gain-pop pointer-events-none absolute -top-3 end-3 rounded-full px-2 py-0.5 text-sm font-extrabold leading-none"
+          style={{ backgroundColor: 'var(--status-good)', color: '#ffffff', border: '2px solid #000000' }}
+        >
+          +{gain}%
+        </span>
+      )}
+    </Tag>
+  )
+}
+
+/**
+ * Lays its children out at `minWidth` and scales the whole block uniformly (up or down) to the
+ * largest size that still fits the available box — so the fixed-size stage art fills the
+ * screen, never gets clipped, and the screen never needs to scroll.
+ */
+function FitToBox({ minWidth, className, children }: { minWidth: number; className?: string; children: ReactNode }) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    if (!outer || !inner) return
+    const update = () => {
+      const w = outer.clientWidth
+      const h = outer.clientHeight
+      if (!w || !h) return
+      const scale = Math.min(w / minWidth, h / inner.offsetHeight)
+      inner.style.transform = `translate(-50%, -50%) scale(${scale})`
+    }
+    const ro = new ResizeObserver(update)
+    ro.observe(outer)
+    ro.observe(inner)
+    update()
+    return () => ro.disconnect()
+  }, [minWidth])
 
   return (
-    <div className="absolute" style={{ width: size, height: size, left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
-      <img
-        src={`/character/idle-${IDLE_FRAME_ORDER[frameIdx]}.webp`}
-        alt=""
-        className="absolute inset-0 h-full w-full object-contain"
-      />
+    <div ref={outerRef} className="relative min-h-0 w-full flex-1">
+      <div
+        ref={innerRef}
+        className={`absolute left-1/2 top-1/2 ${className ?? ''}`}
+        style={{ width: minWidth, transform: 'translate(-50%, -50%)' }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -220,11 +350,15 @@ function FoodAutocomplete({
   // a food someone just saved shows up in search without needing to retype.
   const [, forceUpdate] = useState(0)
   useEffect(() => onCustomFoodsChange(() => forceUpdate((n) => n + 1)), [])
+  const { lang } = useLanguage()
 
+  const typed = name.trim()
   const customMatches = !confirmed ? searchCustomFoods(name).map((f) => f.name) : []
-  const builtInMatches = !confirmed ? searchFoodNames(name) : []
-  const suggestions = !confirmed
-    ? [...customMatches, ...builtInMatches.filter((n) => !customMatches.some((c) => c.toLowerCase() === n.toLowerCase()))].slice(0, 6)
+  const builtInMatches = !confirmed ? searchFoodNames(name, lang) : []
+  const matches = [...customMatches, ...builtInMatches.filter((n) => !customMatches.some((c) => c.toLowerCase() === n.toLowerCase()))].slice(0, 5)
+  // Any food works (GPT does the lookup), so the typed text itself is always pickable, after the matches.
+  const suggestions = !confirmed && typed
+    ? matches.some((m) => m.toLowerCase() === typed.toLowerCase()) || (typed.length < 2 && matches.length > 0) ? matches : [...matches, typed]
     : []
   return (
     <div className="flex flex-col gap-2">
@@ -233,6 +367,10 @@ function FoodAutocomplete({
           type="text"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !confirmed && typed) onConfirm(typed)
+          }}
+          enterKeyHint="done"
           placeholder={t.autocomplete.namePlaceholder}
           className="w-full rounded-xl py-2.5 ps-3 text-base"
           style={{
@@ -357,20 +495,28 @@ function drawDetections(canvas: HTMLCanvasElement, detections: FoodDetection[]) 
 
 export function CameraPanel({
   onLogged,
-  weeklyRanked,
-  weeklyMacros,
+  todayNutrients,
+  todayMacros,
 }: {
   onLogged: () => void
-  /** Weekly per-nutrient coverage (worst-first) — feeds the vitamin rectangles orbiting the
-   *  character on the home stage. */
-  weeklyRanked: RankedNutrient[]
-  weeklyMacros: Record<'proteinG' | 'carbsG' | 'fatG', MacroInsight>
+  /** Today's logged vitamins/minerals — feed the vitamins card under the character, so it fills
+   *  up with every meal logged today. */
+  todayNutrients: NutrientAmounts
+  /** Today's logged calories/protein/carbs/fat — feed the macro cards under the character. */
+  todayMacros: MacroAmounts
 }) {
   const { lang, dir } = useLanguage()
   const t = CAMERA_PANEL_STRINGS[lang]
   const [stage, setStage] = useState<Stage>('camera')
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [scanErrorMsg, setScanErrorMsg] = useState<string | null>(null)
+  // The live camera only runs while the viewfinder popup is open, not on the idle home screen.
+  const [viewfinderOpen, setViewfinderOpen] = useState(false)
+  // The single "Add food" button opens this chooser between scanning and manual logging.
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const [wardrobeOpen, setWardrobeOpen] = useState(false)
+  const [vitaminsOpen, setVitaminsOpen] = useState(false)
+  const [macrosOpen, setMacrosOpen] = useState(false)
   const [analyzeErrorMsg, setAnalyzeErrorMsg] = useState<string | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [identification, setIdentification] = useState<FoodIdentification | null>(null)
@@ -385,49 +531,39 @@ export function CameraPanel({
   const [customValues, setCustomValues] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientId | null>(null)
   const [justSaved, setJustSaved] = useState(false)
-  const [todayNutrients, setTodayNutrients] = useState<NutrientAmounts>(EMPTY_NUTRIENTS)
   const [showAllFoods, setShowAllFoods] = useState(false)
-  const [editingPortions, setEditingPortions] = useState(false)
-  const [editedFoods, setEditedFoods] = useState<IdentifiedFood[]>([])
-  const [recalculating, setRecalculating] = useState(false)
+  const [editingPortionIndex, setEditingPortionIndex] = useState<number | null>(null)
+  const [portionDraft, setPortionDraft] = useState('')
+  const cancelPortionEditRef = useRef(false)
+  const [recalculatingIndex, setRecalculatingIndex] = useState<number | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
 
-  // The orbit rectangles' *displayed* values — deliberately kept out of sync with the
-  // weeklyRanked/weeklyMacros props while any non-'camera' stage is up (identifying a photo,
-  // confirming, saving...), so that when the flow returns to the home stage after logging a
-  // meal, the fill bars visibly animate from the old percent to the new one instead of just
-  // popping in already-updated.
-  const [displayedRanked, setDisplayedRanked] = useState(weeklyRanked)
-  const [displayedMacros, setDisplayedMacros] = useState(weeklyMacros)
+  // The stats cards' *displayed* values — deliberately kept out of sync with the
+  // todayNutrients/todayMacros props while any non-'camera' stage is up (identifying a photo, confirming,
+  // saving...), so that when the flow returns to the home stage after logging a meal, the fill
+  // bars visibly animate from the old percent to the new one instead of just popping in
+  // already-updated.
+  const [displayedNutrients, setDisplayedNutrients] = useState(todayNutrients)
+  const [displayedMacros, setDisplayedMacros] = useState(todayMacros)
   useEffect(() => {
     if (stage !== 'camera') return
-    const id = requestAnimationFrame(() => {
-      setDisplayedRanked(weeklyRanked)
-      setDisplayedMacros(weeklyMacros)
-    })
-    return () => cancelAnimationFrame(id)
-  }, [stage, weeklyRanked, weeklyMacros])
-  const rankedById = new Map(displayedRanked.map((r) => [r.id, r]))
+    const id = setTimeout(() => {
+      setDisplayedNutrients(todayNutrients)
+      setDisplayedMacros(todayMacros)
+    }, STAT_FILL_DELAY_MS)
+    return () => clearTimeout(id)
+  }, [stage, todayNutrients, todayMacros])
+  const vitaminPercent = (id: NutrientId) => percentOfRda(id, displayedNutrients[id])
+  const vitaminsAvgPercent = Math.round(
+    CORE_VITAMIN_IDS.reduce((sum, id) => sum + Math.min(100, vitaminPercent(id)), 0) / CORE_VITAMIN_IDS.length
+  )
 
   // A fresh result (new scan/lookup) always starts with the food list collapsed and not in edit mode.
   useEffect(() => {
     setShowAllFoods(false)
-    setEditingPortions(false)
+    setEditingPortionIndex(null)
     setRecalcError(null)
   }, [result])
-
-  // Loaded fresh each time the result screen appears so the "what's left today" modal reflects
-  // meals already logged today, not just this scanned item in isolation.
-  useEffect(() => {
-    if (stage !== 'result') return
-    let cancelled = false
-    getMealsByDate(todayKey()).then((meals) => {
-      if (!cancelled) setTodayNutrients(sumNutrients(meals.map((m) => m.nutrients)))
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [stage])
 
   const resultNutrients = result
     ? getVisibleNutrients().filter((n) => hasRespectableAmount(n.id, result.nutrients[n.id]))
@@ -512,7 +648,11 @@ export function CameraPanel({
   }, [])
 
   useEffect(() => {
-    if (stage !== 'camera') return
+    if (stage !== 'camera') setViewfinderOpen(false)
+  }, [stage])
+
+  useEffect(() => {
+    if (stage !== 'camera' || !viewfinderOpen) return
     setDetections([])
     setCameraReady(false)
     barcodeAttemptedRef.current = new Set()
@@ -636,7 +776,7 @@ export function CameraPanel({
     // Camera setup/teardown is tied to `stage` only — it must not restart (and briefly drop
     // the live stream) just because the user switches language mid-scan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage])
+  }, [stage, viewfinderOpen])
 
   // COCO-SSD is a hint layer only (bounding box + optional label) — it must never gate
   // whether the user is allowed to send a frame to OpenAI Vision, since it only recognizes
@@ -859,33 +999,76 @@ export function CameraPanel({
     setStage('camera')
   }
 
-  function startEditingPortions() {
-    if (!result) return
-    setEditedFoods(result.foods.map((f) => ({ ...f })))
+  function startEditingPortion(index: number) {
+    if (!result || recalculatingIndex !== null) return
+    cancelPortionEditRef.current = false
+    setPortionDraft(result.foods[index].portion)
     setRecalcError(null)
-    setEditingPortions(true)
+    setEditingPortionIndex(index)
   }
 
-  function updateEditedPortion(index: number, portion: string) {
-    setEditedFoods((prev) => prev.map((f, i) => (i === index ? { ...f, portion } : f)))
-  }
-
-  async function applyEditedQuantities() {
-    setRecalculating(true)
-    setRecalcError(null)
+  // Runs on blur — Enter blurs to commit, Escape flags a cancel and then blurs.
+  async function finishEditingPortion() {
+    const index = editingPortionIndex
+    setEditingPortionIndex(null)
+    if (cancelPortionEditRef.current || !result || index === null) return
+    const portion = portionDraft.trim()
+    if (!portion || portion === result.foods[index].portion) return
+    const editedFoods = result.foods.map((f, i) => (i === index ? { ...f, portion } : f))
+    setRecalculatingIndex(index)
     try {
       const res = await analyzeFoodList(editedFoods, lang)
-      setResult(res)
-      setEditingPortions(false)
+      // Same foods, new portions — keep each item's card photo even if the recalc didn't re-tag it.
+      const foods = res.foods.length === editedFoods.length
+        ? res.foods.map((f, i) => ({ ...f, cardId: f.cardId ?? editedFoods[i].cardId }))
+        : res.foods
+      setResult({ ...res, foods })
     } catch (err) {
       setRecalcError(err instanceof AnalyzeError ? err.message : t.analyzeUnreachable)
     } finally {
-      setRecalculating(false)
+      setRecalculatingIndex(null)
     }
   }
 
+  function renderPortion(f: IdentifiedFood, index: number, className: string) {
+    if (editingPortionIndex === index) {
+      return (
+        <input
+          type="text"
+          autoFocus
+          enterKeyHint="done"
+          value={portionDraft}
+          onChange={(e) => setPortionDraft(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={finishEditingPortion}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+            if (e.key === 'Escape') {
+              cancelPortionEditRef.current = true
+              e.currentTarget.blur()
+            }
+          }}
+          className={`w-28 rounded-full px-2.5 py-0.5 text-center ${className}`}
+          style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
+        />
+      )
+    }
+    return (
+      <button
+        type="button"
+        onClick={() => startEditingPortion(index)}
+        disabled={recalculatingIndex !== null}
+        title={t.result.editQuantities}
+        className={`underline decoration-dotted underline-offset-4 ${className} ${recalculatingIndex === index ? 'animate-pulse' : ''}`}
+        style={{ color: 'var(--text-muted)' }}
+      >
+        {recalculatingIndex === index ? t.result.calculating : f.portion}
+      </button>
+    )
+  }
+
   return (
-    <div className="relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pb-16 pt-5">
+    <div className={`relative mx-auto flex h-full max-w-md flex-col justify-center gap-3 px-4 pt-5 ${stage === 'camera' ? 'w-full pb-24' : stage === 'result' ? 'w-full pb-16' : 'pb-16'}`}>
       {stage === 'camera' && scanErrorMsg && (
         <p
           className="absolute inset-x-4 top-3 z-20 rounded-lg px-3 py-2 text-center text-xs font-medium"
@@ -931,119 +1114,289 @@ export function CameraPanel({
       )}
 
       {stage === 'camera' && (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2.5">
-          <div className="flex w-full items-center justify-center gap-2.5">
-            <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
-              <div className="orbit-spin absolute inset-0">
-                {ORBIT_VITAMIN_IDS.map((id, i) => {
-                  const percent = Math.round(rankedById.get(id)?.percent ?? 0)
-                  const status = coverageStatus(percent)
-                  const pos = orbitPosition(i, ORBIT_VITAMIN_IDS.length, 47)
+        <XpLevelBar ariaLabel={t.level.ariaLabel} dir={dir} />
+      )}
+
+      {stage === 'camera' && (
+        <FitToBox minWidth={STAGE_WIDTH} className="flex flex-col items-center gap-2.5">
+          <div className="relative w-full shrink-0" style={{ height: STAGE_CHARACTER_BOX_HEIGHT }}>
+            <IdleCharacter
+              size={STAGE_CHARACTER_SIZE}
+              lift={24}
+              onClick={() => setWardrobeOpen(true)}
+              ariaLabel={WARDROBE_STRINGS[lang].openAriaLabel}
+            />
+          </div>
+
+          <div className="flex w-full flex-col gap-2.5">
+            <StatCard
+              label={t.vitaminsCard}
+              percent={vitaminsAvgPercent}
+              barColor={STATUS_VAR[coverageStatus(vitaminsAvgPercent)]}
+              onClick={() => setVitaminsOpen(true)}
+            />
+            {isMacroTrackingEnabled() &&
+              STAT_MACRO_IDS.map((id) => (
+                <StatCard
+                  key={id}
+                  label={MACRO_LABELS[lang][id]}
+                  percent={percentOfMacroGoal(id, displayedMacros[id])}
+                  barColor={STAT_MACRO_COLOR[id]}
+                  onClick={() => setMacrosOpen(true)}
+                />
+              ))}
+          </div>
+
+          <div className="mt-4 flex w-[88%] flex-col items-center gap-2">
+            <button
+              onClick={() => setAddMenuOpen(true)}
+              className="w-4/5 rounded-full py-3 text-2xl font-extrabold text-black transition-transform active:translate-y-1 active:shadow-none"
+              style={{ backgroundColor: 'var(--accent)', border: '3px solid #000000', boxShadow: '0 3px 0 #000000' }}
+            >
+              {t.actions.addFood}
+            </button>
+          </div>
+        </FitToBox>
+      )}
+
+      {stage === 'camera' && wardrobeOpen && <WardrobeModal onClose={() => setWardrobeOpen(false)} />}
+
+      {stage === 'camera' && vitaminsOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => setVitaminsOpen(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex max-h-full w-full max-w-xs flex-col items-center gap-3 overflow-hidden rounded-3xl p-4"
+              style={{ backgroundColor: '#e5c184', border: '4px solid #000000' }}
+            >
+              <button
+                type="button"
+                onClick={() => setVitaminsOpen(false)}
+                aria-label={t.actions.closeMenu}
+                className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ backgroundColor: '#000000', color: '#ffffff' }}
+              >
+                <CloseIcon className="h-3.5 w-3.5" />
+              </button>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                {t.vitaminsCard}
+              </p>
+              <div className="-mx-1 flex min-h-0 w-[calc(100%+0.5rem)] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+                {CORE_VITAMIN_IDS.map((id) => {
+                  const percent = vitaminPercent(id)
                   return (
-                    <div key={id} className="absolute" style={{ left: pos.left, top: pos.top, transform: 'translate(-50%, -50%)' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedNutrient(id)}
-                        className="orbit-counter-spin flex flex-col gap-1 rounded-lg px-1.5 py-1.5 text-start"
-                        style={{
-                          width: 64,
-                          backgroundColor: 'var(--surface-cream)',
-                          border: `2px solid ${STATUS_VAR[status]}`,
-                          boxShadow: '0 3px 8px rgba(26,26,25,0.14)',
-                        }}
-                      >
-                        <span className="min-w-0 truncate text-[7px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                          {NUTRIENT_CONTENT[lang][id].name}
-                        </span>
-                        <span className="text-[7px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
-                          {percent}%
-                        </span>
-                        <span className="block h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
-                          <span
-                            className="block h-full rounded-full transition-[width] duration-700"
-                            style={{ width: `${Math.min(100, percent)}%`, backgroundColor: CORE_NUTRIENT_COLOR[id] }}
-                          />
-                        </span>
-                      </button>
-                    </div>
+                    <StatCard
+                      key={id}
+                      compact
+                      label={NUTRIENT_CONTENT[lang][id].name}
+                      value={`${percent}%`}
+                      percent={percent}
+                      barColor={CORE_NUTRIENT_COLOR[id] ?? STATUS_VAR[coverageStatus(percent)]}
+                      onClick={() => {
+                        setVitaminsOpen(false)
+                        setSelectedNutrient(id)
+                      }}
+                    />
                   )
                 })}
               </div>
-              <IdleCharacter size={122} />
             </div>
+          </div>,
+          document.body
+        )}
 
+      {stage === 'camera' && macrosOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            role="dialog"
+            aria-modal="true"
+          >
             <div
-              className="relative aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl"
-              style={{ maxWidth: 92, backgroundColor: 'var(--surface-2)', border: '4px solid #000000' }}
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => setMacrosOpen(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex max-h-full w-full max-w-xs flex-col items-center gap-3 overflow-hidden rounded-3xl p-4"
+              style={{ backgroundColor: '#e5c184', border: '4px solid #000000' }}
             >
-              {!cameraError ? (
-                <>
-                  <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-                  {/* Detection boxes/labels are drawn at the video's native resolution, which reads
-                   *  as oversized clutter shrunk into this small a viewfinder — kept mounted (so
-                   *  detection still runs and feeds stableDetection below) but not shown here. */}
-                  <canvas ref={canvasRef} className="hidden" />
-                </>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center p-1.5">
-                  <p className="text-center text-[8px] leading-snug" style={{ color: 'var(--text-primary)' }}>
-                    {cameraError}
+              <button
+                type="button"
+                onClick={() => setMacrosOpen(false)}
+                aria-label={t.actions.closeMenu}
+                className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ backgroundColor: '#000000', color: '#ffffff' }}
+              >
+                <CloseIcon className="h-3.5 w-3.5" />
+              </button>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                {t.macrosPopupTitle}
+              </p>
+              <div className="-mx-1 flex min-h-0 w-[calc(100%+0.5rem)] flex-col gap-1.5 px-1 pb-1">
+                {POPUP_MACRO_IDS.map((id) => (
+                  <StatCard
+                    key={id}
+                    compact
+                    label={MACRO_LABELS[lang][id]}
+                    value={t.macroValue(Math.round(displayedMacros[id]), Math.round(macroTargetFor(id)), id === 'calories')}
+                    percent={percentOfMacroGoal(id, displayedMacros[id])}
+                    barColor={STAT_MACRO_COLOR[id]}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {stage === 'camera' && addMenuOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => setAddMenuOpen(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex w-full max-w-xs flex-col items-center gap-3 rounded-3xl p-4"
+              style={{ backgroundColor: '#e5c184', border: '4px solid #000000' }}
+            >
+              <button
+                type="button"
+                onClick={() => setAddMenuOpen(false)}
+                aria-label={t.actions.closeMenu}
+                className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ backgroundColor: '#000000', color: '#ffffff' }}
+              >
+                <CloseIcon className="h-3.5 w-3.5" />
+              </button>
+              <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                {t.actions.addFood}
+              </p>
+              <div className="grid w-full grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMenuOpen(false)
+                    setScanErrorMsg(null)
+                    setViewfinderOpen(true)
+                  }}
+                  className="flex flex-col items-center gap-2 rounded-2xl py-4 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
+                >
+                  <CameraIcon className="h-7 w-7" strokeWidth={2.2} />
+                  {t.actions.scanFood}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMenuOpen(false)
+                    setStage('manual')
+                  }}
+                  className="flex flex-col items-center gap-2 rounded-2xl py-4 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ backgroundColor: '#e8863a', border: '4px solid #1a1a19', boxShadow: '0 4px 0 #1a1a19' }}
+                >
+                  <PencilIcon className="h-7 w-7" strokeWidth={2.2} />
+                  {t.actions.logManually}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {stage === 'camera' && viewfinderOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
+            <div
+              className="modal-backdrop-enter absolute inset-0"
+              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+              onClick={() => setViewfinderOpen(false)}
+            />
+            <div
+              className="modal-card-enter relative z-10 flex w-full max-w-sm flex-col items-center gap-3 rounded-3xl p-3"
+              style={{ backgroundColor: '#e5c184', border: '4px solid #000000' }}
+            >
+              <div
+                className="relative w-full overflow-hidden rounded-2xl"
+                style={{ aspectRatio: '3 / 4', maxHeight: '58vh', backgroundColor: 'var(--surface-2)', border: '4px solid #000000' }}
+              >
+                {!cameraError ? (
+                  <>
+                    <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
+                    {/* Detection boxes are drawn at the video's native resolution and wouldn't line up
+                     *  with the object-cover crop — kept mounted (so detection still runs and feeds
+                     *  stableDetection below) but not shown. */}
+                    <canvas ref={canvasRef} className="hidden" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <p className="text-center text-sm leading-snug" style={{ color: 'var(--text-primary)' }}>
+                      {cameraError}
+                    </p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setViewfinderOpen(false)}
+                  aria-label={t.actions.closeCamera}
+                  className="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: '#000000', color: '#ffffff' }}
+                >
+                  <CloseIcon className="h-4 w-4" />
+                </button>
+                {stableDetection && !cameraError && (
+                  <p
+                    className="absolute inset-x-2 bottom-2 rounded-full px-3 py-1 text-center text-xs font-medium"
+                    style={{ backgroundColor: 'rgba(255,250,240,0.9)', color: 'var(--text-primary)' }}
+                  >
+                    {foodEmoji(stableDetection.normalizedName)} {t.detectedSuffix(stableDetection.normalizedName)}
                   </p>
-                </div>
+                )}
+              </div>
+
+              {scanErrorMsg && (
+                <p
+                  className="w-full rounded-lg px-3 py-2 text-center text-xs font-medium"
+                  style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
+                >
+                  {scanErrorMsg}
+                </p>
+              )}
+
+              {!cameraError ? (
+                <button
+                  onClick={scanFood}
+                  disabled={!cameraReady}
+                  className="w-2/3 rounded-full py-3 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
+                  style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
+                >
+                  {t.actions.scanFood}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setStage('manual')}
+                  className="w-2/3 rounded-full py-2.5 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
+                  style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
+                >
+                  {t.actions.logManually}
+                </button>
               )}
             </div>
-          </div>
-
-          <div className="flex w-full max-w-[220px] items-stretch justify-center gap-1.5">
-            {ORBIT_MACROS.map(({ id, emoji }) => {
-              const percent = Math.round(displayedMacros[id].percent)
-              return (
-                <div
-                  key={id}
-                  className="flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5"
-                  style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000' }}
-                >
-                  <span className="text-sm leading-none" aria-hidden>
-                    {emoji}
-                  </span>
-                  <span className="text-[8px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                    {percent}%
-                  </span>
-                  <span className="block h-1 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
-                    <span
-                      className="block h-full rounded-full transition-[width] duration-700"
-                      style={{ width: `${Math.min(100, percent)}%`, backgroundColor: MACRO_COLOR[id] }}
-                    />
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {stableDetection && !cameraError && (
-            <p className="text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {foodEmoji(stableDetection.normalizedName)} {t.detectedSuffix(stableDetection.normalizedName)}
-            </p>
-          )}
-          <div className="flex w-[88%] flex-col items-center gap-2">
-            <button
-              onClick={scanFood}
-              disabled={!!cameraError || !cameraReady}
-              className="w-2/3 rounded-full py-3 text-sm font-semibold text-white transition-transform active:translate-y-1 active:shadow-none disabled:opacity-40"
-              style={{ backgroundColor: 'var(--accent)', border: '4px solid #000000', boxShadow: '0 4px 0 #000000' }}
-            >
-              {t.actions.scanFood}
-            </button>
-            <button
-              onClick={() => setStage('manual')}
-              className="w-2/3 rounded-full py-2.5 text-center text-sm font-medium transition-transform active:translate-y-1 active:shadow-none"
-              style={{ border: '4px solid #1a1a19', color: '#ffffff', backgroundColor: '#e8863a', boxShadow: '0 4px 0 #1a1a19' }}
-            >
-              {t.actions.logManually}
-            </button>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {stage === 'confirm' && identification && (
         <div className="flex flex-col items-center gap-3 py-1">
@@ -1182,15 +1535,7 @@ export function CameraPanel({
               </button>
             </div>
           </div>
-          <div className="flex justify-center pb-20">
-            <button
-              onClick={() => setStage('custom')}
-              className="rounded-full px-4 py-2 text-xs font-semibold transition-transform active:translate-y-1 active:shadow-none"
-              style={{ backgroundColor: '#fbedc3', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19', color: 'var(--text-primary)' }}
-            >
-              {t.manual.addCustomFood} {dir === 'rtl' ? '←' : '→'}
-            </button>
-          </div>
+          <div className="pb-20" />
         </div>
       )}
 
@@ -1241,39 +1586,41 @@ export function CameraPanel({
               </span>
             ) : (
               <>
-                <div className="flex flex-row flex-wrap items-start justify-center gap-x-4 gap-y-1">
-                  {result.foods.slice(0, VISIBLE_FOOD_COUNT).map((f, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      <span className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {f.name}
-                      </span>
-                      <span className="text-base font-medium leading-tight" style={{ color: 'var(--text-muted)' }}>
-                        {f.portion}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex flex-row flex-wrap items-end justify-center gap-x-4 gap-y-1">
+                  {result.foods.slice(0, VISIBLE_FOOD_COUNT).map((f, i) => {
+                    const card = matchSuperfood(f)
+                    return (
+                      <div key={i} className="flex flex-col items-center">
+                        {card?.imageSrc && (
+                          <img src={card.imageSrc} alt="" className="food-wiggle-in mb-0.5 h-14 w-14 object-contain" />
+                        )}
+                        <span className="text-2xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                          {f.name}
+                        </span>
+                        {renderPortion(f, i, 'text-base font-medium leading-tight')}
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="mt-1 flex items-center gap-1.5">
-                  {result.foods.length > VISIBLE_FOOD_COUNT && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllFoods(true)}
-                      className="flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-transform active:translate-y-0.5 active:shadow-none"
-                      style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
-                    >
-                      {t.result.moreFoodsButton(result.foods.length - VISIBLE_FOOD_COUNT)}
-                      <ChevronDownIcon className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                {recalcError && (
+                  <p
+                    className="rounded-lg px-3 py-1 text-center text-xs font-medium"
+                    style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
+                  >
+                    {recalcError}
+                  </p>
+                )}
+                {result.foods.length > VISIBLE_FOOD_COUNT && (
                   <button
                     type="button"
-                    onClick={startEditingPortions}
-                    className="rounded-full px-3 py-1 text-xs font-semibold transition-transform active:translate-y-0.5 active:shadow-none"
+                    onClick={() => setShowAllFoods(true)}
+                    className="mt-1 flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-transform active:translate-y-0.5 active:shadow-none"
                     style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', color: 'var(--text-primary)' }}
                   >
-                    {t.result.editQuantities}
+                    {t.result.moreFoodsButton(result.foods.length - VISIBLE_FOOD_COUNT)}
+                    <ChevronDownIcon className="h-3.5 w-3.5" />
                   </button>
-                </div>
+                )}
               </>
             )}
           </div>
@@ -1362,7 +1709,7 @@ export function CameraPanel({
           amount={
             result
               ? todayNutrients[selectedNutrient] + result.nutrients[selectedNutrient]
-              : rankedById.get(selectedNutrient)?.avgAmount ?? 0
+              : displayedNutrients[selectedNutrient]
           }
           onClose={() => setSelectedNutrient(null)}
         />
@@ -1394,96 +1741,23 @@ export function CameraPanel({
                 </button>
               </div>
               <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
-                {result.foods.slice(VISIBLE_FOOD_COUNT).map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-xl px-2.5 py-2"
-                    style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
-                  >
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{f.name}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{f.portion}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {editingPortions && result &&
-        createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-            <div
-              className="modal-backdrop-enter absolute inset-0"
-              style={{ backgroundColor: 'rgba(60,42,16,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-              onClick={() => !recalculating && setEditingPortions(false)}
-            />
-            <div
-              className="modal-card-enter relative z-10 flex max-h-[80vh] w-full max-w-md flex-col gap-2 overflow-hidden rounded-2xl p-4"
-              style={{ backgroundColor: '#e5c184', border: '3px solid #000000' }}
-            >
-              <div className="relative flex shrink-0 items-center justify-center pb-1">
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {t.result.editQuantitiesTitle}
-                </span>
-                <button
-                  onClick={() => !recalculating && setEditingPortions(false)}
-                  aria-label={t.result.closeAriaLabel}
-                  className="absolute end-0 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-primary)' }}
-                >
-                  <CloseIcon className="h-4 w-4" />
-                </button>
-              </div>
-
-              {recalcError && (
-                <p
-                  className="shrink-0 rounded-lg px-3 py-2 text-center text-xs font-medium"
-                  style={{ backgroundColor: 'var(--status-critical-soft)', color: 'var(--status-critical)' }}
-                >
-                  {recalcError}
-                </p>
-              )}
-
-              <div className="thin-scroll flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
-                {editedFoods.map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2"
-                    style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {f.name}
-                    </span>
-                    <input
-                      type="text"
-                      value={f.portion}
-                      onChange={(e) => updateEditedPortion(i, e.target.value)}
-                      disabled={recalculating}
-                      className="w-28 shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-medium"
-                      style={{ backgroundColor: 'var(--surface-2)', border: '2px solid #000000', color: 'var(--text-primary)' }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-1 flex shrink-0 gap-2">
-                <button
-                  onClick={applyEditedQuantities}
-                  disabled={recalculating}
-                  className="flex-[2] rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
-                  style={{ backgroundColor: 'var(--accent)', border: '2px solid #1a1a19', boxShadow: '0 2px 0 #1a1a19' }}
-                >
-                  {recalculating ? t.result.calculating : t.result.updateQuantities}
-                </button>
-                <button
-                  onClick={() => setEditingPortions(false)}
-                  disabled={recalculating}
-                  className="flex-1 rounded-full py-2.5 text-sm font-medium disabled:opacity-40 transition-transform active:translate-y-1 active:shadow-none"
-                  style={{ backgroundColor: '#f6e4bb', border: '2px solid #222', boxShadow: '0 2px 0 #222', color: 'var(--text-primary)' }}
-                >
-                  {t.result.cancel}
-                </button>
+                {result.foods.slice(VISIBLE_FOOD_COUNT).map((f, j) => {
+                  const i = VISIBLE_FOOD_COUNT + j
+                  const card = matchSuperfood(f)
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded-xl px-2.5 py-2"
+                      style={{ backgroundColor: 'var(--surface-cream)', border: '1px solid var(--border)' }}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {card?.imageSrc && <img src={card.imageSrc} alt="" className="h-8 w-8 shrink-0 object-contain" />}
+                        {f.name}
+                      </span>
+                      {renderPortion(f, i, 'shrink-0 text-xs')}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>,

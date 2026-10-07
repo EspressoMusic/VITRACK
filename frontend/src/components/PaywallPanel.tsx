@@ -136,8 +136,10 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
 
   return (
     <div
-      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3 py-2"
+      className="relative mx-auto flex h-svh w-full max-w-md flex-col items-center justify-center overflow-hidden px-3"
       style={{
+        paddingTop: 'calc(var(--safe-top) + 0.5rem)',
+        paddingBottom: 'calc(var(--safe-bottom) + 0.5rem)',
         backgroundColor: 'var(--surface-0)',
         backgroundImage: "url('/background-calendar.png?v=3')",
         backgroundSize: 'cover',

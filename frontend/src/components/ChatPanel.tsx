@@ -18,7 +18,7 @@ import { todayKey } from '../lib/date'
 import type { WorkoutEntry } from '../types'
 import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
 import { MACRO_LABELS } from '../lib/i18n/macros'
-import { SendIcon, StarIcon, BotIcon, CloseIcon } from './icons'
+import { SendIcon, StarIcon, CloseIcon } from './icons'
 import { MacroSummaryRow } from './MacroSummaryRow'
 import { BotPersonalityModal } from './BotPersonalityModal'
 import { SavedMealCard } from './FavoritesPanel'
@@ -704,13 +704,6 @@ export function ChatPanel() {
     setShowPersonalityModal(false)
   }
 
-  function handleBotIconClick() {
-    if (!isAngry || !mood) return
-    const template = mood.junkFoodName ? pickRandom(t.angryRantFood) : pickRandom(t.angryRantChallenge)
-    const content = template.replace('{food}', mood.junkFoodName ?? '').replace('{challenge}', mood.challengeName ?? '')
-    setTurns((prev) => [...prev, { role: 'assistant', content, angry: true }])
-  }
-
   /** Proposes a challenge from the same template list the manual "add goal" flow uses, with a
    *  plain confirm / different-one choice — resolved locally so this never round-trips through
    *  the nutrition Q&A bot, which has no concept of challenges and would otherwise just answer
@@ -810,26 +803,8 @@ export function ChatPanel() {
           className="relative flex shrink-0 items-center justify-center gap-1.5 px-3 py-2.5 transition-colors"
           style={{ backgroundColor: isAngry ? CHAT_HEADER_ANGRY : CHAT_HEADER }}
         >
-          <button
-            type="button"
-            onClick={handleBotIconClick}
-            aria-label={isAngry ? t.angryIconAriaLabel : t.title}
-            className={`flex h-5 w-5 shrink-0 items-center justify-center ${isAngry ? 'bot-angry-shake' : ''}`}
-            style={{ color: '#f5deb3' }}
-          >
-            <BotIcon className="h-full w-full" />
-          </button>
           <button type="button" onClick={() => setShowPersonalityModal(true)} className="text-sm font-semibold" style={{ color: '#f5deb3' }}>
             {t.title}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSavedItems(true)}
-            aria-label={FAVORITES_PANEL_STRINGS[lang].title}
-            className="absolute end-3 flex h-6 w-6 items-center justify-center"
-            style={{ color: '#f5deb3' }}
-          >
-            <StarIcon className="h-4 w-4" filled={savedMeals.length > 0 || savedChatFoods.length > 0} />
           </button>
         </div>
 

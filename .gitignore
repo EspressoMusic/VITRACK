@@ -34,3 +34,6 @@ supabase/.temp
 
 # Locally built app downloads, not served from source
 website/downloads
+
+# Full-detail character sculpts (sources for frontend/public/character/*.glb), too big for git
+assets/characters-raw/

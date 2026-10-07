@@ -3,34 +3,32 @@ import { createPortal } from 'react-dom'
 
 const CONFETTI_COLORS = ['#f5b942', '#e8952c', '#ffd166', '#f28c28', '#ffcb69', '#d9a441']
 
-export function ConfettiBurst({ count = 28 }: { count?: number } = {}) {
+/** `short` = quick ~1.5s pop; `inline` = render in place (absolute) so a modal can layer it
+ *  between its backdrop and its card instead of over everything. */
+export function ConfettiBurst({ count = 28, short = false, inline = false }: { count?: number; short?: boolean; inline?: boolean } = {}) {
   const [visible, setVisible] = useState(true)
   const pieces = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
-        delay: Math.random() * 0.4,
-        duration: 2.2 + Math.random() * 1.3,
+        delay: Math.random() * (short ? 0.15 : 0.4),
+        duration: short ? 1.1 + Math.random() * 0.6 : 2.2 + Math.random() * 1.3,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
         width: 5 + Math.random() * 5,
         height: 8 + Math.random() * 6,
       })),
-    [count]
+    [count, short]
   )
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 3800)
+    const t = setTimeout(() => setVisible(false), short ? 1900 : 3800)
     return () => clearTimeout(t)
-  }, [])
+  }, [short])
 
   if (!visible) return null
-  // Portaled straight to <body> so this "fixed" layer is positioned against the real viewport,
-  // not against whichever ancestor panel happens to have an active CSS transform (e.g. the
-  // .panel-enter entrance animation), which would otherwise make it fall from mid-screen instead
-  // of the very top.
-  return createPortal(
-    <div className="confetti-layer pointer-events-none fixed inset-0 z-50 overflow-hidden">
+  const layer = (
+    <div className={`confetti-layer pointer-events-none ${inline ? 'absolute' : 'fixed z-50'} inset-0 overflow-hidden`}>
       {pieces.map((p) => (
         <span
           key={p.id}
@@ -45,7 +43,12 @@ export function ConfettiBurst({ count = 28 }: { count?: number } = {}) {
           }}
         />
       ))}
-    </div>,
-    document.body
+    </div>
   )
+  if (inline) return layer
+  // Portaled straight to <body> so this "fixed" layer is positioned against the real viewport,
+  // not against whichever ancestor panel happens to have an active CSS transform (e.g. the
+  // .panel-enter entrance animation), which would otherwise make it fall from mid-screen instead
+  // of the very top.
+  return createPortal(layer, document.body)
 }

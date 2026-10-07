@@ -89,6 +89,19 @@ export async function getMealsByDate(date: string): Promise<MealEntry[]> {
   return db.getAllFromIndex('meals', 'by-date', date)
 }
 
+/** Meals dated `from`..`to` (inclusive, YYYY-MM-DD) with just what they contained — no photos, so it stays a light read. */
+export type MealFoods = Pick<MealEntry, 'id' | 'date' | 'createdAt' | 'foods' | 'isJunkFood'>
+
+export async function getMealFoodsBetween(from: string, to: string): Promise<MealFoods[]> {
+  if (useCloud()) {
+    const { cloudGetMealFoodsBetween } = await import('./cloudDb')
+    return cloudGetMealFoodsBetween(from, to)
+  }
+  const db = await getDb()
+  const meals = await db.getAllFromIndex('meals', 'by-date', IDBKeyRange.bound(from, to))
+  return meals.map(({ id, date, createdAt, foods, isJunkFood }) => ({ id, date, createdAt, foods, isJunkFood }))
+}
+
 export async function clearAllMeals(): Promise<void> {
   if (useCloud()) {
     const { cloudClearAllMeals } = await import('./cloudDb')

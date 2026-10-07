@@ -303,6 +303,18 @@ export function HeartIcon({ className, style, strokeWidth, filled }: IconProps &
   )
 }
 
+/** Little barn — the farm world tab. */
+export function FarmIcon({ className, style, strokeWidth }: IconProps) {
+  return (
+    <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>
+      <path d="M3.5 10.2 12 4l8.5 6.2" />
+      <path d="M5.5 9v11h13V9" />
+      <path d="M9.5 20v-6h5v6" />
+      <path d="m9.5 14 5 6M14.5 14l-5 6" />
+    </svg>
+  )
+}
+
 export function AppleIcon({ className, style, strokeWidth }: IconProps) {
   return (
     <svg className={className} style={style} {...base} strokeWidth={strokeWidth ?? base.strokeWidth}>

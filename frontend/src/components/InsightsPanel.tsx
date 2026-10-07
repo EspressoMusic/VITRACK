@@ -4,6 +4,8 @@ import type { MealEntry, WorkoutEntry } from '../types'
 import { getAllMeals, getAllWorkouts } from '../lib/db'
 import { todayKey } from '../lib/date'
 import { computeWeeklyInsights } from '../lib/insights'
+import { sumMacros } from '../lib/macros'
+import { sumNutrients } from '../lib/nutrients'
 import { useLanguage } from '../contexts/LanguageContext'
 import { INSIGHTS_PANEL_STRINGS } from '../lib/i18n/insightsPanel'
 import { ConfettiBurst } from './ConfettiBurst'
@@ -34,8 +36,16 @@ export function InsightsPanel({ refreshSignal, onLogged }: { refreshSignal: numb
     })
   }, [refreshSignal])
 
-  const { ranked, weeklyCompletion, macros } = useMemo(() => computeWeeklyInsights(meals, workouts), [meals, workouts])
+  const { ranked, weeklyCompletion } = useMemo(() => computeWeeklyInsights(meals, workouts), [meals, workouts])
   const deficient = ranked.filter((r) => r.percent < 90)
+  const todayMacros = useMemo(() => {
+    const today = todayKey()
+    return sumMacros(meals.filter((m) => m.date === today && m.macros).map((m) => m.macros!))
+  }, [meals])
+  const todayNutrients = useMemo(() => {
+    const today = todayKey()
+    return sumNutrients(meals.filter((m) => m.date === today).map((m) => m.nutrients))
+  }, [meals])
 
   useEffect(() => {
     if (!confettiFired.current && meals.length > 0 && weeklyCompletion === 100) {
@@ -65,7 +75,7 @@ export function InsightsPanel({ refreshSignal, onLogged }: { refreshSignal: numb
       {showConfetti && <ConfettiBurst />}
 
       <Suspense fallback={null}>
-        <CameraPanel onLogged={onLogged} weeklyRanked={ranked} weeklyMacros={macros} />
+        <CameraPanel onLogged={onLogged} todayNutrients={todayNutrients} todayMacros={todayMacros} />
       </Suspense>
 
       {noDeficienciesOpen &&

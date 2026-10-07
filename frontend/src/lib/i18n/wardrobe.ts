@@ -1,0 +1,133 @@
+import type { Lang } from './lang'
+
+export type WardrobeTab = 'animal' | 'outfit' | 'shoes' | 'hat' | 'veggie'
+
+export interface WardrobeStrings {
+  /** Short label for the farm menu button. */
+  openAriaLabel: string
+  closeAriaLabel: string
+  done: string
+  tabs: Record<WardrobeTab, string>
+  /** Label over the fur colors in the character tab. */
+  color: string
+  colorAria: (n: number) => string
+  /** Names of every style option, keyed by style id (ids are unique across categories). */
+  styles: Record<string, string>
+}
+
+export const WARDROBE_STRINGS: Record<Lang, WardrobeStrings> = {
+  en: {
+    openAriaLabel: 'Change my style',
+    closeAriaLabel: 'Close',
+    done: 'Done',
+    tabs: { animal: 'Character', outfit: 'Outfit', shoes: 'Shoes', hat: 'Hat', veggie: 'Veggie' },
+    color: 'Color',
+    colorAria: (n) => `Color ${n}`,
+    styles: {
+      bunny: 'Bunny',
+      kitten: 'Kitten',
+      puppy: 'Puppy',
+      bear: 'Teddy',
+      cucumber: 'Cucumber',
+      onion: 'Onion',
+      panda: 'Super Panda',
+      bellpepper: 'Bell Pepper',
+      agent: 'Agent',
+      none: 'None',
+      cape: 'Hero cape',
+      hoodie: 'Hoodie',
+      sport: 'Sporty',
+      raincoat: 'Raincoat',
+      summer: 'Summer',
+      sneakers: 'Sneakers',
+      boots: 'Boots',
+      straw: 'Straw hat',
+      cap: 'Cap',
+      beanie: 'Beanie',
+      crown: 'Crown',
+      flower: 'Flower',
+      carrot: 'Carrot',
+      broccoli: 'Broccoli',
+      tomato: 'Tomato',
+      corn: 'Corn',
+      eggplant: 'Eggplant',
+      pepper: 'Pepper',
+    },
+  },
+  he: {
+    openAriaLabel: 'שינוי הסטייל שלי',
+    closeAriaLabel: 'סגירה',
+    done: 'סיום',
+    tabs: { animal: 'דמות', outfit: 'תלבושת', shoes: 'נעליים', hat: 'כובע', veggie: 'ירק' },
+    color: 'צבע',
+    colorAria: (n) => `צבע ${n}`,
+    styles: {
+      bunny: 'ארנבון',
+      kitten: 'חתלתול',
+      puppy: 'כלבלב',
+      bear: 'דובי',
+      cucumber: 'מלפפון',
+      onion: 'בצל',
+      panda: 'סופר פנדה',
+      bellpepper: 'גמבה',
+      agent: 'סוכן',
+      none: 'בלי',
+      cape: 'גלימת גיבור',
+      hoodie: 'קפוצ׳ון',
+      sport: 'ספורט',
+      raincoat: 'מעיל גשם',
+      summer: 'קיץ',
+      sneakers: 'סניקרס',
+      boots: 'מגפיים',
+      straw: 'כובע קש',
+      cap: 'מצחייה',
+      beanie: 'כובע גרב',
+      crown: 'כתר',
+      flower: 'פרח',
+      carrot: 'גזר',
+      broccoli: 'ברוקולי',
+      tomato: 'עגבנייה',
+      corn: 'תירס',
+      eggplant: 'חציל',
+      pepper: 'פלפל',
+    },
+  },
+  ar: {
+    openAriaLabel: 'تغيير أسلوبي',
+    closeAriaLabel: 'إغلاق',
+    done: 'تم',
+    tabs: { animal: 'الشخصية', outfit: 'الزي', shoes: 'الحذاء', hat: 'القبعة', veggie: 'خضار' },
+    color: 'اللون',
+    colorAria: (n) => `اللون ${n}`,
+    styles: {
+      bunny: 'أرنوب',
+      kitten: 'قطيطة',
+      puppy: 'جرو',
+      bear: 'دبدوب',
+      cucumber: 'خيارة',
+      onion: 'بصلة',
+      panda: 'سوبر باندا',
+      bellpepper: 'فلفلة حلوة',
+      agent: 'العميل',
+      none: 'بدون',
+      cape: 'عباءة بطل',
+      hoodie: 'هودي',
+      sport: 'رياضي',
+      raincoat: 'معطف مطر',
+      summer: 'صيفي',
+      sneakers: 'رياضي',
+      boots: 'جزمة',
+      straw: 'قبعة قش',
+      cap: 'كاب',
+      beanie: 'قبعة صوف',
+      crown: 'تاج',
+      flower: 'وردة',
+      carrot: 'جزر',
+      broccoli: 'بروكلي',
+      tomato: 'طماطم',
+      corn: 'ذرة',
+      eggplant: 'باذنجان',
+      pepper: 'فلفل',
+    },
+  },
+}

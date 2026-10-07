@@ -28,6 +28,8 @@ export type NutrientAmounts = Record<NutrientId, number>
 export interface IdentifiedFood {
   name: string
   portion: string
+  /** Superfood card id when the AI judged this item to be one of the card foods — see lib/superfoods.ts. */
+  cardId?: string
 }
 
 export type MacroId = 'calories' | 'carbsG' | 'fatG' | 'proteinG'

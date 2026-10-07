@@ -51,6 +51,10 @@ const MACRO_PROPERTIES = {
   proteinG: { type: 'number', description: 'Estimated total protein in grams provided by the meal.' },
 }
 
+/** Ids of the foods that have a card (with a photo) in the app's Superfoods panel — keep in sync with
+ *  SUPERFOODS in frontend/src/lib/superfoods.ts. Lets the result screen show the card photo for each match. */
+const CARD_FOOD_IDS = ['lentils', 'chickpeas', 'blackBeans', 'kidneyBeans', 'edamame', 'peas', 'quinoa', 'almonds', 'pumpkinSeeds', 'oats', 'sweetPotato', 'potato', 'corn', 'chia', 'spinach', 'broccoli', 'bellPepper', 'blueberry', 'avocado', 'walnuts', 'pumpkin', 'ginger', 'onion', 'hamburger', 'pizza', 'fries', 'donut', 'croissant', 'cookie', 'cake', 'cupcake', 'chocolate', 'iceCream', 'gummies', 'lollipop', 'cashews', 'pistachios', 'mango', 'peach', 'cherries', 'kiwi', 'pomegranate', 'cauliflower', 'asparagus', 'mushroom', 'radish', 'pretzel', 'plum', 'persimmon', 'fig', 'coconut', 'apricot', 'papaya', 'melon', 'lychee']
+
 const REPORT_TOOL = {
   type: 'function' as const,
   function: {
@@ -68,6 +72,11 @@ const REPORT_TOOL = {
             properties: {
               name: { type: 'string', description: 'Short name of the food item in the reply language, e.g. "Grilled chicken breast".' },
               portion: { type: 'string', description: 'Estimated portion size in the reply language, kept as short as possible — just a weight like "150 grams" with the unit word fully translated into the reply language (e.g. "150 גרם" in Hebrew, never "150g" or "150g~") or a short count like "1 bowl". Never use the "~" symbol. Never combine a size word with a weight (e.g. write "150 grams", not "medium (150 grams)").' },
+              cardId: {
+                type: 'string',
+                enum: CARD_FOOD_IDS,
+                description: 'Set only when this item is plainly one of these foods (e.g. almonds, boiled chickpeas, a slice of pizza) — not a different dish or product made from it (hummus, almond milk, potato chips). Omit otherwise.',
+              },
             },
             required: ['name', 'portion'],
           },

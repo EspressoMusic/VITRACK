@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { NavBar, type Tab } from './components/NavBar'
+import { BOT_ENABLED, NavBar, type Tab } from './components/NavBar'
 import { CalendarPanel } from './components/CalendarPanel'
 import { InsightsPanel } from './components/InsightsPanel'
 import { SuperfoodsPanel } from './components/SuperfoodsPanel'
 import { ChatPanel } from './components/ChatPanel'
+import { FarmPanel } from './farm/FarmPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { GearIcon } from './components/icons'
 import { NAV_BAR_STRINGS } from './lib/i18n/navBar'
@@ -45,7 +46,7 @@ const BOT_ALERT_TOASTS_ENABLED = false
 function AppShell() {
   const { lang } = useLanguage()
   const { loading: authLoading } = useAuth()
-  const [tab, setTab] = useState<Tab>('chat')
+  const [tab, setTab] = useState<Tab>(BOT_ENABLED ? 'chat' : 'insights')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshSignal, setRefreshSignal] = useState(0)
   const [weeklyCompletion, setWeeklyCompletion] = useState(0)
@@ -57,6 +58,7 @@ function AppShell() {
     insights: 'background-insights',
     superfoods: 'background-plain',
     chat: 'background-plain',
+    farm: 'background-plain',
   }[tab]
 
   const navT = NAV_BAR_STRINGS[lang]
@@ -131,15 +133,16 @@ function AppShell() {
 
   return (
     <div
-      className="app-shell relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
+      className="app-shell safe-screen relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
       style={{ '--panel-bg': `url('/${panelBg}.png?v=3')` } as React.CSSProperties}
     >
       <main className="relative min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
           {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} onChallengeUpdate={bumpRefresh} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} onLogged={bumpRefresh} />}
-          {tab === 'superfoods' && <SuperfoodsPanel />}
+          {tab === 'superfoods' && <SuperfoodsPanel onAskBot={BOT_ENABLED ? () => setTab('chat') : undefined} />}
           {tab === 'chat' && <ChatPanel />}
+          {tab === 'farm' && <FarmPanel />}
         </div>
 
         {tab === 'insights' && !settingsOpen && (

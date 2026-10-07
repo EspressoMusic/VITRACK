@@ -133,7 +133,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
   return (
     <div
       dir={dir}
-      className="relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
+      className="safe-screen relative mx-auto flex h-svh w-full max-w-md flex-col overflow-hidden"
       style={{
         backgroundColor: 'var(--surface-0)',
         backgroundImage: "url('/background-onboarding.png?v=3')",

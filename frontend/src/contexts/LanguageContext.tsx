@@ -14,7 +14,7 @@ const LanguageContext = createContext<LanguageContextValue | null>(null)
 function getInitialLang(): Lang {
   const stored = localStorage.getItem(STORAGE_KEY)
   if (stored === 'en' || stored === 'he' || stored === 'ar') return stored
-  return 'en'
+  return 'he'
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {

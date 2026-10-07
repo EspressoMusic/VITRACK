@@ -2,6 +2,20 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Phone status bar / home-indicator insets. Capacitor's Android SystemBars injects
+   --safe-area-inset-*; iOS and installed web apps fall back to env(). */
+:root {
+  --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+
+/* Full-screen roots keep their content clear of the status bar and home indicator,
+   while their background still runs edge to edge. */
+.safe-screen {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
 @font-face {
   font-family: 'Manrope';
   src: url('/fonts/manrope-variable.ttf') format('truetype-variations');
@@ -59,10 +73,10 @@
 :root {
   color-scheme: light;
   --surface-0: #fde3a3;
-  --surface-1: #fcfcfb;
+  --surface-1: #fbf1d8;
   --surface-2: #f1f0ec;
   --surface-tint: rgba(11, 11, 11, 0.07);
-  --surface-cream: #fdf3d9;
+  --surface-cream: #f8e9c4;
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
   --text-muted: #898781;
@@ -88,10 +102,10 @@
 .dark {
   color-scheme: light;
   --surface-0: #fde3a3;
-  --surface-1: #fcfcfb;
+  --surface-1: #fbf1d8;
   --surface-2: #f1f0ec;
   --surface-tint: rgba(11, 11, 11, 0.07);
-  --surface-cream: #fdf3d9;
+  --surface-cream: #f8e9c4;
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
   --text-muted: #898781;
@@ -155,6 +169,12 @@ button {
 button:active {
   transform: scale(0.96);
   opacity: 0.9;
+}
+/* Cards inside a scroll area: a finger landing to scroll counts as a press, so the shrink
+   above would make the card under it jump while scrolling. */
+button.scroll-card:active {
+  transform: none;
+  opacity: 1;
 }
 
 .nav-tab-transition {
@@ -371,6 +391,32 @@ button:active {
 }
 .food-wiggle-in {
   animation: food-wiggle-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* "+N%" badge over a home stat card while its bar fills after a meal is logged. */
+@keyframes stat-gain-pop {
+  0% {
+    transform: translateY(6px) scale(0.5);
+    opacity: 0;
+  }
+  18% {
+    transform: translateY(-4px) scale(1.15);
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(1);
+    opacity: 0;
+  }
+}
+.stat-gain-pop {
+  animation: stat-gain-pop 2.2s ease-out both;
 }
 
 @keyframes confetti-fall {
@@ -867,29 +913,6 @@ button:active {
   animation: chip-level-fill 5s ease-in-out infinite;
 }
 
-@keyframes orbit-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes orbit-counter-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(-360deg);
-  }
-}
-.orbit-spin {
-  animation: orbit-spin 60s linear infinite;
-}
-.orbit-counter-spin {
-  animation: orbit-counter-spin 60s linear infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
   .modal-backdrop-enter,
@@ -914,8 +937,6 @@ button:active {
   .power-on-flash,
   .vitamin-chip-drift,
   .chip-level-fill,
-  .orbit-spin,
-  .orbit-counter-spin,
   .bot-angry-shake {
     animation: none;
   }
@@ -956,6 +977,21 @@ button:active {
     animation: none;
     display: none;
   }
+}
+
+/* Superfoods filter panel grows out of its floating button */
+@keyframes filter-row-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.filter-row-enter {
+  animation: filter-row-in 180ms ease-out;
 }
 
 /* Scrollable day-detail / insights lists — still scrollable, just no visible scrollbar */

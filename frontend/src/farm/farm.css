@@ -1,0 +1,112 @@
+/* Farm panel animations (see src/farm). */
+@keyframes farm-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.7);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -80%) scale(1.15);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -260%) scale(1);
+  }
+}
+.farm-float {
+  transform: translate(-50%, -50%);
+  animation: farm-float-up 1.2s ease-out both;
+}
+
+@keyframes farm-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.farm-pop {
+  animation: farm-pop-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+@keyframes farm-toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.farm-toast {
+  animation: farm-toast-in 2.2s ease-out both;
+}
+/* Same fade as the toast, held longer (online notices carry names). */
+.farm-notice {
+  animation: farm-toast-in 3.6s ease-out both;
+}
+
+@keyframes farm-star-in {
+  from {
+    transform: rotate(-14deg) scale(0.5);
+  }
+  60% {
+    transform: rotate(6deg) scale(1.12);
+  }
+  to {
+    transform: rotate(0) scale(1);
+  }
+}
+.farm-level-star {
+  animation: farm-star-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+@keyframes farm-coin-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(6deg);
+  }
+}
+.farm-coin-bob {
+  animation: farm-coin-bob 1.6s ease-in-out infinite;
+}
+
+/* Countdown ring of the coin ad: fills once over --ring-time. */
+@keyframes farm-ad-ring {
+  from {
+    stroke-dashoffset: var(--ring-len);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.farm-ad-ring {
+  animation: farm-ad-ring var(--ring-time) linear both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farm-coin-bob,
+  .farm-float,
+  .farm-pop,
+  .farm-toast,
+  .farm-notice,
+  .farm-level-star {
+    animation: none;
+  }
+}

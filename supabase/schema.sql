@@ -239,3 +239,116 @@ $$;
 
 revoke all on function paddle_upsert_subscription_sandbox(text, text, text, text, timestamptz, uuid) from public, anon, authenticated;
 grant execute on function paddle_upsert_subscription_sandbox(text, text, text, text, timestamptz, uuid) to service_role;
+
+-- ---------- Online city (visit other players' cities, send guards) ----------
+
+-- Each player's city map, published by the app so other players can visit it. Only the map is
+-- stored (buildings, unlocked land, guards at the gate) — no coins, barn or orders. `name` stays
+-- null until the player names their city; the app then shows "City #1234" instead, so no real
+-- name is ever shown to strangers by default.
+create table if not exists city_snapshots (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  name text check (name is null or char_length(name) between 1 and 20),
+  level int not null default 1,
+  city jsonb not null check (octet_length(city::text) < 300000),
+  look jsonb check (look is null or octet_length(look::text) < 4000),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists city_snapshots_updated_at_idx on city_snapshots (updated_at desc);
+
+alter table city_snapshots enable row level security;
+
+create policy "Signed-in players can visit cities"
+  on city_snapshots for select
+  to authenticated
+  using (true);
+
+create policy "Players publish their own city"
+  on city_snapshots for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Players update their own city"
+  on city_snapshots for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- A guard one player sent to another's gate. Once per sender → city per (UTC) day. There are no
+-- insert/update policies: sending and claiming only happen through send_guard()/claim_guards() below,
+-- which enforce the limits.
+create table if not exists guard_gifts (
+  id uuid primary key default gen_random_uuid(),
+  from_user uuid not null references auth.users (id) on delete cascade,
+  to_user uuid not null references auth.users (id) on delete cascade,
+  sent_on date not null default current_date,
+  created_at timestamptz not null default now(),
+  claimed_at timestamptz,
+  constraint guard_gifts_not_self check (from_user <> to_user),
+  constraint guard_gifts_once_a_day unique (from_user, to_user, sent_on)
+);
+
+create index if not exists guard_gifts_unclaimed_idx on guard_gifts (to_user) where claimed_at is null;
+create index if not exists guard_gifts_from_day_idx on guard_gifts (from_user, sent_on);
+
+alter table guard_gifts enable row level security;
+
+create policy "Players see guards they sent or got"
+  on guard_gifts for select
+  to authenticated
+  using (auth.uid() = from_user or auth.uid() = to_user);
+
+-- Returns 'sent', 'already' (this city got one from you today), 'limit' (5 a day, matches GUARD.sendsPerDay
+-- in frontend/src/farm/data/guards.ts) or 'blocked' (no such city / your own city).
+create or replace function send_guard(p_to uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_me uuid := auth.uid();
+  v_sent int;
+begin
+  if v_me is null or p_to is null or p_to = v_me then
+    return 'blocked';
+  end if;
+  if not exists (select 1 from city_snapshots where user_id = p_to) then
+    return 'blocked';
+  end if;
+  if exists (select 1 from guard_gifts where from_user = v_me and to_user = p_to and sent_on = current_date) then
+    return 'already';
+  end if;
+  select count(*) into v_sent from guard_gifts where from_user = v_me and sent_on = current_date;
+  if v_sent >= 5 then
+    return 'limit';
+  end if;
+  insert into guard_gifts (from_user, to_user) values (v_me, p_to) on conflict do nothing;
+  return 'sent';
+end;
+$$;
+
+revoke all on function send_guard(uuid) from public, anon;
+grant execute on function send_guard(uuid) to authenticated;
+
+-- Hands the caller every guard sent to them that they haven't received yet (each one only once).
+create or replace function claim_guards()
+returns table (id uuid, from_user uuid, from_name text)
+language sql
+security definer
+set search_path = public
+as $$
+  with claimed as (
+    update guard_gifts g
+    set claimed_at = now()
+    where g.to_user = auth.uid() and g.claimed_at is null
+    returning g.id, g.from_user
+  )
+  select c.id, c.from_user, s.name
+  from claimed c
+  left join city_snapshots s on s.user_id = c.from_user;
+$$;
+
+revoke all on function claim_guards() from public, anon;
+grant execute on function claim_guards() to authenticated;
