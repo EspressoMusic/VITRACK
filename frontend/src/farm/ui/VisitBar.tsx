@@ -2,13 +2,14 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { FARM_STRINGS } from '../../lib/i18n/farmPanel'
 import { CREAM, GameButton, INK, NAV_CLEARANCE } from './kit'
 
-/** While visiting someone's city: its name up top, and "Home" / "Send a guard" at the bottom (instead of the bottom menu). */
+/** While visiting someone's city: its name up top, and "Home" / "Their home" / "Send a guard" at the bottom (instead of the bottom menu). */
 export function VisitBar({
   name,
   level,
   sent,
   busy,
   onSend,
+  onHouse,
   onHome,
 }: {
   name: string
@@ -16,6 +17,8 @@ export function VisitBar({
   sent: boolean
   busy: boolean
   onSend: (e: React.MouseEvent<HTMLButtonElement>) => void
+  /** Steps inside their home; missing when the city has none. */
+  onHouse?: () => void
   onHome: () => void
 }) {
   const { lang } = useLanguage()
@@ -45,6 +48,11 @@ export function VisitBar({
           <GameButton color="cream" onClick={onHome} className="py-2">
             {t.backHome} 🏠
           </GameButton>
+          {onHouse && (
+            <GameButton color="amber" onClick={onHouse} className="py-2">
+              {t.visitHouse}
+            </GameButton>
+          )}
           <GameButton onClick={onSend} disabled={sent || busy} className="flex-1 py-2 text-sm">
             {sent ? t.guardSent : t.sendGuard}
           </GameButton>

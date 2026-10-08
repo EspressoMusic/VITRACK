@@ -688,3 +688,104 @@ export function drawGermNest(ctx: Ctx, p: Point, t: number) {
     }
   })
 }
+
+/** The candy cave junk food marches out of: a big chocolate cake hill with a lollipop stuck in it, in a puddle of melted chocolate. */
+export function drawJunkNest(ctx: Ctx, p: Point, t: number) {
+  ellipse(ctx, p.x, p.y + 4, 38, 14)
+  fillStroke(ctx, '#8a5a3a', '#4a2a17', 1.6)
+  ellipse(ctx, p.x + 14, p.y + 8, 7, 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'
+  ctx.fill()
+  // lollipop stuck in the side
+  ctx.lineCap = 'round'
+  for (const [w, color] of [
+    [4.4, OUTLINE],
+    [2.4, '#fff6ea'],
+  ] as const) {
+    ctx.strokeStyle = color
+    ctx.lineWidth = w
+    ctx.beginPath()
+    ctx.moveTo(p.x + 20, p.y - 8)
+    ctx.lineTo(p.x + 29, p.y - 30)
+    ctx.stroke()
+  }
+  ellipse(ctx, p.x + 30, p.y - 35, 8, 8)
+  fillStroke(ctx, '#7fd6e8')
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  for (let i = 0; i <= 24; i++) {
+    const a = i * 0.55
+    const r = i * 0.27
+    ctx.lineTo(p.x + 30 + Math.cos(a) * r, p.y - 35 + Math.sin(a) * r)
+  }
+  ctx.stroke()
+  // the hill
+  const hill = () => {
+    ctx.beginPath()
+    ctx.moveTo(p.x - 32, p.y + 4)
+    ctx.bezierCurveTo(p.x - 30, p.y - 32, p.x + 28, p.y - 34, p.x + 31, p.y + 4)
+    ctx.closePath()
+  }
+  hill()
+  fillStroke(ctx, '#6b3f26')
+  // pink frosting over the top, dripping down
+  ctx.save()
+  hill()
+  ctx.clip()
+  ctx.beginPath()
+  ctx.moveTo(p.x - 40, p.y - 40)
+  ctx.lineTo(p.x + 40, p.y - 40)
+  ctx.lineTo(p.x + 40, p.y - 15)
+  for (let i = 0; i < 8; i++) {
+    const x0 = p.x + 40 - i * 10
+    ctx.quadraticCurveTo(x0 - 5, p.y - 15 + (i % 2 ? 13 : 6), x0 - 10, p.y - 15 - (i % 3) * 1.5)
+  }
+  ctx.closePath()
+  fillStroke(ctx, '#ff9fc0', OUTLINE, 1.4)
+  ctx.restore()
+  hill()
+  ctx.strokeStyle = OUTLINE
+  ctx.lineWidth = 1.6
+  ctx.stroke()
+  ellipse(ctx, p.x - 12, p.y - 19, 7, 2.6, -0.3)
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'
+  ctx.fill()
+  ctx.lineWidth = 1.4
+  for (const [dx, dy, a, color] of [
+    [-16, -14, 0.6, '#ffffff'],
+    [-4, -22, -0.4, '#7fd6e8'],
+    [8, -18, 0.9, '#ffe066'],
+    [16, -12, -0.7, '#8fd14f'],
+    [2, -12, 0.2, '#b98cff'],
+  ] as const) {
+    ctx.strokeStyle = color
+    ctx.beginPath()
+    ctx.moveTo(p.x + dx - Math.cos(a) * 1.8, p.y + dy - Math.sin(a) * 1.8)
+    ctx.lineTo(p.x + dx + Math.cos(a) * 1.8, p.y + dy + Math.sin(a) * 1.8)
+    ctx.stroke()
+  }
+  // a cherry on top
+  ctx.strokeStyle = OUTLINE
+  ctx.lineWidth = 1.2
+  ctx.beginPath()
+  ctx.moveTo(p.x - 1, p.y - 30)
+  ctx.quadraticCurveTo(p.x + 1, p.y - 36, p.x + 5, p.y - 37)
+  ctx.stroke()
+  ellipse(ctx, p.x - 1.5, p.y - 27.5, 4.2, 4)
+  fillStroke(ctx, '#e8232f')
+  // cave mouth with a sugary glow and eyes blinking in the dark
+  ctx.beginPath()
+  ctx.ellipse(p.x, p.y + 2, 14, 14, 0, Math.PI, Math.PI * 2)
+  ctx.closePath()
+  fillStroke(ctx, '#2a160c')
+  ellipse(ctx, p.x, p.y + 1, 11, 3.6)
+  ctx.fillStyle = `rgba(255,143,184,${0.5 + Math.sin(t * 2) * 0.2})`
+  ctx.fill()
+  const blink = Math.sin(t * 1.1 + 1) > 0.93
+  for (const dx of [-5, 5]) {
+    ellipse(ctx, p.x + dx, p.y - 6, 2, blink ? 0.4 : 2.4)
+    ctx.fillStyle = '#ffb3d1'
+    ctx.fill()
+  }
+}

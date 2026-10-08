@@ -153,5 +153,14 @@ export const GERM_ROAD: Point[] = [
   { x: 18.5, y: 24.35 },
 ]
 
+/** Junk food marches out of the candy cave along this road (tile coordinates), left of the germs' one, and stops
+ *  in front of the wall to throw at the food friends on top of it. */
+export const JUNK_ROAD: Point[] = [
+  { x: 19.6, y: 29.2 },
+  { x: 18.7, y: 28.0 },
+  { x: 17.9, y: 27.0 },
+  { x: 17.3, y: 26.35 },
+]
+
 /** Signpost beside the germs' road (tile coordinates of its foot); tapping it opens the germ library. */
 export const GERM_SIGN: Point = { x: 23.0, y: 26.2 }

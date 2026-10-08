@@ -1,14 +1,17 @@
-import { GERM_ROAD } from '../data/areas'
-import { GERM } from '../data/city'
-import { GERMS, GERMS_BY_ID, type GermDef, MINI_GERM } from '../data/germs'
+import { GERM_ROAD, JUNK_ROAD } from '../data/areas'
+import { GERM, JUNK_RAID } from '../data/city'
+import { type FoeDef, type FoeShape, GERMS, GERMS_BY_ID, type GermDef, type GermShape, MINI_GERM } from '../data/germs'
+import { JUNK_FOODS, JUNK_FOODS_BY_ID, type JunkShape } from '../data/junkFoods'
 import { biteDamage, findGate, gateHp, zapDamage } from '../systems/DefenseSystem'
 import type { GameState, Point } from '../types'
 import { type Box, type InkWeight, boxAround } from './ink'
 import { tileToWorld } from './iso'
+import { JUNK_ART, drawTreat } from './junkArt'
 import { OUTLINE, ellipse, fillStroke, shade, softFx } from './sprites'
 
 /** Germs crawl out of the swamp, follow the road to the city gate and bite it until the gate zaps them.
  *  Every germ type (see data/germs.ts) has its own look and power.
+ *  Junk food (data/junkFoods.ts) comes out of the candy cave on a road of its own and throws at the food friends on the wall.
  *  They live only while the map is on screen — nothing about them is saved except the gate's damage. */
 
 type Ctx = CanvasRenderingContext2D
@@ -21,12 +24,23 @@ export type GermEvent =
   | { type: 'hit'; at: Point; color: string }
   /** A healer gave a germ some health back. */
   | { type: 'heal'; at: Point }
-  /** Spit landed on the gate. */
-  | { type: 'splat'; at: Point }
+  /** Spit landed on the gate (goo green), or junk food hit a friend on the wall (`color` of what it threw). */
+  | { type: 'splat'; at: Point; color?: string }
+
+/** A food friend on top of the wall that junk food throws at (see WallCrew). */
+export interface WallTarget {
+  /** Where it stands, tile coordinates. */
+  spot: Point
+  /** Middle of its body, world units. */
+  body: Point
+  /** False while it's knocked down. */
+  up: boolean
+  hit: (damage: number) => void
+}
 
 /** What's needed to paint a germ — a live one, or a still one for the germ library. */
-interface GermLook {
-  def: GermDef
+export interface GermLook {
+  def: FoeDef
   radius: number
   speed: number
   state: 'walk' | 'attack' | 'pop'
@@ -45,6 +59,8 @@ export interface Germ extends GermLook {
   maxHp: number
   tapsLeft: number
   attack: number
+  /** The road it walks: the germs' one, or the junk food's. */
+  road: Road
   /** Distance travelled along the road, world units. */
   dist: number
   /** Where it stops walking: at the gate, or (spitters) further down the road. */
@@ -67,6 +83,20 @@ interface Spit {
   damage: number
 }
 
+/** A bit of junk food flying at a friend on the wall. */
+interface Treat {
+  from: Point
+  to: Point
+  target: WallTarget
+  /** 0..1 along the flight. */
+  t: number
+  damage: number
+  shape: JunkShape
+  color: string
+  /** Radians per second, either way round. */
+  spin: number
+}
+
 export interface GermDrawable {
   depth: number
   at: Point
@@ -79,6 +109,8 @@ export interface GermDrawable {
   cache?: { id: string; key: string }
   /** Drawn this many world units higher (a hop or a drop-in), without redrawing a cached picture. */
   lift?: number
+  /** Drawn moved by this much: a cached picture painted around (0, 0) that walks around (a food friend). */
+  shift?: Point
   /** Drawn as-is, without an ink outline (arrows). */
   noInk?: boolean
 }
@@ -92,26 +124,50 @@ const SPIT_TIME = 0.6
 const HEAL_EVERY = 2.4
 const HEAL_RANGE = 52
 const GOO = '#9be15d'
+const TREAT_TIME = 0.65
+const TREAT_ARC = 30
 /** Outside things are always in front of the city (see renderer depth notes). */
 export const OUTSIDE_DEPTH = 1000
 
-const ROAD_WORLD = GERM_ROAD.map((p) => tileToWorld(p.x, p.y))
-const SEGMENTS = ROAD_WORLD.slice(1).map((p, i) => Math.hypot(p.x - ROAD_WORLD[i].x, p.y - ROAD_WORLD[i].y))
-const ROAD_LENGTH = SEGMENTS.reduce((a, b) => a + b, 0)
-const GATE_FRONT = ROAD_WORLD[ROAD_WORLD.length - 1]
+interface Road {
+  /** Tile coordinates. */
+  points: Point[]
+  /** Length of each stretch, world units. */
+  segments: number[]
+  length: number
+  /** Where it ends, world units. */
+  end: Point
+}
 
-function roadPoint(dist: number): Point {
-  let d = Math.max(0, Math.min(ROAD_LENGTH, dist))
-  for (let i = 0; i < SEGMENTS.length; i++) {
-    if (d <= SEGMENTS[i] || i === SEGMENTS.length - 1) {
-      const k = SEGMENTS[i] ? Math.min(1, d / SEGMENTS[i]) : 0
-      const a = GERM_ROAD[i]
-      const b = GERM_ROAD[i + 1]
+function makeRoad(points: Point[]): Road {
+  const world = points.map((p) => tileToWorld(p.x, p.y))
+  const segments = world.slice(1).map((p, i) => Math.hypot(p.x - world[i].x, p.y - world[i].y))
+  return { points, segments, length: segments.reduce((a, b) => a + b, 0), end: world[world.length - 1] }
+}
+
+const GERM_PATH = makeRoad(GERM_ROAD)
+const JUNK_PATH = makeRoad(JUNK_ROAD)
+const GATE_FRONT = GERM_PATH.end
+
+function roadPoint(road: Road, dist: number): Point {
+  const { points, segments } = road
+  let d = Math.max(0, Math.min(road.length, dist))
+  for (let i = 0; i < segments.length; i++) {
+    if (d <= segments[i] || i === segments.length - 1) {
+      const k = segments[i] ? Math.min(1, d / segments[i]) : 0
+      const a = points[i]
+      const b = points[i + 1]
       return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }
     }
-    d -= SEGMENTS[i]
+    d -= segments[i]
   }
-  return GERM_ROAD[GERM_ROAD.length - 1]
+  return points[points.length - 1]
+}
+
+function pickWeighted<T extends FoeDef>(pool: T[]): T {
+  let r = Math.random() * pool.reduce((sum, d) => sum + d.weight, 0)
+  for (const d of pool) if ((r -= d.weight) <= 0) return d
+  return pool[0]
 }
 
 /** Sleepy germs keep fading out and back in. */
@@ -129,29 +185,38 @@ const isHidden = (g: Germ) => fadeAlpha(g) < 0.6
 export class GermSwarm {
   germs: Germ[] = []
   private spits: Spit[] = []
+  private treats: Treat[] = []
   private clock = 0
   private nextSpawn = 1.5
+  private nextJunk = 4
   private nextId = 1
   private last = 0
 
   constructor() {
-    // One germ already on its way, so the outside never looks empty when the map opens.
-    this.spawn(this.pickType(1), ROAD_LENGTH * 0.45)
+    // One germ and one junk food already on their way, so the outside never looks empty when the map opens.
+    this.spawn(this.pickType(1), GERM_PATH.length * 0.45)
+    this.spawn(this.pickJunk(1), JUNK_PATH.length * 0.5)
   }
 
   /** A random germ type the player is ready for; only one king at a time. */
   private pickType(level: number): GermDef {
     const kingOut = this.germs.some((g) => g.def.power === 'boss' && g.state !== 'pop')
-    const pool = GERMS.filter((d) => d.minLevel <= level && !(d.power === 'boss' && kingOut))
-    let r = Math.random() * pool.reduce((sum, d) => sum + d.weight, 0)
-    for (const d of pool) if ((r -= d.weight) <= 0) return d
-    return pool[0]
+    return pickWeighted(GERMS.filter((d) => d.minLevel <= level && !(d.power === 'boss' && kingOut)))
   }
 
-  private spawn(def: GermDef, dist = 0, mini?: { lane: number }) {
-    const used = this.germs.filter((g) => g.state !== 'pop').map((g) => g.lane)
+  private pickJunk(level: number): FoeDef {
+    return pickWeighted(JUNK_FOODS.filter((d) => d.minLevel <= level))
+  }
+
+  private onRoad(road: Road): Germ[] {
+    return this.germs.filter((g) => g.state !== 'pop' && g.road === road)
+  }
+
+  private spawn(def: FoeDef, dist = 0, mini?: { lane: number }) {
+    const road = def.power === 'lob' ? JUNK_PATH : GERM_PATH
+    const used = this.onRoad(road).map((g) => g.lane)
     const lane = mini?.lane ?? LANES.find((l) => !used.includes(l)) ?? 0
-    const p = roadPoint(dist)
+    const p = roadPoint(road, dist)
     const hp = mini ? MINI_GERM.hp : def.hp
     this.germs.push({
       id: this.nextId++,
@@ -163,8 +228,9 @@ export class GermSwarm {
       attack: mini ? MINI_GERM.attack : def.attack,
       speed: def.speed * (mini ? MINI_GERM.speedFactor : 1),
       radius: def.radius * (mini ? MINI_GERM.sizeFactor : 1),
+      road,
       dist,
-      stopAt: def.power === 'spit' ? ROAD_LENGTH - SPIT_RANGE : ROAD_LENGTH,
+      stopAt: def.power === 'spit' ? road.length - SPIT_RANGE : road.length,
       lane,
       state: 'walk',
       timer: 0,
@@ -178,21 +244,26 @@ export class GermSwarm {
     })
   }
 
-  update(state: GameState, now: number): GermEvent[] {
+  /** `crew`: the friends on top of the wall, for junk food to throw at. */
+  update(state: GameState, now: number, crew: WallTarget[] = []): GermEvent[] {
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0
     this.last = now
     const gate = findGate(state)
     if (!gate) {
       this.germs = []
       this.spits = []
+      this.treats = []
       return []
     }
     const events: GermEvent[] = []
     this.clock += dt
-    const alive = this.germs.filter((g) => g.state !== 'pop').length
     if (this.clock >= this.nextSpawn) {
-      if (alive < GERM.maxAlive) this.spawn(this.pickType(state.player.level))
+      if (this.onRoad(GERM_PATH).length < GERM.maxAlive) this.spawn(this.pickType(state.player.level))
       this.nextSpawn = this.clock + GERM.spawnMin + Math.random() * (GERM.spawnMax - GERM.spawnMin)
+    }
+    if (this.clock >= this.nextJunk) {
+      if (crew.length && this.onRoad(JUNK_PATH).length < JUNK_RAID.maxAlive) this.spawn(this.pickJunk(state.player.level))
+      this.nextJunk = this.clock + JUNK_RAID.spawnMin + Math.random() * (JUNK_RAID.spawnMax - JUNK_RAID.spawnMin)
     }
     // A standing gate fights back; a broken one can't, and germs pile up until it's repaired.
     const standing = gateHp(gate, now) >= 1
@@ -210,6 +281,8 @@ export class GermSwarm {
           g.state = 'attack'
           g.timer = g.def.attackEvery * 0.6
         }
+      } else if (g.state === 'attack' && g.def.power === 'lob') {
+        if (g.timer >= g.def.attackEvery) this.lob(g, crew)
       } else if (g.state === 'attack' && g.timer >= g.def.attackEvery) {
         g.timer = 0
         if (g.def.power === 'spit') {
@@ -233,7 +306,7 @@ export class GermSwarm {
         this.heal(g, events)
       }
       // Spread out over the last stretch before the stop.
-      const p = roadPoint(g.dist)
+      const p = roadPoint(g.road, g.dist)
       const spread = Math.max(0, Math.min(1, (g.dist - g.stopAt * 0.6) / (g.stopAt * 0.4)))
       const lunge = g.state === 'attack' && g.def.power !== 'spit' ? Math.max(0, Math.sin((g.timer / 0.35) * Math.PI)) * (g.timer < 0.35 ? 0.16 : 0) : 0
       g.x = p.x + g.lane * spread
@@ -248,8 +321,45 @@ export class GermSwarm {
       }
     }
     this.spits = this.spits.filter((s) => s.t < 1)
+    for (const tr of this.treats) {
+      tr.t += dt / TREAT_TIME
+      if (tr.t < 1) continue
+      tr.target.hit(tr.damage)
+      events.push({ type: 'splat', at: tr.to, color: tr.color })
+    }
+    this.treats = this.treats.filter((tr) => tr.t < 1)
     this.germs = this.germs.filter((g) => g.state !== 'pop' || g.timer < POP_TIME)
     return events
+  }
+
+  /** Junk food throws a bit of itself at the closest friend still standing on the wall; with none in reach it looks again soon. */
+  private lob(g: Germ, crew: WallTarget[]) {
+    let target: WallTarget | null = null
+    let best = JUNK_RAID.range
+    for (const w of crew) {
+      const d = Math.hypot(w.spot.x - g.x, w.spot.y - g.y)
+      if (w.up && d <= best) {
+        target = w
+        best = d
+      }
+    }
+    if (!target) {
+      g.timer = g.def.attackEvery * 0.7
+      return
+    }
+    g.timer = 0
+    const junk = JUNK_FOODS_BY_ID[g.def.id]
+    const c = this.bodyCenter(g)
+    this.treats.push({
+      from: { x: c.x, y: c.y - g.radius * 0.5 },
+      to: target.body,
+      target,
+      t: 0,
+      damage: g.attack,
+      shape: junk.shape,
+      color: junk.treat,
+      spin: (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 5),
+    })
   }
 
   /** Healers give one health point back to every hurt germ near them. */
@@ -295,14 +405,15 @@ export class GermSwarm {
     return best
   }
 
-  /** The germ furthest down the road (closest to the gate) within `range` tiles of tile point `from`, for an archer.
-   *  Faded germs dodge, and so do ones `skip` rules out (e.g. already doomed by arrows in the air). */
+  /** The germ or junk food furthest along its road (closest to the gate or the wall) within `range` tiles of tile point `from`,
+   *  for an archer. Faded germs dodge, and so do ones `skip` rules out (e.g. already doomed by arrows in the air). */
   aimAt(from: Point, range: number, skip?: (g: Germ) => boolean): Germ | null {
+    const along = (g: Germ) => g.dist / g.road.length
     let best: Germ | null = null
     for (const g of this.germs) {
       if (g.state === 'pop' || isHidden(g) || skip?.(g)) continue
       if (Math.hypot(g.x - from.x, g.y - from.y) > range) continue
-      if (!best || g.dist > best.dist) best = g
+      if (!best || along(g) > along(best)) best = g
     }
     return best
   }
@@ -377,6 +488,12 @@ export class GermSwarm {
       const p = { x: s.from.x + (s.to.x - s.from.x) * s.t, y: s.from.y + (s.to.y - s.from.y) * s.t - Math.sin(s.t * Math.PI) * 26 }
       list.push({ depth: OUTSIDE_DEPTH + 500, at: p, box: boxAround(p.x, p.y, 8, 8, 8), alpha: 1, draw: (c: Ctx) => drawSpit(c, p, t) })
     }
+    for (const tr of this.treats) {
+      const k = Math.min(1, tr.t)
+      const p = { x: tr.from.x + (tr.to.x - tr.from.x) * k, y: tr.from.y + (tr.to.y - tr.from.y) * k - Math.sin(k * Math.PI) * TREAT_ARC }
+      const angle = tr.spin * k * TREAT_TIME
+      list.push({ depth: OUTSIDE_DEPTH + 520, at: p, box: boxAround(p.x, p.y, 7, 7, 7), alpha: 1, noInk: true, draw: (c: Ctx) => drawTreat(c, tr.shape, p, angle) })
+    }
     return list
   }
 }
@@ -401,7 +518,7 @@ function fx(layer: 'under' | 'over', draw: (c: Ctx) => void) {
 
 type Mood = 'grumpy' | 'wild' | 'tough' | 'sleepy' | 'dry' | 'lazy' | 'royal' | 'drool'
 
-interface ShapeArt {
+export interface ShapeArt {
   /** Spikes and tails, behind the body. */
   back?: (c: Ctx, g: GermLook, t: number) => void
   /** The body's outline (path only). */
@@ -629,7 +746,7 @@ const SPRINKLES: [number, number, number, string][] = [
   [-1.6, 5.8, 0.4, '#ffffff'],
 ]
 
-const ART: Record<GermDef['shape'], ShapeArt> = {
+const ART: Record<GermShape, ShapeArt> = {
   round: {
     back: (c, g, t) => spikes(c, g, t, 8, 3.2, (_, x, y) => roundKnob(g.def.color)(c, x, y)),
     body: circleBody,
@@ -931,7 +1048,9 @@ const ART: Record<GermDef['shape'], ShapeArt> = {
   },
 }
 
-/** Paints a germ standing with its feet at `p`. */
+const FOE_ART: Record<FoeShape, ShapeArt> = { ...ART, ...JUNK_ART }
+
+/** Paints a germ (or a junk food) standing with its feet at `p`. */
 function drawGerm(ctx: Ctx, p: Point, g: GermLook, t: number) {
   const popping = g.state === 'pop'
   const k = popping ? g.timer / POP_TIME : 0
@@ -949,7 +1068,7 @@ function drawGerm(ctx: Ctx, p: Point, g: GermLook, t: number) {
     c.fillStyle = 'rgba(40,30,20,0.22)'
     c.fill()
   })
-  const art = ART[g.def.shape]
+  const art = FOE_ART[g.def.shape]
   const cy = p.y - r - 2 - hop
   const sx = s / squash
   const sy = s * squash

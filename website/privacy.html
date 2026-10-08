@@ -83,7 +83,7 @@ footer .wrap { max-width: 1100px; display: flex; align-items: center; justify-co
   <div class="wrap">
     <div class="doc-card">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: 10.09.2026</p>
+      <p class="updated">Last updated: 08.10.2026</p>
 
       <div class="legal-nav">
         <a href="/terms.html">Terms &amp; Conditions</a>
@@ -91,80 +91,126 @@ footer .wrap { max-width: 1100px; display: flex; align-items: center; justify-co
         <a href="/refund.html">Refund Policy</a>
       </div>
 
-      <h2>1. General</h2>
-      <p>This policy explains what information Vitrack collects, how it is stored and used, with whom it may be shared, and what rights you have regarding it. "Personal information" is any information relating to an identified or identifiable person.</p>
-      <p>The data controller is currently Shilo, an independent private developer, with no registered business entity, who can be contacted at: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a>.</p>
+      <p>This Privacy Policy explains what personal information Vitrack collects, why, where it is kept, who receives it, and what rights you have. It applies to the Vitrack web app, the Android app, and the website at vitamintrack.com (together, "the App"). "Personal information" means any information about an identified or identifiable person.</p>
 
-      <h2>2. What information is collected</h2>
+      <h2>1. Who is responsible for your information</h2>
+      <p>The App is operated by Shilo, an individual based in Israel, who is the controller (the "database owner") of the personal information described here. Contact: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a>.</p>
+
+      <h2>2. The short version</h2>
       <ul>
-        <li>Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin, mineral, calorie, and macronutrient targets.</li>
-        <li>Meal photos and analysis results: when you photograph a meal, the photo is sent for automatic analysis (see section 3), and the analysis result (list of identified foods, estimated quantities, nutrient estimates, and confidence level) is stored together with the photo: locally on the device (IndexedDB) if you are not signed in, or in a cloud database if you signed in with a Google account.</li>
-        <li>Workout logs: if you use the workout-tracking feature, the workout name, exercises, sets/reps, and completion status you enter are stored locally on your device if you are not signed in, or in a cloud database if you signed in with a Google account.</li>
-        <li>Goals, challenges, and saved items: custom nutrition goals/challenges you create, and meals or superfoods you mark as a favorite, are stored locally on your device (or, for goals, synced to a cloud database if you are signed in). This data is not shared with anyone besides the infrastructure providers in section 5.</li>
-        <li>Nutrition chat messages: if you use the in-app chat ("Superfoods" nutrition Q&amp;A or the motivational workout-chat feature), the messages you type and the conversation history are sent for AI-based processing to generate a reply (see section 3). This chat is a paid feature and therefore requires you to be signed in with an active subscription; chat messages themselves are not stored by the App beyond the current session.</li>
-        <li>Account details: if you sign in with Google, we receive from it (via our authentication provider) your name, email address, and profile picture as provided by Google.</li>
-        <li>Subscription and billing status: the plan type selected (monthly/yearly) and active/inactive status, recorded by the App once a purchase is completed through Paddle. We do not collect or store your payment method details (such as card numbers) — these are entered directly into Paddle's checkout and handled solely by Paddle, as described in section 5 below.</li>
-        <li>Basic technical information: like any online service, the hosting, authentication, and AI infrastructure we use may naturally process basic connection data (such as IP address, browser type, timestamps) necessary to operate and secure the Service.</li>
+        <li>If you do not sign in, almost everything you enter stays on your device.</li>
+        <li>Meal photos, typed food names, and chat messages are sent to OpenAI to be analyzed — even when you are not signed in.</li>
+        <li>If you sign in with Google, your data is synced to our cloud database so you can use it on other devices.</li>
+        <li>Your city (but not your name or email) is visible to other signed-in players.</li>
+        <li>We use the TikTok Pixel to measure our ads. TikTok receives page visits and checkout events — never your meals, photos, health information, or chat messages.</li>
+        <li>We never see your card details, and we do not sell your personal information.</li>
+        <li>You can delete your data and your account at any time in Settings.</li>
       </ul>
 
-      <h2>3. AI-based image analysis and chat</h2>
-      <p>Food recognition from a photo happens in two stages: (a) live, on-device recognition only (using a machine-learning model that runs in the browser) that helps frame the shot in real time — this stage does not send any data to a server; (b) final analysis of the photo you captured, performed by sending the photo to the App's server, which forwards it for processing by OpenAI (ChatGPT / GPT models) for food recognition and nutrient estimation.</p>
-      <p>This means the meal photo you choose to analyze is transferred to OpenAI as an external third party, even if you are not signed in and even if the analysis result is ultimately stored only locally on your device. This processing is also subject to OpenAI's own privacy policy and terms of use (openai.com). If we change or add AI providers in the future, we will update this section accordingly.</p>
-      <p>Do not upload especially sensitive photos (such as ones that clearly show a third party's face, personal documents, or information unrelated to a meal) for analysis.</p>
-      <p>Separately, the App's in-app nutrition chat (including the "Superfoods" Q&amp;A assistant and the motivational workout-chat persona) sends the text you type, together with the recent conversation history, to the App's server, which forwards it to OpenAI to generate a reply. Do not type sensitive personal information (such as medical record details or another person's private information) into the chat. Chat messages are used only to generate that reply and are not retained by the App once the session ends, though OpenAI may retain and process them subject to its own privacy policy.</p>
-
-      <h2>4. How we use information</h2>
+      <h2>3. Information we collect</h2>
       <ul>
-        <li>Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, tracking daily/weekly vitamin, mineral, calorie, and macronutrient intake, and computing progress shown in gauges and achievement badges.</li>
-        <li>Managing accounts, sign-in, and syncing across devices for those who choose to sign in.</li>
-        <li>Managing subscriptions and payments, processed through Paddle.</li>
-        <li>Responding to support requests sent to our email address.</li>
-        <li>Maintaining the security of the Service and preventing misuse.</li>
-        <li>Complying with legal requirements where applicable.</li>
-      </ul>
-      <p>We do not sell personal information to third parties, and we do not use your data for targeted advertising.</p>
-
-      <h2>5. Who information is shared with</h2>
-      <ul>
-        <li>Supabase — the database, authentication, and cloud storage infrastructure provider we use for signed-in users.</li>
-        <li>Vercel — the hosting provider used to serve the App.</li>
-        <li>Google — for the sign-in process (Google Sign-In).</li>
-        <li>OpenAI (ChatGPT / GPT models) — the AI-based image analysis provider, used for food recognition and nutrient estimation in the photos you take, as described in section 3 above.</li>
-        <li>Paddle.com Market Ltd and its group companies ("Paddle") — our payment processor and Merchant of Record for paid subscriptions. When you subscribe, Paddle collects and processes your payment details, billing address, and email directly, subject to Paddle's own privacy policy (paddle.com/legal). The Operator receives only your subscription plan and active/inactive status — never your full payment details.</li>
-        <li>Law enforcement authorities or competent bodies — only to the extent required by law, court order, or to protect rights, property, or safety.</li>
-        <li>In the event of a sale, merger, acquisition, or transfer of business assets — information may be transferred to the acquiring/merging party, with reasonable notice given where possible.</li>
+        <li>Questionnaire and targets: age, biological sex, weight, height, activity level, diet type, and the daily targets calculated from them. Stored on your device; if you sign in, also synced to our cloud database.</li>
+        <li>Meals: the photos you take or upload, food names you type, barcodes you scan, the AI analysis results (foods, estimated portions, nutrients, calories, macronutrients, confidence, notes, and whether a food was flagged as junk food), and the date and time of each meal. Stored on your device if you are not signed in, or in our cloud database (including the photo itself) if you are.</li>
+        <li>Chat: the messages you type and the assistant's replies, the chat mode and personality you chose, and your calorie and protein targets, which are sent with each message so replies fit your plan. Your chat history is saved on your device; it is not stored in our database.</li>
+        <li>Other things you enter: workouts, goals and challenges, favorites, achievements, experience points, settings, and language. Stored on your device; workouts and goals are also synced to our cloud database if you sign in.</li>
+        <li>City game: your game progress is saved on your device. If you are signed in and open the city, a snapshot (city layout, level, food guards, avatar appearance, and the city name you choose) is stored in our database and shown to other signed-in players, and we keep a record of food guards sent between players (sender, recipient, and date).</li>
+        <li>Account: if you sign in with Google, we receive your name, email address, profile picture, and Google account identifier, and our authentication provider records basic sign-in information (such as sign-in times).</li>
+        <li>Subscription: your Paddle subscription and customer identifiers, plan, status (for example, trialing, active, or canceled), and the end date of the current period. Paddle collects your payment details, billing address, country, and email directly; we never receive your full card details.</li>
+        <li>Support: if you contact us by email or WhatsApp, we receive your contact details and the content of your messages.</li>
+        <li>Technical information: IP address, device and browser type, app version, timestamps, and error logs, which our hosting, database, and AI providers process to run and secure the Service. We also store your IP address briefly in rate-limit records to prevent abuse of the AI features.</li>
+        <li>Advertising measurement: see section 8 (TikTok Pixel).</li>
       </ul>
 
-      <h2>6. Storage, data security, and international transfer</h2>
-      <p>We take reasonable, standard measures to protect information, but no method of storage or transmission over the internet is guaranteed to be 100% secure, and we cannot promise absolute security of information.</p>
-      <p>The infrastructure providers we use (Supabase, Vercel, Google, Paddle, and OpenAI) may store or process information on servers located outside Israel, including in the US and Europe. By using the App, you consent to such transfer of information.</p>
+      <h2>4. Health-related information and your consent</h2>
+      <p>Some of the information you give us — such as your weight, height, diet type, the food you eat, and your nutrient intake — may be considered health-related or sensitive information under privacy laws, including the Israeli Privacy Protection Law, 1981 (as amended), the EU/UK GDPR, and certain US state laws.</p>
+      <p>You are not under any legal obligation to provide this information. Providing it is your choice, but the App cannot calculate targets or analyze meals without it. By entering it into the App, you explicitly consent to us processing it for the purposes described in this policy, including sending meal content to our AI provider. You can withdraw your consent at any time by deleting the information or your account in Settings; this does not affect processing already carried out.</p>
+      <p>We use health-related information only to provide the App's features to you. We do not sell it, we do not use it for advertising, and we do not share it with advertising partners.</p>
 
-      <h2>7. Data retention and deletion</h2>
-      <p>Information stored only locally (without an account) stays on your device only and can be deleted immediately and irreversibly via "Clear all data" in Settings, and is also deleted if you clear your browser storage or remove the App.</p>
-      <p>Account information (for signed-in users) is retained as long as the account is active. Deleting an account via "Delete account" in Settings deletes the information associated with it from the services under our control; copies may be retained briefly in technical backups before final deletion, and third-party providers (such as the image-analysis provider) may retain their own independent retention policies.</p>
-      <p>You can also request deletion, review, or correction of information manually by contacting shilohdhd1@gmail.com.</p>
-
-      <h2>8. Your rights</h2>
-      <p>Subject to applicable law, you may have the right to: review the information stored about you; correct inaccurate information; request its deletion; object to certain processing; and receive a copy of your information in an accessible format (data portability). Some of these rights can be exercised directly through the Settings screen (deleting data/account), and others by contacting shilohdhd1@gmail.com. We will endeavor to respond to requests within a reasonable time.</p>
-      <p>Residents of the European Union may enjoy additional rights under the GDPR; residents of Israel may enjoy rights under the Israeli Privacy Protection Law, 1981, and its regulations.</p>
-
-      <h2>9. Children's privacy</h2>
-      <p>The Service is intended for those aged 18 and over only, and we do not knowingly collect information from minors. See the "Minimum age" section in our <a href="/terms.html" style="text-decoration: underline;">Terms &amp; Conditions</a>.</p>
-
-      <h2>10. Cookies and local storage</h2>
-      <p>The App does not currently use advertising cookies or third-party ad tracking. We do use browser storage technologies essential to operating the App:</p>
+      <h2>5. How we use information, and our legal bases</h2>
       <ul>
-        <li>Local Storage — to save the state of your personal questionnaire, your calculated nutritional targets, your calorie/macro-tracking display preference, and your subscription status on your device.</li>
-        <li>IndexedDB — to save your meal log on your device when you are not signed in.</li>
-        <li>Sign-in related storage — if you sign in with Google, our authentication provider (Supabase, via Google) may store session tokens in local storage or cookies, to keep you signed in between visits.</li>
+        <li>To provide the App: calculate targets, analyze meals, show tracking and insights, run the chat and the game, and sync your data — based on our agreement with you (performing the contract) and, for health-related information, your explicit consent.</li>
+        <li>To manage subscriptions, payments, refunds, and access to paid features — based on performing the contract.</li>
+        <li>To show your city to other players and run the online game features — based on performing the contract.</li>
+        <li>To answer support requests — based on performing the contract and our legitimate interest in helping users.</li>
+        <li>To keep the App secure, prevent abuse and fraud, and enforce our Terms (for example, rate limits and moderation of city names) — based on our legitimate interests.</li>
+        <li>To measure the effectiveness of our ads with the TikTok Pixel — based on our legitimate interests and, where the law requires it, your consent.</li>
+        <li>To keep accounting and tax records and comply with legal obligations — based on legal obligation.</li>
       </ul>
-      <p>These technologies are essential to the basic functioning of the App and are not used by us for cross-site advertising tracking. You can delete all local data at any time via "Clear all data" and/or "Delete account" in the Settings screen, or by clearing site/browser data in your browser settings. If we add usage-analytics or advertising tools in the future, we will update this policy accordingly and request your consent where required by law.</p>
+      <p>We do not make decisions about you that have legal or similarly significant effects based solely on automated processing.</p>
 
-      <h2>11. Changes to this Privacy Policy</h2>
-      <p>We may update this policy from time to time. Material changes will be reflected by updating the "Last updated" date at the top of the document, and where necessary, a notice will be shown within the App.</p>
+      <h2>6. AI processing</h2>
+      <p>When you analyze a meal photo, type a food name for analysis, or send a chat message, that content (and, for chat, the recent conversation together with your calorie and protein targets) is sent through our server to OpenAI to generate the result. This happens even if you are not signed in and even if the result is then stored only on your device.</p>
+      <p>Before the photo is taken, a small machine-learning model runs on your device to help frame the shot; that step does not send anything to a server.</p>
+      <p>OpenAI processes this content as our service provider, under its own API terms and privacy policy (openai.com/policies). Under OpenAI's API terms at the time of writing, content sent through its API is not used to train its models by default and may be kept for a limited period (typically up to 30 days) for abuse monitoring. If we change or add AI providers, we will update this policy.</p>
+      <p>Please do not include other people's faces, documents, or private information in photos or chat messages.</p>
 
-      <h2>12. Contact</h2>
-      <p>For any question, request, or complaint regarding this Privacy Policy or your personal information, contact us at: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a></p>
+      <h2>7. Who we share information with</h2>
+      <p>We share personal information only as needed to run the App, with:</p>
+      <ul>
+        <li>Supabase — database, authentication, and server functions (for signed-in users' data and for AI requests).</li>
+        <li>Vercel — hosting of the App and website.</li>
+        <li>Google — sign-in with Google.</li>
+        <li>OpenAI — AI analysis of meal photos, typed foods, and chat messages (section 6).</li>
+        <li>Paddle.com Market Ltd and its group companies — payments, as our Merchant of Record. Paddle processes your purchase information as an independent controller under its own privacy policy (paddle.com/legal).</li>
+        <li>TikTok — advertising measurement (section 8).</li>
+        <li>Open Food Facts — when you scan a barcode, your device sends the barcode number directly to Open Food Facts to look up the product name. No account information is sent, though Open Food Facts, like any website, receives your IP address.</li>
+        <li>WhatsApp (Meta) and Google (Gmail) — if you choose to contact us through them.</li>
+        <li>Other players — your city snapshot and city name, as described in section 3.</li>
+        <li>Authorities — when required by law, court order, or to protect the rights, property, or safety of users, the Operator, or others.</li>
+        <li>A successor — if the App is transferred to a company or business set up by the Operator, or sold, merged, or reorganized, in which case this policy will continue to apply to your information.</li>
+      </ul>
+      <p>We do not sell your personal information for money. Our use of the TikTok Pixel may be considered "sharing" or "targeted advertising" under some US state laws; see section 13 for how to opt out.</p>
+
+      <h2>8. Advertising measurement — TikTok Pixel</h2>
+      <p>The web app and the Android app include the TikTok Pixel, a measurement tool from TikTok. It lets us understand how many people arrive from our TikTok ads and whether they start a checkout or subscribe, so we can measure and improve our advertising.</p>
+      <p>The TikTok Pixel receives: the fact that a page of the App was loaded and its address; checkout events (starting a checkout, adding payment information, and a confirmed purchase) together with the plan, price identifier, amount, and currency; and technical information such as your IP address, browser and device information, and cookies or similar identifiers (such as "_ttp") that TikTok sets. TikTok may link this to your TikTok account if you have one, and processes it under its own privacy policy (tiktok.com/legal).</p>
+      <p>We do not send TikTok your meals, photos, questionnaire answers, health information, chat messages, name, or email address.</p>
+      <p>To limit this tracking you can block or clear third-party cookies in your browser, use a browser or extension that blocks trackers, adjust your ad-personalization settings in the TikTok app, or contact us.</p>
+
+      <h2>9. Cookies and local storage</h2>
+      <p>The App uses storage on your device that is essential for it to work:</p>
+      <ul>
+        <li>Local storage — your questionnaire answers and targets, settings, language, subscription status, chat history, goals, favorites, achievements, workouts, and game progress.</li>
+        <li>IndexedDB — your meal log (including photos) when you are not signed in.</li>
+        <li>Sign-in storage — session tokens set by our authentication provider to keep you signed in.</li>
+        <li>Session storage — temporary checkout information used to complete a purchase.</li>
+      </ul>
+      <p>In addition, the TikTok Pixel sets its own cookies and identifiers, as described in section 8.</p>
+      <p>You can delete the data stored on your device at any time with "Clear all data" in Settings, or by clearing site or app data in your browser or device settings. This may sign you out and erase data that was not synced.</p>
+
+      <h2>10. International transfers</h2>
+      <p>Our service providers may store or process information on servers outside Israel, including in the United States and the European Union. Where we transfer personal information outside Israel or the EU/UK, we rely on our providers' contractual commitments and recognized safeguards (such as Standard Contractual Clauses where applicable) to protect it.</p>
+
+      <h2>11. How long we keep information</h2>
+      <ul>
+        <li>Information on your device stays there until you delete it, clear your browser or app data, or uninstall the App.</li>
+        <li>Cloud data of signed-in users (meals and photos, questionnaire and targets, goals, workouts, city snapshot, food-guard records) is kept while your account is active and deleted when you delete your account. Deleted data may remain in encrypted backups for a limited period (typically up to 30 days) before it is overwritten.</li>
+        <li>Subscription records (Paddle identifiers, plan, status, and dates) are kept after account deletion, disconnected from your deleted account, for as long as needed for accounting, tax, chargeback, and legal purposes (in Israel, generally up to 7 years).</li>
+        <li>Rate-limit records containing IP addresses are overwritten continuously and are not kept longer than needed to prevent abuse.</li>
+        <li>Support messages are kept as long as needed to handle your request and any follow-up.</li>
+        <li>Information held by third parties (such as OpenAI, Paddle, Google, and TikTok) is kept according to their own policies.</li>
+      </ul>
+
+      <h2>12. Security</h2>
+      <p>We use reasonable technical and organizational measures to protect personal information, including encryption in transit (HTTPS), access controls that let each user read only their own data, and keeping secret keys only on the server. No method of storage or transmission is 100% secure, and we cannot guarantee absolute security. If a security incident affects your personal information, we will notify you and the relevant authorities where the law requires it.</p>
+
+      <h2>13. Your rights and choices</h2>
+      <p>Depending on where you live, you may have the right to: access the personal information we hold about you; correct it; delete it; receive a copy in a portable format; restrict or object to certain processing; withdraw consent at any time; and opt out of targeted advertising or "sharing".</p>
+      <ul>
+        <li>Israel: you have the rights to review and correct your information under the Privacy Protection Law, 1981, and its regulations.</li>
+        <li>EU / UK: you have the rights listed above under the GDPR, and the right to complain to your local data protection authority.</li>
+        <li>United States: residents of states with privacy laws (such as California, Colorado, Virginia, Connecticut, and others) may have the rights listed above, including to opt out of targeted advertising, and we will not discriminate against you for using them. If you live in a state with a consumer health data law (such as Washington or Nevada), we collect consumer health data only to provide the features you request, and we do not sell it or share it for advertising.</li>
+      </ul>
+      <p>You can delete your data and account yourself in Settings. For any other request, email <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a>. We may need to verify your identity, and we will respond within 30 days or any shorter period required by law. If we refuse a request, we will explain why, where the law requires it.</p>
+
+      <h2>14. Children</h2>
+      <p>The App is intended only for people aged 18 and over, and we do not knowingly collect personal information from anyone under 18. If you believe a minor has given us personal information, contact us and we will delete it.</p>
+
+      <h2>15. Changes to this policy</h2>
+      <p>We may update this policy from time to time. The "Last updated" date at the top shows the latest version. If a change is material, we will notify you in the App or by email, and where the law requires it, we will ask for your consent.</p>
+
+      <h2>16. Contact</h2>
+      <p>For any question, request, or complaint about this policy or your personal information, contact Shilo at: <a href="mailto:shilohdhd1@gmail.com" style="text-decoration: underline;">shilohdhd1@gmail.com</a></p>
     </div>
   </div>
 </main>

@@ -110,3 +110,21 @@
     animation: none;
   }
 }
+
+/* Furniture drawer in the home: slides in from its side (--drawer-from is ±100% by text direction). */
+@keyframes house-drawer-in {
+  from {
+    transform: translateX(var(--drawer-from));
+  }
+  to {
+    transform: none;
+  }
+}
+.house-drawer {
+  animation: house-drawer-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .house-drawer {
+    animation: none;
+  }
+}

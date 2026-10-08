@@ -1,4 +1,5 @@
 import type { LocalizedText } from '../types'
+import type { JunkShape } from './junkFoods'
 
 /** What makes a germ type special on the map. */
 export type GermPower =
@@ -20,22 +21,15 @@ export type GermPower =
   | 'heal'
   /** The boss: huge, strong, needs many taps. */
   | 'boss'
+  /** Junk food (./junkFoods): stops in front of the wall and throws bits of itself at the food friends on top of it. */
+  | 'lob'
 
 export type GermShape = 'round' | 'cube' | 'blob' | 'flu' | 'rod' | 'ghost' | 'dry' | 'couch' | 'king'
+export type FoeShape = GermShape | JunkShape
 
-export interface GermDef {
+/** What anything that walks up to attack the city needs on the map: the germs, and the junk food (./junkFoods). */
+export interface FoeDef {
   id: string
-  name: LocalizedText
-  /** The power in a few words. */
-  powerName: LocalizedText
-  /** What the power does on the map. */
-  powerInfo: LocalizedText
-  /** What makes it grow in real life. */
-  cause: LocalizedText
-  /** What beats it in real life. */
-  cure: LocalizedText
-  /** Foods and habits that beat it. */
-  cureIcons: string[]
   power: GermPower
   hp: number
   attack: number
@@ -54,6 +48,21 @@ export interface GermDef {
   /** Player level from which it starts to show up. */
   minLevel: number
   color: string
+  shape: FoeShape
+}
+
+export interface GermDef extends FoeDef {
+  name: LocalizedText
+  /** The power in a few words. */
+  powerName: LocalizedText
+  /** What the power does on the map. */
+  powerInfo: LocalizedText
+  /** What makes it grow in real life. */
+  cause: LocalizedText
+  /** What beats it in real life. */
+  cure: LocalizedText
+  /** Foods and habits that beat it. */
+  cureIcons: string[]
   shape: GermShape
 }
 

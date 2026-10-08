@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { dirFor, type Lang } from '../lib/i18n/lang'
 
-const STORAGE_KEY = 'vitatrack-lang'
+// Bumped so devices with an older saved 'en' start in Hebrew again.
+const STORAGE_KEY = 'vitatrack-lang-v2'
 
 interface LanguageContextValue {
   lang: Lang

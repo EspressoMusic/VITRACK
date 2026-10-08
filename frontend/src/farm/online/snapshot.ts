@@ -1,13 +1,15 @@
 import { type AvatarLook, sanitizeLook } from '../../avatar/look'
 import { AREAS_BY_ID } from '../data/areas'
 import { CROPS_BY_ID } from '../data/crops'
+import { FURNITURE_BY_ID, ROOM_STYLES_BY_ID, starterInterior } from '../data/furniture'
 import { GUARD } from '../data/guards'
 import { OBJECTS_BY_ID } from '../data/objects'
 import { RECIPES_BY_ID } from '../data/recipes'
 import { SAVE_VERSION } from '../data/config'
 import { activeGuards } from '../systems/GuardSystem'
+import { canPlaceFurniture } from '../systems/HomeSystem'
 import { areaAt } from '../systems/MapSystem'
-import type { GameState, GuardStay, PlacedObject, ProductionJob } from '../types'
+import type { GameState, GuardStay, HomeInterior, PlacedFurniture, PlacedObject, ProductionJob } from '../types'
 
 /** What other players get to see of a city: the map only — no coins, barn or orders. */
 export interface CitySnapshot {
@@ -26,6 +28,7 @@ export function toSnapshot(state: GameState, now: number): CitySnapshot {
 // against the game's data files before the map draws it.
 
 const MAX_OBJECTS = 800
+const MAX_FURNITURE = 80
 const MAX_NAME = 20
 
 type Raw = Record<string, unknown>
@@ -36,6 +39,30 @@ const isInt = (v: unknown, min: number, max: number): v is number => isNum(v) &&
 function parseJob(raw: unknown): ProductionJob | null {
   if (!isObj(raw) || typeof raw.recipeId !== 'string' || !RECIPES_BY_ID[raw.recipeId] || !isNum(raw.startAt) || !isNum(raw.endAt)) return null
   return { recipeId: raw.recipeId, startAt: raw.startAt, endAt: raw.endAt }
+}
+
+/** Inside of a visited home — only what a visitor sees: the room's pieces, wall and floor (nothing from storage). */
+function parseInterior(raw: unknown, room: { w: number; h: number }): HomeInterior | undefined {
+  if (!isObj(raw) || !Array.isArray(raw.furniture)) return undefined
+  const styleOf = (id: unknown, kind: 'wall' | 'floor', fallback: string) =>
+    typeof id === 'string' && ROOM_STYLES_BY_ID[id]?.kind === kind ? id : fallback
+  const starter = starterInterior()
+  const interior: HomeInterior = {
+    furniture: [],
+    stored: {},
+    wall: styleOf(raw.wall, 'wall', starter.wall),
+    floor: styleOf(raw.floor, 'floor', starter.floor),
+    styles: [],
+    nextId: 1,
+  }
+  for (const f of raw.furniture.slice(0, MAX_FURNITURE)) {
+    if (!isObj(f) || typeof f.defId !== 'string' || !FURNITURE_BY_ID[f.defId] || !isInt(f.x, 0, room.w - 1) || !isInt(f.y, 0, room.h - 1)) continue
+    const piece: PlacedFurniture = { id: `f${interior.nextId}`, defId: f.defId, x: f.x, y: f.y, ...(f.turned === true && { turned: true }) }
+    if (!canPlaceFurniture(room, interior, piece)) continue
+    interior.furniture.push(piece)
+    interior.nextId++
+  }
+  return interior
 }
 
 function parseObject(raw: unknown, i: number): PlacedObject | null {
@@ -53,6 +80,8 @@ function parseObject(raw: unknown, i: number): PlacedObject | null {
   if (isInt(raw.level, 1, 20)) obj.level = raw.level
   if (isNum(raw.hp)) obj.hp = raw.hp
   if (isNum(raw.hpAt)) obj.hpAt = raw.hpAt
+  const interior = def.home && parseInterior(raw.interior, def.home.interior)
+  if (interior) obj.interior = interior
   return obj
 }
 

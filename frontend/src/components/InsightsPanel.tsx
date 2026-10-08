@@ -29,11 +29,16 @@ export function InsightsPanel({ refreshSignal, onLogged }: { refreshSignal: numb
   const noDeficienciesFired = useRef(false)
 
   useEffect(() => {
-    Promise.all([getAllMeals(), getAllWorkouts()]).then(([m, w]) => {
-      setMeals(m)
-      setWorkouts(w)
-      setLoaded(true)
-    })
+    Promise.all([getAllMeals(), getAllWorkouts()])
+      .then(([m, w]) => {
+        setMeals(m)
+        setWorkouts(w)
+      })
+      .catch(() => {
+        // A failed cloud read (offline, expired session, missing table) used to leave `loaded`
+        // false forever, blanking the whole home tab — the camera doesn't need this data to render.
+      })
+      .finally(() => setLoaded(true))
   }, [refreshSignal])
 
   const { ranked, weeklyCompletion } = useMemo(() => computeWeeklyInsights(meals, workouts), [meals, workouts])

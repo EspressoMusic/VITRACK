@@ -13,7 +13,7 @@ const STORAGE_KEY = 'vitrack-farm-save'
 const CALENDAR_BOARD_TILE = { x: 23, y: 15 }
 
 /** Starting town: the gate in the front wall, two crossing streets, the main character's house, a grocery,
- *  a small park, the food calendar board, and the farm basics (barn, six garden beds — two with wheat ready to pick). */
+ *  a small park, the food calendar board, and the farm basics (six garden beds — two with wheat ready to pick). */
 export function createInitialState(now: number): GameState {
   let state: GameState = {
     version: SAVE_VERSION,
@@ -42,7 +42,6 @@ export function createInitialState(now: number): GameState {
   place('bench', 16, 19)
   place('grocery', 19, 15)
   place('park', 20, 19)
-  place('barn', 21, 12)
   place('calendarBoard', CALENDAR_BOARD_TILE.x, CALENDAR_BOARD_TILE.y)
   for (const [x, y] of [[13, 13], [14, 13], [15, 13], [13, 14], [14, 14], [15, 14]]) place('field', x, y)
   place('oakTree', 12, 12)

@@ -136,7 +136,12 @@ export async function deleteWorkout(id: string): Promise<void> {
 export async function getAllWorkouts(): Promise<WorkoutEntry[]> {
   if (useCloud()) {
     const { cloudGetAllWorkouts } = await import('./cloudWorkouts')
-    return cloudGetAllWorkouts()
+    // Workouts are secondary: callers pair this with getAllMeals in a Promise.all, so a failed
+    // read (e.g. the table missing in Supabase) would otherwise throw away the meals too.
+    return cloudGetAllWorkouts().catch((err) => {
+      console.warn('[db] workouts read failed, treating as empty', err)
+      return []
+    })
   }
   return getAllLocalWorkouts()
 }

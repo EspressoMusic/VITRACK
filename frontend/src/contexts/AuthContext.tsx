@@ -8,6 +8,7 @@ import { setCurrentUserId } from '../lib/db'
 import { syncLocalMealsToCloud } from '../lib/cloudDb'
 import { syncLocalWorkoutsToCloud } from '../lib/cloudWorkouts'
 import { syncProfileWithCloud } from '../lib/cloudProfile'
+import { hasOnboarded } from '../lib/profile'
 
 declare global {
   interface Window {
@@ -80,6 +81,7 @@ interface AuthContextValue {
    *  URL; the classic redirect flow (which shows supabase.co) is used only as a fallback. */
   renderGoogleButton: (container: HTMLElement) => void
   signOut: () => Promise<void>
+  ensureUser: () => Promise<User | null>
   deleteAccount: () => Promise<void>
 }
 
@@ -130,6 +132,14 @@ async function nativeGoogleSignIn(): Promise<void> {
   if (data?.url) await Browser.open({ url: data.url })
 }
 
+/** Reloads so the app re-reads state syncProfileWithCloud just changed — but never mid-
+ *  questionnaire: a reload there restarts onboarding from the welcome screen, sending the user
+ *  back through the Google sign-in step a second time. The synced values are already in
+ *  localStorage either way, and App re-reads the subscription flag when onboarding completes. */
+function reloadAfterSync() {
+  if (hasOnboarded()) window.location.reload()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -157,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (sessionUser) {
         syncProfileWithCloud(sessionUser.id)
           .then((changed) => {
-            if (changed) window.location.reload()
+            if (changed) reloadAfterSync()
           })
           .catch((err) => console.error('Profile sync failed:', err))
       }
@@ -178,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         syncProfileWithCloud(session.user.id)
           .then((restored) => {
-            if (restored) window.location.reload()
+            if (restored) reloadAfterSync()
           })
           .catch((err) => console.error('Profile sync failed:', err))
       }
@@ -189,11 +199,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !Capacitor.isNativePlatform()) return
-    const listenerPromise = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
-      if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return
+    // exchangeCodeForSession takes the bare `code` param, not the whole deep-link URL —
+    // passing the URL makes Supabase reject it as an unknown auth code every time.
+    const handleAuthRedirect = (url: string | undefined) => {
+      if (!url?.startsWith(NATIVE_AUTH_REDIRECT)) return
       Browser.close().catch(() => {})
-      supabase!.auth.exchangeCodeForSession(url).catch((err) => console.error('Google sign-in failed:', err))
-    })
+      const params = new URL(url).searchParams
+      const code = params.get('code')
+      if (!code) {
+        console.error('Google sign-in failed:', params.get('error_description') ?? params.get('error') ?? url)
+        return
+      }
+      supabase!.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) console.error('Google sign-in failed:', error)
+      })
+    }
+    // Android may kill the app while the Custom Tab is open; the redirect then cold-starts
+    // it and arrives as the launch URL rather than an appUrlOpen event.
+    CapacitorApp.getLaunchUrl().then((launch) => handleAuthRedirect(launch?.url)).catch(() => {})
+    const listenerPromise = CapacitorApp.addListener('appUrlOpen', ({ url }) => handleAuthRedirect(url))
     return () => {
       listenerPromise.then((listener) => listener.remove())
     }
@@ -260,6 +284,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) console.error('Anonymous sign-in failed:', error)
   }
 
+  /** The current user, or a fresh anonymous one if the launch-time sign-in failed (e.g. no
+   *  network right after the phone woke) — otherwise checkout would stay blocked until a restart. */
+  async function ensureUser(): Promise<User | null> {
+    if (!supabase) return null
+    return user ?? ensureAnonymousSession()
+  }
+
   async function deleteAccount() {
     if (!supabase || !user) return
     const { error } = await supabase.functions.invoke('delete-account')
@@ -268,7 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, renderGoogleButton, signOut, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, renderGoogleButton, signOut, ensureUser, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )

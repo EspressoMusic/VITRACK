@@ -22,23 +22,6 @@ export const BUILDINGS: ObjectDef[] = [
     look: { type: 'field' },
   },
   {
-    id: 'barn',
-    name: { en: 'Barn', he: 'אסם', ar: 'حظيرة' },
-    icon: '🏚️',
-    kind: 'barn',
-    shopCategory: null,
-    cost: 0,
-    requiredLevel: 1,
-    width: 2,
-    height: 2,
-    buildTime: 0,
-    productionSlots: 0,
-    recipes: [],
-    xpReward: 0,
-    maxCount: one,
-    look: { type: 'house', wall: '#d9534a', roof: '#8a3b33', trim: '#fff6e6', wallHeight: 30, roofHeight: 26 },
-  },
-  {
     // Tapping it opens the calendar of everything the player ate.
     id: 'calendarBoard',
     name: { en: 'Food Calendar', he: 'לוח האוכל', ar: 'لوحة الطعام' },

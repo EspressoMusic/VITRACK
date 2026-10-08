@@ -11,6 +11,7 @@ import { AVATAR_WORLD_SCALE, AvatarWalker, THROW_MS } from './avatarWalker'
 import { drawChoreProps } from './choreFx'
 import { type Chore, pendingChores } from './chores'
 import { FoodGuardSquad, STONE_DUST } from './foodGuards'
+import { TownFriends } from './friends'
 import { GateBuddy } from './gateBuddy'
 import { type GermEvent, GermSwarm } from './germs'
 import { GuardSquad } from './guards'
@@ -64,6 +65,10 @@ interface Props {
   neighbors?: NeighborIsland[]
   /** The player tapped a neighbor's island. */
   onNeighborTap?: (userId: string) => void
+  /** A land was just bought and its food friend broke out of the cage (it's moving into town). */
+  onFriendFreed?: (areaId: string) => void
+  /** The player tapped a food friend living in town (by its land's id). */
+  onFriendTap?: (areaId: string) => void
 }
 
 type Gesture =
@@ -111,10 +116,12 @@ export function FarmCanvas({
   onFoodGuardTap,
   neighbors,
   onNeighborTap,
+  onFriendFreed,
+  onFriendTap,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const uiRef = useRef(ui)
-  const handlersRef = useRef({ onTap, onGhostMove, onPanStart, onAvatarTap, onObjectHold, onGermSignTap, onFoodGuardTap, onNeighborTap })
+  const handlersRef = useRef({ onTap, onGhostMove, onPanStart, onAvatarTap, onObjectHold, onGermSignTap, onFoodGuardTap, onNeighborTap, onFriendFreed, onFriendTap })
   const neighborsRef = useRef(neighbors)
   const foodSquadRef = useRef<FoodGuardSquad | null>(null)
   const foodGuardsRef = useRef(foodGuards)
@@ -125,7 +132,7 @@ export function FarmCanvas({
   useLayoutEffect(() => {
     uiRef.current = ui
     worldRef.current = world
-    handlersRef.current = { onTap, onGhostMove, onPanStart, onAvatarTap, onObjectHold, onGermSignTap, onFoodGuardTap, onNeighborTap }
+    handlersRef.current = { onTap, onGhostMove, onPanStart, onAvatarTap, onObjectHold, onGermSignTap, onFoodGuardTap, onNeighborTap, onFriendFreed, onFriendTap }
     foodGuardsRef.current = foodGuards
     neighborsRef.current = neighbors
   })
@@ -166,6 +173,8 @@ export function FarmCanvas({
     // The player's food friend on top of the gate (not in someone else's city).
     const buddy = visiting ? null : new GateBuddy()
     const guards = new GuardSquad()
+    // Food friends: caged on the locked lands, living in town once their land is bought.
+    const friends = new TownFriends()
     // The player's own food guards: not shown in someone else's city.
     const foodSquad = new FoodGuardSquad()
     if (!visiting) {
@@ -218,7 +227,7 @@ export function FarmCanvas({
         } else if (e.type === 'heal') {
           renderer.floatText(e.at.x, e.at.y - 6, '+1', '#5fd46a')
         } else if (e.type === 'splat') {
-          renderer.germPop(e.at, '#9be15d', 7)
+          renderer.germPop(e.at, e.color ?? '#9be15d', 7)
         } else {
           renderer.germPop(e.at, e.color)
           if (!visiting) farm.germStopped(e.germId, e.mini, toClient(e.at))
@@ -247,7 +256,17 @@ export function FarmCanvas({
       if (finished && !visiting) finishChore(finished)
       actor.x = walker.x
       actor.y = walker.y
-      handleGerms(germs.update(state, now))
+      for (const e of friends.update(state, { x: walker.x, y: walker.y }, now)) {
+        renderer.burst('build', e.tile.x, e.tile.y)
+        if (e.type === 'cageBroken') {
+          renderer.germPop({ x: e.at.x, y: e.at.y - 26 }, '#a3abbd', 16)
+          renderer.floatText(e.at.x, e.at.y - 58, '♥', '#ff6b8a')
+          if (!visiting) handlersRef.current.onFriendFreed?.(e.areaId)
+        } else {
+          renderer.germPop({ x: e.at.x, y: e.at.y - 14 }, '#ffcf4a', 10)
+        }
+      }
+      handleGerms(germs.update(state, now, crew.targets()))
       buddy?.update(state, germs, throws, now)
       const landed = throws.update(germs, now)
       handleGerms(landed.events)
@@ -277,6 +296,7 @@ export function FarmCanvas({
       const extras = guards.drawables(state, now, now / 1000)
       if (!visiting) extras.push(...foodSquad.drawables(now))
       extras.push(...crew.drawables(now))
+      extras.push(...friends.drawables(state, now))
       if (buddy) extras.push(...buddy.drawables(now))
       extras.push(...throws.drawables(now))
       const neighbors = visiting ? undefined : neighborsRef.current
@@ -397,6 +417,7 @@ export function FarmCanvas({
         const germ = placing ? null : germs.germAt(w.x, w.y)
         const foodGuard = visiting || placing || plantingCropId ? null : foodSquad.guardAt(w.x, w.y)
         const neighbor = visiting || placing || plantingCropId || !neighborsRef.current ? null : neighborAt(neighborsRef.current, w.x, w.y)
+        const friend = placing || plantingCropId ? null : friends.friendAt(w.x, w.y)
         if (germ) {
           if (walker.hidden) {
             handleGerms(germs.squish(germ))
@@ -413,6 +434,10 @@ export function FarmCanvas({
           handlersRef.current.onFoodGuardTap?.(foodGuard)
         } else if (neighbor) {
           handlersRef.current.onNeighborTap?.(neighbor.userId)
+        } else if (friend) {
+          const at = friends.poke(friend, tapNow)
+          if (at) renderer.floatText(at.x, at.y, '♥', '#ff6b8a')
+          if (!visiting) handlersRef.current.onFriendTap?.(friend)
         } else if (visiting) {
           // Visiting: just looking around (germs can still be squished).
         } else if (!placing && !plantingCropId && germSignHit(w.x, w.y)) {

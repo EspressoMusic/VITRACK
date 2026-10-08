@@ -1,4 +1,4 @@
-import { CONTINENT, GERM_ROAD, GERM_SIGN, ISLAND, OUTSIDE, WORLDS, ZONES } from '../data/areas'
+import { AREAS, CONTINENT, GERM_ROAD, GERM_SIGN, ISLAND, JUNK_ROAD, OUTSIDE, WORLDS, ZONES, ownedRect } from '../data/areas'
 import { nearFoodGuardSpot } from '../data/foodGuards'
 import { nearGuardSpot } from '../data/guards'
 import { NEIGHBOR_SIZE, NEIGHBOR_SLOTS } from '../data/neighbors'
@@ -140,6 +140,33 @@ const SLOT_RECTS: Rect[] = NEIGHBOR_SLOTS.map((s) => ({ x: s.x, y: s.y, w: NEIGH
 
 const FEATURES: Feature[] = ZONES.map((a) => ({ kind: a.zone!.feature, ...a.zone!.spot, area: a }))
 
+/** Where each land's caged food friend stands (tile coordinates), with its lock badge above it: in a zone, the most open
+ *  spot (clear of its feature and any village) nearest its middle; in a world or a city district, the middle. */
+export const CAGE_SPOTS: Record<string, Point> = Object.fromEntries(
+  AREAS.filter((a) => a.cost > 0).map((a) => {
+    if (!a.zone) {
+      const r = ownedRect(a)
+      return [a.id, { x: r.x + r.w / 2 + 0.5, y: r.y + r.h / 2 + 0.5 }]
+    }
+    const r = a.rect
+    const blockers = [a.zone.spot, ...SLOT_RECTS.filter((s) => inRect(r, s.x, s.y))]
+    let best = { x: 0, y: 0, score: -Infinity }
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const px = x + 0.5
+        const py = y + 0.5
+        const clear = Math.min(px - r.x, r.x + r.w - px, py - r.y, r.y + r.h - py, ...blockers.map((b) => distToRect(px, py, b)))
+        const score = Math.min(clear, 3) - Math.hypot(px - r.x - r.w / 2, py - r.y - r.h / 2) * 0.01
+        if (score > best.score) best = { x: px, y: py, score }
+      }
+    }
+    return [a.id, { x: best.x, y: best.y }]
+  }),
+)
+
+/** Whether tile (x, y) is too close to a cage for wild trees and decor. */
+export const nearCage = (x: number, y: number) => Object.values(CAGE_SPOTS).some((c) => Math.hypot(x + 0.5 - c.x, y + 0.5 - c.y) < 1.6)
+
 // ---------- wild decor ----------
 
 interface Decor {
@@ -161,6 +188,7 @@ interface Decor {
 const nearFeature = (x: number, y: number) => FEATURES.some((f) => x >= f.x - 1 && y >= f.y - 1 && x < f.x + f.w + 1 && y < f.y + f.h + 1)
 const SIGN_CLEAR = 1.8
 const NEST = GERM_ROAD[0]
+const CANDY_CAVE = JUNK_ROAD[0]
 
 function pickKind(biome: Biome, r: number): DecorKind {
   const kinds = THEMES[biome].decor
@@ -183,10 +211,11 @@ for (let y = Y0; y < Y0 + CH; y++) {
       // the landmark's 2×2 at the back corner, plus a clear ring in front of it
       if (x < island.x + 3 && y < island.y + 3) continue
       rim = !inRect(world!.rect, x, y)
-      if (hash(x, y, 83) > (rim ? 0.5 : 0.22)) continue
+      if (hash(x, y, 83) > (rim ? 0.5 : 0.22) || nearCage(x, y)) continue
     } else {
-      if (hash(x, y, 83) > 0.095 || nearFeature(x, y)) continue
+      if (hash(x, y, 83) > 0.095 || nearFeature(x, y) || nearCage(x, y)) continue
       if (Math.hypot(x + 0.5 - GERM_SIGN.x, y + 0.5 - GERM_SIGN.y) < SIGN_CLEAR || Math.hypot(x + 0.5 - NEST.x, y + 0.5 - NEST.y) < 3) continue
+      if (Math.hypot(x + 0.5 - CANDY_CAVE.x, y + 0.5 - CANDY_CAVE.y) < 3) continue
       if (nearFoodGuardSpot(x + 0.5, y + 0.5) || nearGuardSpot(x + 0.5, y + 0.5)) continue
     }
     const biome = BIOME[index(x, y)]
@@ -198,25 +227,6 @@ for (let y = Y0; y < Y0 + CH; y++) {
 
 const hidden = (d: Decor, unlocked: Set<string>, villages: number) => (d.world && !d.rim && unlocked.has(d.world.id)) || (d.slot >= 0 && d.slot < villages)
 const locked = (area: AreaDef | null, unlocked: Set<string>) => !!area && !unlocked.has(area.id)
-
-/** Where each zone's lock badge sits: the most open spot in it (clear of its feature and any village), nearest its middle. */
-export const LOCK_SPOTS: Record<string, Point> = Object.fromEntries(
-  ZONES.map((a) => {
-    const r = a.rect
-    const blockers = [a.zone!.spot, ...SLOT_RECTS.filter((s) => inRect(r, s.x, s.y))]
-    let best = { x: 0, y: 0, score: -Infinity }
-    for (let y = r.y; y < r.y + r.h; y++) {
-      for (let x = r.x; x < r.x + r.w; x++) {
-        const px = x + 0.5
-        const py = y + 0.5
-        const clear = Math.min(px - r.x, r.x + r.w - px, py - r.y, r.y + r.h - py, ...blockers.map((b) => distToRect(px, py, b)))
-        const score = Math.min(clear, 3) - Math.hypot(px - r.x - r.w / 2, py - r.y - r.h / 2) * 0.01
-        if (score > best.score) best = { x: px, y: py, score }
-      }
-    }
-    return [a.id, tileToWorld(best.x, best.y)]
-  }),
-)
 
 // ---------- drawing ----------
 

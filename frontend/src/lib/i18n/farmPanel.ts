@@ -83,6 +83,8 @@ interface FarmStrings {
   guardsHint: (n: number) => string
   helpedToday: string
   backHome: string
+  /** Visit bar: step inside the visited player's home. */
+  visitHouse: string
   openingCity: string
   cityFailed: string
   sendGuard: string
@@ -90,6 +92,12 @@ interface FarmStrings {
   guardOnTheWay: (name: string) => string
   guardLimit: (n: number) => string
   guardsArrived: (from: string[]) => string
+  /** A land was bought and the food friend caged there broke free. */
+  friendFreed: (name: string) => string
+  /** The player tapped a food friend living in town. */
+  friendHello: (name: string) => string
+  /** Locked land menu: who is waiting in the cage there. */
+  friendCaged: (name: string) => string
   getCoins: string
   adPays: (n: number) => string
   adsLeft: (left: number, total: number) => string
@@ -180,6 +188,7 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardsHint: (n) => `Send a guard to help a city. You can send ${n} a day 💂`,
     helpedToday: 'Helped',
     backHome: 'Home',
+    visitHouse: 'Their home 🛋️',
     openingCity: 'Walking over…',
     cityFailed: "This city didn't open. Try another one",
     sendGuard: 'Send a guard 💂',
@@ -187,6 +196,9 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardOnTheWay: (name) => `Your guard is on the way to ${name} 💂`,
     guardLimit: (n) => `You sent ${n} guards today. You can send more tomorrow 🌙`,
     guardsArrived: (from) => (from.length === 1 ? `${from[0]} sent a guard to help you 💂` : `${from.length} guards came to help you 💂`),
+    friendFreed: (name) => `You set ${name} free! Now it lives in your city 🎉`,
+    friendHello: (name) => `${name} says hi 👋`,
+    friendCaged: (name) => `${name} is stuck in a cage here. Unlock to set it free 🔓`,
     getCoins: 'Get coins',
     adPays: (n) => `Watch a short ad and get ${n} coins`,
     adsLeft: (left, total) => `${left} of ${total} left today`,
@@ -285,6 +297,7 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardsHint: (n) => `אפשר לשלוח שומר שיעזור לעיר. עד ${n} ביום 💂`,
     helpedToday: 'עזרת',
     backHome: 'הביתה',
+    visitHouse: 'לבית שלהם 🛋️',
     openingCity: 'בדרך לעיר…',
     cityFailed: 'העיר הזאת לא נפתחה. אפשר לנסות עיר אחרת',
     sendGuard: 'לשלוח שומר 💂',
@@ -292,6 +305,9 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardOnTheWay: (name) => `השומר שלך בדרך אל ${name} 💂`,
     guardLimit: (n) => `שלחת היום ${n} שומרים. מחר אפשר לשלוח עוד 🌙`,
     guardsArrived: (from) => (from.length === 1 ? `${from[0]} שלחו לך שומר לעזרה 💂` : `${from.length} שומרים באו לעזור לך 💂`),
+    friendFreed: (name) => `שחררת את ${name}! מעכשיו גרים יחד בעיר 🎉`,
+    friendHello: (name) => `שלום מ${name} 👋`,
+    friendCaged: (name) => `יש כאן ${name} בכלוב. פותחים את האזור ומשחררים 🔓`,
     getCoins: 'להשיג מטבעות',
     adPays: (n) => `צפו במודעה קצרה וקבלו ${n} מטבעות`,
     adsLeft: (left, total) => `נשארו היום ${left} מתוך ${total}`,
@@ -390,6 +406,7 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardsHint: (n) => `أرسل حارسًا لمساعدة مدينة. حتى ${n} في اليوم 💂`,
     helpedToday: 'ساعدت',
     backHome: 'العودة',
+    visitHouse: 'إلى بيتهم 🛋️',
     openingCity: 'في الطريق…',
     cityFailed: 'لم تُفتح هذه المدينة. جرّب مدينة أخرى',
     sendGuard: 'أرسل حارسًا 💂',
@@ -397,6 +414,9 @@ export const FARM_STRINGS: Record<Lang, FarmStrings> = {
     guardOnTheWay: (name) => `حارسك في الطريق إلى ${name} 💂`,
     guardLimit: (n) => `أرسلت ${n} حراس اليوم. يمكنك إرسال المزيد غدًا 🌙`,
     guardsArrived: (from) => (from.length === 1 ? `${from[0]} أرسل لك حارسًا للمساعدة 💂` : `جاء ${from.length} حراس لمساعدتك 💂`),
+    friendFreed: (name) => `حررت ${name}! من الآن تعيشان معًا في المدينة 🎉`,
+    friendHello: (name) => `مرحبًا من ${name} 👋`,
+    friendCaged: (name) => `${name} محبوس هنا في قفص. افتح الأرض لتحريره 🔓`,
     getCoins: 'احصل على عملات',
     adPays: (n) => `شاهد إعلانًا قصيرًا واحصل على ${n} عملة`,
     adsLeft: (left, total) => `بقي ${left} من ${total} اليوم`,

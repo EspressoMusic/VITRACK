@@ -19,6 +19,7 @@ interface OnboardingStrings {
     agreePrefix: string
     agreeLinkLabel: string
     agreeErrorToast: string
+    guestLabel: string
   }
   age: { title: string; subtitle: string; unit: string }
   sex: {
@@ -86,6 +87,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       agreePrefix: 'I agree to the ',
       agreeLinkLabel: 'Terms & Privacy Policy',
       agreeErrorToast: 'Please agree to the Terms of Use first',
+      guestLabel: 'Continue as guest',
     },
     age: {
       title: 'How old are you?',
@@ -169,6 +171,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       agreePrefix: 'אני מאשר/ת את ',
       agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
       agreeErrorToast: 'יש לאשר קודם את תנאי השימוש',
+      guestLabel: 'המשך כאורח',
     },
     age: {
       title: 'בן/בת כמה את/ה?',
@@ -252,6 +255,7 @@ export const ONBOARDING_STRINGS: Record<Lang, OnboardingStrings> = {
       agreePrefix: 'أوافق على ',
       agreeLinkLabel: 'الشروط وسياسة الخصوصية',
       agreeErrorToast: 'يرجى الموافقة على شروط الاستخدام أولاً',
+      guestLabel: 'المتابعة كضيف',
     },
     age: {
       title: 'كم عمرك؟',

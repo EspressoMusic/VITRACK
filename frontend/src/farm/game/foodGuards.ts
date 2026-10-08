@@ -10,11 +10,13 @@ import { OUTLINE, ellipse, shade, softFx } from './sprites'
  *  Kept light: a guard's picture is drawn once per pose and cached by the renderer; only arrows are drawn every frame. */
 
 type Ctx = CanvasRenderingContext2D
-/** aim: bow drawn / stone raised to throw; throw: the stone just left the hand (stone throwers only). */
-export type GuardPose = 'idle' | 'aim' | 'throw'
+/** aim: bow drawn / stone raised to throw; throw: the stone just left the hand (stone throwers only);
+ *  sad: locked in a cage, holding the bars; cheer: both arms up for joy (food friends only);
+ *  hurt: just hit by junk food; dizzy: knocked down by it, wobbling (stone throwers only). */
+export type GuardPose = 'idle' | 'aim' | 'throw' | 'sad' | 'cheer' | 'hurt' | 'dizzy'
 type Pose = GuardPose
-/** Archers outside the wall carry a bow; the crew on top of the wall throws stones. */
-export type GuardWeapon = 'bow' | 'stones'
+/** Archers outside the wall carry a bow; the crew on top of the wall throws stones; food friends in town carry nothing. */
+export type GuardWeapon = 'bow' | 'stones' | 'none'
 
 /** guardLanded: a new guard touched down (`tile` where it stands, `at` its feet in world units). */
 export type FoodGuardEvent = GermEvent | { type: 'guardLanded'; tile: Point; at: Point; color: string }
@@ -614,6 +616,8 @@ function drawPattern(c: Ctx, def: FoodGuardDef) {
 }
 
 function drawFace(c: Ctx, x: number, y: number, pose: Pose) {
+  if (pose === 'sad' || pose === 'cheer') return friendFace(c, x, y, pose)
+  if (pose === 'hurt' || pose === 'dizzy') return ouchFace(c, x, y, pose)
   for (const dx of [-2.8, 2.8]) {
     ellipse(c, x + dx, y, 1.3, pose === 'idle' ? 1.7 : 1.25)
     c.fillStyle = OUTLINE
@@ -643,6 +647,74 @@ function drawFace(c: Ctx, x: number, y: number, pose: Pose) {
   for (const dx of [-4.9, 4.9]) {
     ellipse(c, x + dx, y + 2.3, 1.3, 0.85)
     c.fill()
+  }
+}
+
+/** sad: worried brows, a tear and a frown; cheer: happy closed eyes and a big open smile. */
+function friendFace(c: Ctx, x: number, y: number, pose: 'sad' | 'cheer') {
+  if (pose === 'cheer') {
+    stroke(c, 1.1, OUTLINE, () => {
+      for (const dx of [-2.8, 2.8]) {
+        c.moveTo(x + dx - 1.4, y + 0.4)
+        c.quadraticCurveTo(x + dx, y - 1.6, x + dx + 1.4, y + 0.4)
+      }
+    })
+    c.beginPath()
+    c.moveTo(x - 2.4, y + 2)
+    c.quadraticCurveTo(x, y + 5.6, x + 2.4, y + 2)
+    c.closePath()
+    c.fillStyle = '#c2413c'
+    c.fill()
+    c.strokeStyle = OUTLINE
+    c.lineWidth = 0.9
+    c.stroke()
+  } else {
+    for (const dx of [-2.8, 2.8]) {
+      ellipse(c, x + dx, y + 0.3, 1.2, 1.5)
+      c.fillStyle = OUTLINE
+      c.fill()
+      ellipse(c, x + dx + 0.4, y - 0.3, 0.45, 0.45)
+      c.fillStyle = '#ffffff'
+      c.fill()
+    }
+    stroke(c, 1, OUTLINE, () => {
+      c.moveTo(x - 4.2, y - 2.2)
+      c.lineTo(x - 1.7, y - 3.3)
+      c.moveTo(x + 4.2, y - 2.2)
+      c.lineTo(x + 1.7, y - 3.3)
+    })
+    stroke(c, 1, OUTLINE, () => {
+      c.moveTo(x - 1.6, y + 3.6)
+      c.quadraticCurveTo(x, y + 2.2, x + 1.6, y + 3.6)
+    })
+    // a tear under one eye
+    c.beginPath()
+    c.moveTo(x + 2.4, y + 1.6)
+    c.quadraticCurveTo(x + 1.7, y + 3.2, x + 2.4, y + 3.5)
+    c.quadraticCurveTo(x + 3.1, y + 3.2, x + 2.4, y + 1.6)
+    c.fillStyle = '#7fd3ff'
+    c.fill()
+  }
+  c.fillStyle = 'rgba(255,110,130,0.5)'
+  for (const dx of [-4.9, 4.9]) {
+    ellipse(c, x + dx, y + 2.3, 1.3, 0.85)
+    c.fill()
+  }
+}
+
+/** A food friend's empty hands: hanging (idle), gripping the cage bars at its sides (sad), or thrown up high (cheer).
+ *  Arms go behind the body; returns the hands, which go over it. */
+function friendArms(c: Ctx, pose: Pose, skin: string): () => void {
+  const hands: [number, number][] =
+    pose === 'cheer' ? [[-10.6, -24.4], [11, -24.6]] : pose === 'sad' ? [[-10.4, -16.6], [10.6, -16.8]] : [[-9.6, -10.2], [9.4, -10]]
+  stroke(c, 2, OUTLINE, () => {
+    c.moveTo(-5, -14)
+    c.lineTo(hands[0][0], hands[0][1])
+    c.moveTo(4, -14)
+    c.lineTo(hands[1][0], hands[1][1])
+  })
+  return () => {
+    for (const [x, y] of hands) solid(c, () => ellipse(c, x, y, 1.6, 1.6), skin, 0.8)
   }
 }
 
@@ -709,8 +781,37 @@ export function drawStone(c: Ctx, x: number, y: number, r: number, lw = 0.8) {
   c.fill()
 }
 
+/** hurt: eyes squeezed shut; dizzy: spinning eyes. Both with an "ouch" mouth. */
+function ouchFace(c: Ctx, x: number, y: number, pose: 'hurt' | 'dizzy') {
+  stroke(c, 1, OUTLINE, () => {
+    for (const s of [-1, 1]) {
+      if (pose === 'hurt') {
+        c.moveTo(x + s * 4, y - 1.4)
+        c.lineTo(x + s * 1.9, y)
+        c.lineTo(x + s * 4, y + 1.4)
+      } else {
+        const cx = x + s * 2.8
+        c.moveTo(cx + 0.25, y)
+        for (let i = 1; i <= 16; i++) c.lineTo(cx + Math.cos(i * 0.75) * (0.25 + i * 0.09), y + Math.sin(i * 0.75) * (0.25 + i * 0.09))
+      }
+    }
+  })
+  ellipse(c, x, y + 3.2, 1.4, pose === 'hurt' ? 1.1 : 1.6)
+  c.fillStyle = '#7a1f3d'
+  c.fill()
+  c.strokeStyle = OUTLINE
+  c.lineWidth = 0.8
+  c.stroke()
+  c.fillStyle = 'rgba(255,110,130,0.5)'
+  for (const dx of [-4.9, 4.9]) {
+    ellipse(c, x + dx, y + 2.3, 1.3, 0.85)
+    c.fill()
+  }
+}
+
 /** A stone thrower's arms behind the body: idle holds a stone out front, aim winds up with it raised behind the head,
- *  throw follows through with the front arm. Returns what goes over the body (front hand, held stone). */
+ *  throw follows through with the front arm (hurt flinches the same way); dizzy has dropped its stone.
+ *  Returns what goes over the body (front hand, held stone). */
 function stoneArms(c: Ctx, pose: Pose, skin: string): () => void {
   if (pose === 'aim') {
     stroke(c, 2, OUTLINE, () => {
@@ -727,11 +828,12 @@ function stoneArms(c: Ctx, pose: Pose, skin: string): () => void {
     c.moveTo(-6, -13)
     c.lineTo(-9.4, -10.4)
     c.moveTo(3, -13)
-    if (pose === 'throw') c.lineTo(12.2, -19)
+    if (pose === 'throw' || pose === 'hurt') c.lineTo(12.2, -19)
     else c.lineTo(9.8, -11.2)
   })
   solid(c, () => ellipse(c, -9.6, -10.2, 1.6, 1.6), skin, 0.8)
-  if (pose === 'throw') return () => solid(c, () => ellipse(c, 12.4, -19.2, 1.6, 1.6), skin, 0.8)
+  if (pose === 'throw' || pose === 'hurt') return () => solid(c, () => ellipse(c, 12.4, -19.2, 1.6, 1.6), skin, 0.8)
+  if (pose === 'dizzy') return () => solid(c, () => ellipse(c, 10, -11.2, 1.6, 1.6), skin, 0.8)
   return () => {
     drawStone(c, 11.4, -13.4, 2.4)
     solid(c, () => ellipse(c, 10, -11.2, 1.6, 1.6), skin, 0.8)
@@ -762,9 +864,11 @@ export function drawFoodGuard(ctx: Ctx, feet: Point, def: FoodGuardDef, pose: Po
       [-5.8, -1.2, 1.6],
       [-7.2, -3.8, 1.5],
     ]) drawStone(c, x, y, r, 0.7)
-  } else {
+  } else if (weapon === 'bow') {
     drawQuiver(c)
   }
+  // knocked back, wobbling on its heels
+  if (pose === 'dizzy') c.rotate(-0.4)
 
   // legs and boots
   stroke(c, 2.4, OUTLINE, () => {
@@ -778,6 +882,8 @@ export function drawFoodGuard(ctx: Ctx, feet: Point, def: FoodGuardDef, pose: Po
   let hands: (() => void) | null = null
   if (weapon === 'stones') {
     hands = stoneArms(c, pose, skin)
+  } else if (weapon === 'none') {
+    hands = friendArms(c, pose, skin)
   } else {
     // the back one hangs, the front one holds the bow's grip
     stroke(c, 2, OUTLINE, () => {

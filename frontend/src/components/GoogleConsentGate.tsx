@@ -8,16 +8,9 @@ export interface GoogleConsentStrings {
   agreeErrorToast: string
 }
 
-/**
- * Wraps a visible (aria-hidden) Google sign-in button with a required, off-by-default
- * "I agree to the Terms & Privacy Policy" toggle. Signing in with Google creates or links a
- * real account, so consent must be captured before the click ever reaches Google's button —
- * not just implied by using the app. Pass the styled button as `children`; this component
- * supplies the `relative` wrapper and the gated GoogleSignInOverlay itself.
- */
-export function GoogleConsentGate({ t, dir, children }: { t: GoogleConsentStrings; dir: 'ltr' | 'rtl'; children: ReactNode }) {
+/** Consent toggle state; lift it with this hook when another action (e.g. guest mode) must share the same toggle. */
+export function useConsentState() {
   const [agreed, setAgreed] = useState(false)
-  const [legalOpen, setLegalOpen] = useState(false)
   const [showError, setShowError] = useState(false)
 
   useEffect(() => {
@@ -25,6 +18,33 @@ export function GoogleConsentGate({ t, dir, children }: { t: GoogleConsentString
     const id = setTimeout(() => setShowError(false), 2200)
     return () => clearTimeout(id)
   }, [showError])
+
+  return { agreed, setAgreed, showError, setShowError }
+}
+
+export type ConsentState = ReturnType<typeof useConsentState>
+
+/**
+ * Wraps a visible (aria-hidden) Google sign-in button with a required, off-by-default
+ * "I agree to the Terms & Privacy Policy" toggle. Signing in with Google creates or links a
+ * real account, so consent must be captured before the click ever reaches Google's button —
+ * not just implied by using the app. Pass the styled button as `children`; this component
+ * supplies the `relative` wrapper and the gated GoogleSignInOverlay itself.
+ */
+export function GoogleConsentGate({
+  t,
+  dir,
+  consent,
+  children,
+}: {
+  t: GoogleConsentStrings
+  dir: 'ltr' | 'rtl'
+  consent?: ConsentState
+  children: ReactNode
+}) {
+  const ownConsent = useConsentState()
+  const { agreed, setAgreed, showError, setShowError } = consent ?? ownConsent
+  const [legalOpen, setLegalOpen] = useState(false)
 
   return (
     <div className="flex w-full flex-col gap-1.5">
@@ -47,7 +67,7 @@ export function GoogleConsentGate({ t, dir, children }: { t: GoogleConsentString
         </button>
         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {t.agreePrefix}
-          <button type="button" onClick={() => setLegalOpen(true)} style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}>
+          <button type="button" onClick={() => setLegalOpen(true)} className="whitespace-nowrap" style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}>
             {t.agreeLinkLabel}
           </button>
         </span>

@@ -536,7 +536,117 @@ function paintFloor(c: Ctx, w: number, h: number, style: RoomStyleDef) {
   }
 }
 
-function paintWindow(c: Ctx, w: number) {
+/** World units per tile along a back wall (one tile steps 32 across and 16 down). */
+const WALL_TILE = Math.hypot(32, 16)
+
+/** The view out of the window while germs are inside the city: burning houses, smoke, embers and germs running about.
+ *  Drawn in the wall's own plane: x runs along the wall from the pane's top corner, y goes down. `s` is the time in seconds. */
+function paintChaos(c: Ctx, origin: Point, pw: number, ph: number, s: number) {
+  c.save()
+  c.transform(32 / WALL_TILE, 16 / WALL_TILE, 0, 1, origin.x, origin.y)
+
+  const sky = c.createLinearGradient(0, 0, 0, ph)
+  sky.addColorStop(0, '#4a1f2e')
+  sky.addColorStop(0.55, '#c8432a')
+  sky.addColorStop(1, '#ffa23a')
+  c.fillStyle = sky
+  c.fillRect(-2, -2, pw + 4, ph + 4)
+
+  for (let i = 0; i < 5; i++) {
+    const k = (s * 0.22 + i / 5) % 1
+    ellipse(c, ((i * 37) % pw) + Math.sin(k * 6 + i) * 3, ph * 0.7 - k * ph * 0.9, 4 + k * 6, 3 + k * 5)
+    c.fillStyle = `rgba(40,28,38,${0.6 * (1 - k)})`
+    c.fill()
+  }
+
+  // Houses across the road, dark against the fire.
+  for (const [x, hw, hh] of [
+    [1, 12, 10],
+    [15, 10, 14],
+    [28, 13, 9],
+    [40, 11, 12],
+  ]) {
+    c.beginPath()
+    c.moveTo(x, ph)
+    c.lineTo(x, ph - hh)
+    c.lineTo(x + hw / 2, ph - hh - 5)
+    c.lineTo(x + hw, ph - hh)
+    c.lineTo(x + hw, ph)
+    c.closePath()
+    fillStroke(c, '#3a2028', OUTLINE, 0.7)
+    c.fillStyle = (Math.floor(s * 3 + x) % 3) === 0 ? '#ffd84a' : '#ff9a3d'
+    c.fillRect(x + hw / 2 - 1.4, ph - hh + 2.5, 2.8, 2.8)
+  }
+
+  const flame = (x: number, hw: number, h: number, color: string) => {
+    c.beginPath()
+    c.moveTo(x - hw, ph + 1)
+    c.quadraticCurveTo(x - hw, ph + 1 - h * 0.6, x + Math.sin(s * 6 + x) * 1.3, ph + 1 - h)
+    c.quadraticCurveTo(x + hw, ph + 1 - h * 0.6, x + hw, ph + 1)
+    c.closePath()
+    c.fillStyle = color
+    c.fill()
+  }
+  for (let i = 0; i < 6; i++) {
+    const x = ((i + 0.5) * pw) / 6
+    const h = 9 + (i % 3) * 3 + Math.sin(s * 9 + i * 1.7) * 2.5
+    flame(x, 4.4, h, '#ff4d2e')
+    flame(x, 3, h * 0.72, '#ff9a3d')
+    flame(x, 1.6, h * 0.42, '#ffd84a')
+  }
+
+  // Germs running up and down the street.
+  const colors = ['#7ac74f', '#b388eb', '#ff6fae']
+  for (let i = 0; i < 3; i++) {
+    const span = pw + 16
+    const run = ((s * (13 + i * 5) + i * 23) % span) - 8
+    const x = i % 2 ? pw - run : run
+    const y = ph - 4.5 - Math.abs(Math.sin(s * 10 + i * 2)) * 4
+    const r = 3.4
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + s * 4
+      dot(c, { x: x + Math.cos(a) * r * 1.25, y: y + Math.sin(a) * r * 1.25 }, 0.8, colors[i], 0.5)
+    }
+    dot(c, { x, y }, r, colors[i], 0.8)
+    const look = i % 2 ? -0.9 : 0.9
+    for (const ex of [-1.2, 1.2]) {
+      dot(c, { x: x + ex + look * 0.4, y: y - 0.8 }, 0.95, '#ffffff', 0.4)
+      ellipse(c, x + ex + look * 0.7, y - 0.8, 0.45, 0.45)
+      c.fillStyle = OUTLINE
+      c.fill()
+    }
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const k = (s * 0.5 + i / 8) % 1
+    ellipse(c, (i * 13 + Math.sin(k * 8 + i) * 3) % pw, ph - k * ph, 0.7, 0.7)
+    c.fillStyle = `rgba(255,216,74,${1 - k})`
+    c.fill()
+  }
+  c.restore()
+}
+
+/** Firelight from outside: a flickering orange glow on the window wall and on the floor in front of it. */
+function paintFireGlow(c: Ctx, w: number, h: number, s: number) {
+  const flick = 0.78 + 0.22 * Math.sin(s * 11) * Math.sin(s * 4.3)
+  const glow = (clip: Point[], at: Point, r: number, alpha: number) => {
+    c.save()
+    poly(c, clip)
+    c.clip()
+    const g = c.createRadialGradient(at.x, at.y, 2, at.x, at.y, r)
+    g.addColorStop(0, `rgba(255,118,38,${alpha * flick})`)
+    g.addColorStop(1, 'rgba(255,118,38,0)')
+    c.fillStyle = g
+    c.fillRect(at.x - r, at.y - r, r * 2, r * 2)
+    c.restore()
+  }
+  const mid = w / 2
+  glow([P(0, 0), P(w, 0), P(w, 0, WALL_H), P(0, 0, WALL_H)], P(mid, 0, 41), 72, 0.42)
+  glow([P(0, 0), P(w, 0), P(w, h), P(0, h)], P(mid, 1.3), 64, 0.3)
+}
+
+/** `chaos` (seconds, for the animation) swaps the blue sky for the city burning outside. */
+function paintWindow(c: Ctx, w: number, chaos?: number) {
   const W = (t: number, z: number) => wallPoint('right', t, z)
   const quad = (t0: number, t1: number, z0: number, z1: number) => poly(c, [W(t0, z0), W(t1, z0), W(t1, z1), W(t0, z1)])
   const a = w / 2 - 0.8
@@ -544,12 +654,23 @@ function paintWindow(c: Ctx, w: number) {
   quad(a, b, 24, 58)
   fillStroke(c, '#ffffff', OUTLINE, 1.6)
   quad(a + 0.09, b - 0.09, 27, 55)
-  fillStroke(c, '#bde0fe', OUTLINE, 1)
-  const cloud = W(a + 0.55, 45)
-  for (const [dx, dy, r] of [[0, 0, 3.4], [4, -1.5, 4], [8, 0.5, 3]]) {
-    ellipse(c, cloud.x + dx, cloud.y + dy, r, r * 0.8)
-    c.fillStyle = '#ffffff'
-    c.fill()
+  if (chaos === undefined) {
+    fillStroke(c, '#bde0fe', OUTLINE, 1)
+    const cloud = W(a + 0.55, 45)
+    for (const [dx, dy, r] of [[0, 0, 3.4], [4, -1.5, 4], [8, 0.5, 3]]) {
+      ellipse(c, cloud.x + dx, cloud.y + dy, r, r * 0.8)
+      c.fillStyle = '#ffffff'
+      c.fill()
+    }
+  } else {
+    c.save()
+    c.clip()
+    paintChaos(c, W(a + 0.09, 55), (b - a - 0.18) * WALL_TILE, 28, chaos)
+    c.restore()
+    quad(a + 0.09, b - 0.09, 27, 55)
+    c.strokeStyle = OUTLINE
+    c.lineWidth = 1
+    c.stroke()
   }
   stick(c, W((a + b) / 2, 27), W((a + b) / 2, 55), '#ffffff', 1.8)
   stick(c, W(a + 0.09, 41), W(b - 0.09, 41), '#ffffff', 1.8)
@@ -585,8 +706,9 @@ function paintDoorAndPicture(c: Ctx, h: number) {
   dot(c, W(t0 + 0.4, 46.5), 2.6, '#ffd60a', 0.7)
 }
 
-/** Floor, back walls (with a door, a window and a picture) and the open cut-away front. */
-export function paintRoom(c: Ctx, w: number, h: number, wallId: string, floorId: string) {
+/** Floor, back walls (with a door, a window and a picture) and the open cut-away front.
+ *  `chaos` (seconds) is set while germs are loose in the city: fire outside the window, its light inside. */
+export function paintRoom(c: Ctx, w: number, h: number, wallId: string, floorId: string, chaos?: number) {
   const wall = ROOM_STYLES_BY_ID[wallId] ?? ROOM_STYLES_BY_ID.wallCream
   const floor = ROOM_STYLES_BY_ID[floorId] ?? ROOM_STYLES_BY_ID.floorOak
 
@@ -605,7 +727,8 @@ export function paintRoom(c: Ctx, w: number, h: number, wallId: string, floorId:
   fillStroke(c, '#e6d6bb', OUTLINE, 1.4)
   poly(c, [P(w, 0, 0), P(w, -WALL_T, 0), P(w, -WALL_T, WALL_H), P(w, 0, WALL_H)])
   fillStroke(c, '#d9c6a6', OUTLINE, 1.4)
-  paintWindow(c, w)
+  if (chaos !== undefined) paintFireGlow(c, w, h, chaos)
+  paintWindow(c, w, chaos)
   paintDoorAndPicture(c, h)
 
   poly(c, [P(0, 0), P(w, 0), P(w, h), P(0, h)])

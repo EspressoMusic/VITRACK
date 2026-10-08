@@ -4,296 +4,480 @@ export interface LegalBlock {
 }
 
 export interface LegalPart {
-  id: string
+  id: 'terms' | 'privacy' | 'refund' | 'credits'
   title: string
   blocks: LegalBlock[]
 }
 
-export const LEGAL_LAST_UPDATED = '02.09.2026'
+/**
+ * Single source of truth for the legal documents. The in-app LegalPanel renders LEGAL_PARTS
+ * directly, and the website's terms.html / privacy.html / refund.html are regenerated from this
+ * file — edit here, then run `npm run legal` from the repo root so the two never drift apart.
+ * Paragraphs starting with "• " render as bullet items.
+ */
+export const LEGAL_LAST_UPDATED = '08.10.2026'
 export const SUPPORT_EMAIL = 'shilohdhd1@gmail.com'
 export const OPERATOR_NAME = 'Shilo'
-export const AI_PROVIDER_NAME = 'OpenAI (ChatGPT / GPT models)'
+export const AI_PROVIDER_NAME = 'OpenAI'
+export const WEBSITE = 'vitamintrack.com'
 
 export const LEGAL_PARTS: LegalPart[] = [
   {
-    id: 'intro',
-    title: 'Preliminary note',
+    id: 'terms',
+    title: 'Terms & Conditions',
     blocks: [
       {
         heading: '',
         paragraphs: [
-          `Last updated: ${LEGAL_LAST_UPDATED}`,
-          'This document combines the Terms of Use, Privacy Policy, Cookie and local-storage policy, and additional disclosures applicable to your use of the Vitrack application ("the App" or "the Service"). Please read it carefully. Using the App constitutes agreement to everything stated in this document.',
-          `Vitrack is currently operated by ${OPERATOR_NAME} (a single private individual, referred to below as "the Operator" or "we"), and not by a registered company or licensed business. The Operator's contact details are provided later in this document and at the bottom of the Settings screen in the App.`,
-        ],
-      },
-    ],
-  },
-  {
-    id: 'terms',
-    title: 'Part A — Terms of Use',
-    blocks: [
-      {
-        heading: '1. Agreement to the terms',
-        paragraphs: [
-          'Browsing the App, creating an account, answering the personal questionnaire, photographing meals, or purchasing a subscription — each of these actions constitutes full and binding agreement to these Terms of Use and the Privacy Policy attached to them. If you do not agree to any of these terms, do not use the App.',
-          'If you use the App on behalf of a third party, you represent that you have the authority to accept these terms on their behalf, and that they meet the minimum age requirement set out in section 3 below.',
+          `These Terms & Conditions ("Terms") govern your use of Vitrack — the web app, the Android app, the website at ${WEBSITE}, and every feature offered through them (together, "the App" or "the Service"). Vitrack is operated by ${OPERATOR_NAME}, an individual based in Israel ("the Operator", "we", "us"). Please read these Terms together with our Privacy Policy and Refund Policy, which form part of them.`,
         ],
       },
       {
-        heading: '2. Description of the Service',
+        heading: '1. Agreement to these Terms',
         paragraphs: [
-          'Vitrack is an application that helps users generally track estimated vitamin, mineral, calorie, and macronutrient (protein, carbohydrate, and fat) intake, based on meal photos analyzed with artificial intelligence (AI), and a personal questionnaire (age, biological sex, weight, height, activity level, and diet type) used to calculate estimated daily targets.',
-          'The results, estimates, and targets shown in the App are only a rough, automated approximation, based on general formulas (such as published RDA values) and imperfect automatic food recognition from images. This is not a laboratory, clinical, or professional assessment.',
-          'The App tracks a broader set of vitamins and minerals than what is shown on screen by default. To keep the main view focused and readable, only a core subset of vitamins is displayed by default; the remaining tracked vitamins and minerals are not shown unless you turn on "Show all vitamins & minerals" in Settings, which reveals the full list. Not every vitamin, mineral, or nutrient that may be relevant to your health is necessarily tracked or displayed by the App, whether or not that setting is enabled. Calorie and macronutrient tracking can likewise be turned off in Settings by users who only want to track vitamins and minerals.',
-          'The App also includes optional motivational, game-like features, such as a visual fill-level progress gauge, achievement badges awarded for consistent logging against the App\'s own internal thresholds, and short "superfood" / "food to limit" cards with a one-line hook (for example, a fruit tagged as something that "may help support" a certain body function) and a brief explanation. These features exist for engagement and general education purposes only, in a playful, gamified format. They are not medical, nutritional, or clinical advice, diagnosis, treatment, or certification of health, adequacy, or well-being; a food\'s hook line or badge does not mean that food will treat, cure, or prevent any condition, and unlocking (or not unlocking) a badge says nothing about your actual health status.',
-          'The Operator may change, expand, reduce, suspend, or discontinue any part of the Service, temporarily or permanently, at any time and at its discretion, including without prior notice where required for technical or operational reasons. Where possible, reasonable advance notice will be given of material changes.',
+          'By using the App in any way — browsing it, answering the questionnaire, logging a meal, signing in, playing the city game, or buying a subscription — you agree to these Terms. If you sign in or subscribe, you are also asked to confirm your agreement explicitly. If you do not agree, do not use the App.',
+          'If any part of these Terms conflicts with a right you have under a mandatory law that cannot be waived by contract (for example, consumer-protection law in your country), that right prevails and the rest of these Terms remains in effect.',
         ],
       },
       {
-        heading: '3. Minimum age — adults only',
+        heading: '2. What the Service is',
         paragraphs: [
-          'The Service is intended for users aged 18 and over only. It is not intended for minors, and we do not knowingly collect information from minors.',
-          'By completing the personal questionnaire, creating an account, and in any event by using the App at all, you represent and warrant that you are 18 years of age or older, and that you have full legal capacity to enter into these terms (including any commitment to pay for a subscription, to the extent a real charge is ever applied).',
-          'If we become aware that a minor has provided us with personal information contrary to the above, we will act to delete that information as soon as possible. A parent or guardian who discovers that a minor in their care has used the App is welcome to contact us — see contact details below.',
+          'Vitrack is a self-tracking and general-education app about food and nutrition. Its main features are:',
+          '• Meal logging: you photograph a meal, upload a photo, type a food name, or scan a product barcode, and the App estimates the vitamins, minerals, calories, and macronutrients (protein, carbohydrates, fat) in it. You can correct the result.',
+          '• Personal targets: a short questionnaire (age, biological sex, weight, height, activity level, diet type) is used to calculate estimated daily targets from general, published formulas.',
+          '• Tracking views: a calendar, insights, progress gauges, nutrient alerts, food suggestions, "superfood" and "food to limit" cards, goals and challenges, favorites, achievements, experience points, and levels.',
+          '• AI chat: a chat assistant for general food and nutrition questions, with a separate "motivation" mode and selectable personalities (see section 9).',
+          '• Workout log: a simple optional log of workouts you enter yourself.',
+          '• The city game: a playful game with an animal avatar and a city you build, defend, and decorate, including online features that let signed-in players visit each other\'s cities (see section 10).',
+          'All estimates, targets, suggestions, and chat replies are rough, automated approximations. They are not a laboratory, clinical, or professional assessment, and not every nutrient that may matter for your health is tracked or shown.',
+          'The App is offered as a web app and as an Android app that you can download from our website. Download the Android app only from our official website; we are not responsible for copies obtained from any other source. If the App is offered through an app store in the future, that store\'s terms will also apply to your download.',
         ],
       },
       {
-        heading: '4. User account',
+        heading: '3. Who may use the App — adults only',
         paragraphs: [
-          'The App can be used without an account, in which case your data (including meal photos) is stored locally on your device only and may be lost if browser storage is cleared or the device is replaced.',
-          'You can also sign in with a Google account, so that your data is stored in the cloud and synced across devices. You are responsible for keeping your Google account credentials confidential and for all activity carried out through it in the App.',
-          'You must provide accurate and correct information when using the App (for example, in the personal questionnaire). The App does not verify the accuracy of the data entered, and the calculated estimates depend entirely on the reliability of the information you provide.',
-          'You may delete your account at any time from the Settings screen in the App. Deleting an account is an irreversible action that deletes all data associated with it.',
+          'The App is intended only for people aged 18 or over. By using it you confirm that you are at least 18 and have the legal capacity to agree to these Terms and to pay for a subscription.',
+          'We do not knowingly collect information from anyone under 18. If we learn that a minor is using the App, we may close the account and delete the related information. A parent or guardian who believes a minor has used the App can contact us at the address below.',
         ],
       },
       {
-        heading: '5. Subscription, payments, and cancellation',
+        heading: '4. Your account',
         paragraphs: [
-          'Paid subscriptions are processed through Paddle.com Market Ltd and its group companies ("Paddle"), acting as our authorized reseller and Merchant of Record for all purchases made in the App. This means your purchase is transacted with, invoiced by, and (where applicable) taxed by Paddle, and not directly by the Operator. Paddle\'s own Buyer Terms and Checkout Buyer Terms of Sale (available at paddle.com/legal) apply to the purchase transaction itself, in addition to these Terms, which govern your use of the App and Service. Card and other payment-method details are entered directly into Paddle\'s checkout and are never collected, stored, or seen by the Operator.',
-          'A subscription renews automatically at the end of each billing period (monthly or yearly, depending on the plan chosen) at the then-current price for that plan, unless cancelled before the renewal date. You can cancel at any time using the cancellation link in your Paddle receipt or confirmation email, through Paddle\'s customer portal, or by emailing us at the contact address below and we will assist. Cancelling stops future renewals but does not itself entitle you to a refund of a period already paid for.',
-          'Refunds beyond what mandatory law requires are granted at the Operator\'s sole discretion, on a case-by-case basis; Paddle may also independently review and grant refund requests under its own buyer terms. To the extent Israeli Consumer Protection Law, 1981, and its regulations (including any right to cancel a distance sale transaction), or another mandatory consumer-protection law applicable to a given user, grant non-waivable cancellation or refund rights, those rights will be honored notwithstanding the above.',
-          'The Operator may change prices and subscription plans from time to time; a price change will not apply to a subscription period already paid for in advance, and reasonable notice will be given before a price change applies to the next renewal.',
+          'Some parts of the App work without an account, in which case your data is kept only on your device and may be lost if you clear your browser or app data, uninstall the App, or change devices.',
+          'Signing in with Google is required for paid features, for syncing your data between devices, and for the online city features. You are responsible for keeping your Google account secure and for all activity under it in the App. Tell us right away if you believe your account has been used without your permission.',
+          'You must give accurate information (for example, in the questionnaire). The App does not check the information you enter, and its estimates depend on it.',
+          'You can delete your account at any time from Settings → "Delete account". Deletion is permanent and removes the data described in the Privacy Policy. Deleting your account, uninstalling the App, or clearing your data does NOT cancel a paid subscription — cancel it first (see section 6).',
         ],
       },
       {
-        heading: '6. User-submitted content and license to use',
+        heading: '5. Subscriptions, free trials, and payments',
         paragraphs: [
-          'When you photograph or upload a meal photo, you remain the owner of that photo. However, you grant the Operator a non-exclusive, worldwide, royalty-free license to store, process, transmit, and transfer the photo — including to third-party providers performing AI-based image analysis — solely for the purpose of providing the Service (food recognition and nutrient estimation) and its proper operation.',
-          'You may not upload content to the App that is not your own, that is offensive or unlawful, that infringes a third party\'s privacy, or that is unrelated to photographing meals for the purpose of the Service.',
-          'Do not upload photos to the App that include identifying details of other people (for example, another person\'s face) without their consent, since these photos may be transferred for processing to an external AI provider as described in the Privacy Policy.',
+          'The App\'s AI features and other premium features require an active paid subscription ("Vitrack Pro") and a signed-in account. The available plans (currently monthly and yearly) and their prices are shown in the App and on our website, and the final price — including any applicable tax and in your local currency where available — is shown in the checkout before you pay.',
+          'Payments are processed by Paddle.com Market Ltd and its group companies ("Paddle"), which acts as our reseller and Merchant of Record. This means Paddle sells you the subscription, charges your payment method, issues your receipt or invoice, and collects any applicable sales tax or VAT. Paddle\'s Buyer Terms (paddle.com/legal) apply to the purchase itself, alongside these Terms. Your card or other payment details are entered directly into Paddle\'s checkout; we never see or store them.',
+          'Automatic renewal: your subscription renews automatically at the end of each billing period (each month or each year, depending on your plan) and your payment method is charged the then-current price for your plan, until you cancel. By subscribing, you authorize these recurring charges.',
+          'Free trials: some plans may include a free trial (for example, a 3-day trial on the monthly plan). The trial length is shown before checkout. A payment method is required to start a trial. If you do not cancel before the trial ends, your subscription starts automatically and you are charged the full plan price at the end of the trial. Cancelling during the trial means you will not be charged. Free trials are limited to one per person; we may refuse or end a trial if we reasonably believe it is being misused (for example, repeated trials with new accounts).',
+          'Where required by applicable law, we or Paddle will notify you before a free trial converts into a paid subscription or before a yearly subscription renews.',
+          'If you buy a subscription before signing in, you must then sign in with Google in the App so the subscription can be linked to your account. If you cannot access a subscription you paid for, contact us with your Paddle receipt and we will help.',
+          'A subscription is personal to you and may not be shared, transferred, or resold.',
+          'Price changes: we may change subscription prices. A price change never applies to a period you have already paid for. We will give you reasonable advance notice before a new price applies to your next renewal, so you can cancel before it takes effect if you do not wish to continue.',
         ],
       },
       {
-        heading: '7. Intellectual property',
+        heading: '6. Cancellation and refunds',
         paragraphs: [
-          'All code, design, interface, the name "Vitrack", the logo, and original content in the App (excluding user-submitted content, and any marks/components attributed to third parties in the Credits section) are owned by, or licensed to, the Operator, and are protected by copyright, trademark, and other intellectual property laws. You may not copy, reproduce, reverse-engineer, decompile, redistribute, or create derivative works from the App without prior written consent.',
+          'You can cancel at any time: in the App under Settings → Subscription; through the link in your Paddle receipt email or Paddle\'s customer portal; or by emailing us and we will cancel it for you. When you cancel, no further renewal charges are made, and you keep access to paid features until the end of the period you have already paid for.',
+          'Refunds are handled under our Refund Policy, which is part of these Terms. In summary: you can get a refund of your first payment for a new subscription if you ask within 14 days; Israeli consumers have the statutory right to cancel a distance transaction described there; you can get a refund of a yearly renewal charge if you ask within 14 days of it; and duplicate or mistaken charges are always refunded. Paddle may also review and grant refund requests under its own Buyer Terms.',
+          'Nothing in these Terms limits any cancellation or refund right you have under mandatory law, including the Israeli Consumer Protection Law, 1981, and its regulations.',
         ],
       },
       {
-        heading: '8. Important medical, nutritional, and technological disclosure',
+        heading: '7. AI features and AI-generated content',
         paragraphs: [
-          'Vitrack does not provide medical advice, professional nutritional advice, diagnosis, treatment, prevention, or cure of any disease or medical condition, and is not a substitute for a physician, a licensed clinical dietitian, or any other medical professional.',
-          'Food recognition from photos and vitamin, mineral, calorie, and macronutrient estimates are performed by an automated AI system, and may be incorrect, partial, inaccurate, or misleading — including misidentifying the type of food, the portion size, or failing to identify ingredients at all.',
-          'The App is not designed and is not able to identify allergens, hazardous ingredients, contamination, spoiled food, food-drug interactions, or any other health risk in a photographed meal. Do not rely on the App to make decisions relating to allergies, sensitivities, diabetes (including carbohydrate counting), pregnancy, breastfeeding, chronic illness, eating disorders, or any other medical condition — without independent verification and approval from a qualified medical professional.',
-          'Food and nutrient-source suggestions shown in the App (for example, foods suggested to help close a vitamin or mineral gap) are general and are not filtered for allergens, intolerances, or any personal dietary restriction. If you have a food allergy, intolerance, or sensitivity of any kind, you are solely responsible for checking any food named or suggested by the App against your own medical history before consuming it. The Operator bears no responsibility or liability for any allergic reaction, adverse reaction, or other harm resulting from a food identified, logged, or suggested by the App.',
-          'Some screens in the App display a general phrase associating a shortfall in a specific vitamin or mineral with feelings commonly reported alongside such shortfalls (for example, tiredness or low energy). These phrases reflect generic, population-level associations based solely on your logged food intake for that day — they are not based on any symptom you have actually reported to the App, and are not a diagnosis of the cause of how you currently feel. Do not use these phrases to self-diagnose, rule out, or delay seeking care for any symptom; if a symptom concerns you, consult a qualified medical professional regardless of what the App does or does not show.',
-          'The daily targets calculated in the personal questionnaire are based on general, publicly available formulas and are not clinically personalized; do not adjust the dosage of dietary supplements, vitamins, or minerals based solely on data from the App, and in particular not in amounts higher than recommended, without consulting a physician.',
-          'In a medical emergency, contact emergency services immediately (for example, Magen David Adom in Israel, phone 101) and do not rely on the App.',
+          `Food recognition from photos, nutrient estimates for typed foods, and chat replies are generated automatically by artificial intelligence (currently provided by ${AI_PROVIDER_NAME}). AI output is produced by a machine, is not reviewed by a person before you see it, and can be wrong, incomplete, outdated, or misleading — for example, it can misidentify a food, misjudge a portion, miss ingredients entirely, or state something inaccurate with confidence.`,
+          'You are responsible for how you use AI output. Always use your own judgment and check anything important — especially anything related to health, allergies, or medication — with a qualified professional.',
+          'Product names looked up by barcode come from Open Food Facts, a free, collaborative public database. That data is provided by third parties and may be incomplete or incorrect.',
         ],
       },
       {
-        heading: '9. Limitation of liability',
+        heading: '8. Important health, nutrition, and medical disclaimer',
         paragraphs: [
-          'The Service is provided "AS IS" and "AS AVAILABLE", without any warranty of any kind, express or implied, including (without limitation) warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, reliability, continuous availability, or absence of faults.',
-          'The Operator does not warrant that the App will be free of errors or viruses, available without interruption, or that the analysis results will be accurate or complete.',
-          'To the extent permitted by law, the Operator will not be liable for any indirect, consequential, incidental, special, or punitive damages, or for loss of profit, loss of data, personal injury, health damage, or intangible harm, arising from use of the App, inability to use it, or reliance on content it provides — even if the Operator was advised of the possibility of such damage.',
-          'If, despite the above, liability is nevertheless imposed on the Operator, its total cumulative liability for all claims arising from use of the App, on any legal basis, will not exceed the greater of: (a) the amount actually paid by the user for the Service in the 12 months preceding the event giving rise to the claim; or (b) USD 100 (or the equivalent in the currency actually charged).',
-          'Nothing in this document seeks to limit liability in a manner not permitted by mandatory law (for example, in cases of damage caused by malice or gross negligence, to the extent these cannot be limited under applicable law).',
+          'Vitrack does not provide medical advice, professional nutrition advice, diagnosis, or treatment, and does not prevent, treat, or cure any disease or condition. It is not a medical device and is not a substitute for a physician, a registered dietitian, or any other qualified professional. Using the App does not create any professional–patient relationship.',
+          'The App cannot detect allergens, hazardous or spoiled food, contamination, food–drug interactions, or any other health risk in a meal. Food suggestions, superfood cards, and chat replies are general and are NOT filtered for allergies, intolerances, medical conditions, medications, or dietary restrictions. If you have any of these, you are solely responsible for checking every food the App names before eating it.',
+          'Do not rely on the App for decisions about allergies, diabetes (including carbohydrate counting or insulin), pregnancy, breastfeeding, kidney or other chronic disease, eating disorders, or any other medical condition without independent advice from a qualified professional.',
+          'Some screens link a shortfall in a vitamin or mineral to feelings commonly reported alongside it (for example, tiredness). These are generic, population-level associations based only on the food you logged — not on any symptom — and are not a diagnosis. If a symptom worries you, see a doctor regardless of what the App shows.',
+          'Short lines on food cards (for example, that a food "helps with" a body function) are simplified general education about nutrients the food contains. They are not health claims about you, and do not mean that eating the food will treat, cure, or prevent anything.',
+          'Daily targets are based on general published formulas and are not clinically personalized. Do not start, stop, or change any dietary supplement, medication, or diet — and never take supplements above recommended amounts — based on the App alone. Consult a professional first.',
+          'If you have, or have had, an eating disorder or a difficult relationship with food or body weight, calorie counting, food scores, streaks, and critical or "angry" feedback may not be right for you. You can switch the bot to its normal personality at any time, and we encourage you to talk to a professional before using the App or any other food-tracking app.',
+          'In a medical emergency, call your local emergency number immediately (in Israel: Magen David Adom, 101). Do not use the App or its chat for emergencies.',
         ],
       },
       {
-        heading: '10. Indemnification',
+        heading: '9. Chat personalities and motivational features',
         paragraphs: [
-          'You agree to indemnify and hold harmless the Operator against any claim, demand, damage, or expense (including reasonable attorney\'s fees) arising from your breach of these terms, misuse of the Service, or infringement of a third party\'s rights resulting from your actions in the App.',
+          'The chat assistant and the in-app bot can use different personalities that you choose, including deliberately blunt, sarcastic, or "angry" styles that react to the food you log or to challenges you do not complete. These styles are optional entertainment only. What the bot says is generated automatically, is not a real assessment of you, and is not therapy, counseling, or coaching by a licensed professional. Nothing it says should be taken personally or as a statement of fact about you or your health. You can switch back to the normal personality at any time.',
+          'Badges, scores, levels, gauges, and colors (for example, a "red" day) exist to keep tracking engaging. They do not certify your health or the adequacy of your diet.',
+          'If you are feeling low, distressed, or unsafe, do not rely on the chat — reach out to a qualified professional or, in an emergency, to local emergency services (in Israel you can also contact ERAN emotional first aid at 1201).',
         ],
       },
       {
-        heading: '11. Termination of service and account closure',
+        heading: '10. The city game, virtual items, and online features',
         paragraphs: [
-          'The Operator may suspend or terminate a user\'s access to the Service, at its discretion, in the event of a breach of these terms, unlawful or abusive use of the App, or for reasonable operational/business reasons, giving advance notice where possible.',
-          'You may stop using the App at any time and delete your data and account through the Settings screen.',
+          'Coins, buildings, land, food guards, friends, avatar clothing, levels, and any other in-game items ("virtual items") have no monetary value. They cannot be bought separately for real money, sold, transferred, exchanged, or redeemed for money or anything of value. You receive a limited, revocable license to use them inside the game only. We may change, rebalance, reset, or remove virtual items or game features, and game progress stored only on your device may be lost if your device data is cleared.',
+          'When you are signed in and open the city, a snapshot of your city — its layout, level, food guards, your avatar\'s appearance, and the city name you choose (or, if you have not chosen one, an automatic label such as "City #1234") — is published and can be seen by other signed-in players. Other players can visit your city and send you food guards, and you can do the same. Your Google name, email address, and profile picture are not shown to other players.',
+          'City names must follow the community rules in section 12. Do not put your real full name, contact details, or any other personal information in your city name. We may change, reset, or remove any city name or city, or restrict a player\'s online features, without prior notice if we believe the rules were broken. To report an offensive city or name, email us with the city\'s name or number.',
         ],
       },
       {
-        heading: '12. Governing law and jurisdiction',
+        heading: '11. Your content and the license you give us',
         paragraphs: [
-          'These terms are governed solely by the laws of the State of Israel, excluding its private international law (conflict of laws) rules. Exclusive jurisdiction over any dispute relating to these terms or use of the App is given to the competent courts of the Tel Aviv-Jaffa district, Israel, unless mandatory law applicable to a particular user (for example, consumer protection law in their country of residence) provides otherwise.',
+          'You keep ownership of the content you submit — meal photos, food names, chat messages, city names, and any other text you enter ("your content"). You give the Operator a worldwide, non-exclusive, royalty-free license to store, copy, process, display, and transmit your content — including to the service providers listed in the Privacy Policy, such as the AI provider — only as needed to operate, secure, and provide the Service to you, and, for city names and city snapshots, to show them to other players as described above. This license ends when your content is deleted, except for copies kept for a limited time in backups or as required by law.',
+          'You confirm that you have the right to submit your content and that it does not break the law or anyone else\'s rights.',
         ],
       },
       {
-        heading: '13. Miscellaneous',
+        heading: '12. Community and acceptable-use rules',
         paragraphs: [
-          '• If any provision of these terms is found to be void or unenforceable, the remaining provisions will remain in full force.',
-          '• The Operator\'s failure to enforce a right at any point in time does not constitute a waiver of it.',
-          '• These terms, together with the attached Privacy Policy and Cookie Policy, constitute the entire agreement between the parties regarding use of the App, and supersede any prior oral or written agreement.',
-          '• The Operator may assign these terms to a third party as part of a sale, merger, or transfer of business activity; the user may not assign their rights without the Operator\'s consent.',
-          '• These terms may be updated from time to time; continued use of the App after an update constitutes agreement to the updated terms. The date of the last update appears at the top of this document.',
+          'When using the App you must not:',
+          '• upload photos of other people (including faces), identity documents, or anything unrelated to food, or type another person\'s private or health information into the App;',
+          '• use offensive, hateful, sexual, violent, harassing, discriminatory, or misleading city names or content, impersonate anyone, or use names to advertise or share contact details;',
+          '• break any law, or use the App for any illegal, harmful, or fraudulent purpose;',
+          '• try to make the AI produce harmful, illegal, or unrelated content, or use the chat for anything other than its intended purpose;',
+          '• bypass the paywall, rate limits, or any security measure; access another user\'s account or data; or probe, scan, or test the App\'s security without our written permission;',
+          '• scrape, copy, or collect data from the App, use bots or automated requests, or overload the Service;',
+          '• copy, modify, reverse-engineer, decompile, resell, or create derivative works from the App, except where the law expressly allows it;',
+          '• misuse free trials, refunds, or chargebacks.',
+          'We may remove content and suspend or close accounts that break these rules.',
+        ],
+      },
+      {
+        heading: '13. Third-party services',
+        paragraphs: [
+          'The App relies on third-party services, including Google (sign-in), Paddle (payments), OpenAI (AI processing), Supabase (database and authentication), Vercel (hosting), Open Food Facts (barcode product data), and TikTok (advertising measurement). Your use of those services may also be subject to their own terms and privacy policies. We are not responsible for third-party services, and an outage or change in them may affect the App.',
+        ],
+      },
+      {
+        heading: '14. Intellectual property',
+        paragraphs: [
+          'The App — including its code, design, interface, characters, artwork, game content, texts, the name "Vitrack", and the logo — is owned by or licensed to the Operator and is protected by copyright, trademark, and other laws, except for your content and third-party materials listed in the Credits. These Terms give you a personal, non-exclusive, non-transferable, revocable right to use the App for your own non-commercial use, and nothing more.',
+          'If you send us feedback or suggestions, we may use them freely without any obligation to you.',
+        ],
+      },
+      {
+        heading: '15. Disclaimer of warranties',
+        paragraphs: [
+          'To the fullest extent permitted by law, the App is provided "AS IS" and "AS AVAILABLE", without warranties of any kind, express or implied, including warranties of accuracy, reliability, merchantability, fitness for a particular purpose, non-infringement, or uninterrupted, secure, or error-free operation. We do not promise that estimates, AI output, or any other content will be accurate or complete, or that data will never be lost.',
+        ],
+      },
+      {
+        heading: '16. Limitation of liability',
+        paragraphs: [
+          'To the fullest extent permitted by law, the Operator will not be liable for any indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, or goodwill, or for any personal injury or health harm, arising from or related to your use of, or inability to use, the App, or your reliance on any estimate, suggestion, AI output, or other content in it.',
+          'To the fullest extent permitted by law, the Operator\'s total liability for all claims relating to the App, on any legal basis, will not exceed the greater of (a) the amount you actually paid for the Service in the 12 months before the event that gave rise to the claim, or (b) USD 100 (or its equivalent in the currency you were charged).',
+          'Nothing in these Terms excludes or limits liability that cannot be excluded or limited under applicable law — for example, liability for fraud, intentional misconduct, or gross negligence, or your statutory rights as a consumer.',
+        ],
+      },
+      {
+        heading: '17. Indemnification',
+        paragraphs: [
+          'To the extent permitted by law, you agree to indemnify the Operator against claims, damages, and reasonable costs (including reasonable legal fees) arising from your breach of these Terms, your content, or your misuse of the App.',
+        ],
+      },
+      {
+        heading: '18. Suspension and termination',
+        paragraphs: [
+          'You may stop using the App at any time, and delete your data and account in Settings.',
+          'We may suspend or close your account, or restrict features, if you break these Terms, misuse the App, or act unlawfully, or if we are required to by law. Where reasonable, we will give you notice first.',
+          'We may also stop offering the App, or any part of it, for operational or business reasons. If we permanently shut down a paid feature, or close your account without any breach on your part, we will refund the unused part of any period you have already paid for.',
+          'Sections that by their nature should continue after termination (including sections 8, 11, 14–17, and 20) will continue to apply.',
+        ],
+      },
+      {
+        heading: '19. Changes to the Service and to these Terms',
+        paragraphs: [
+          'We may add, change, or remove features of the App from time to time, including for technical, security, or legal reasons.',
+          'We may update these Terms. The "Last updated" date at the top shows the latest version. If a change is material, we will give notice in the App or by email before it takes effect; for paid subscribers, a material change that is to your disadvantage takes effect no earlier than 14 days after notice, and you may cancel your subscription before then. Continuing to use the App after a change takes effect means you accept the updated Terms.',
+        ],
+      },
+      {
+        heading: '20. Governing law and disputes',
+        paragraphs: [
+          'These Terms are governed by the laws of the State of Israel, without regard to conflict-of-laws rules. The competent courts in the Tel Aviv-Jaffa district have exclusive jurisdiction over any dispute relating to these Terms or the App, without derogating from the jurisdiction of small claims courts, and except where mandatory law where you live gives you the right to bring proceedings in your local courts or to rely on your local consumer-protection laws.',
+          'Before starting any legal proceeding, please contact us first so we can try to resolve the issue informally.',
+        ],
+      },
+      {
+        heading: '21. General',
+        paragraphs: [
+          '• If any provision of these Terms is found invalid or unenforceable, the rest of the Terms remains in full effect.',
+          '• Our failure to enforce a right is not a waiver of it.',
+          '• These Terms, together with the Privacy Policy and the Refund Policy, are the entire agreement between you and the Operator about the App.',
+          '• We may transfer these Terms to another person or entity as part of a sale, merger, reorganization, or transfer of the App — including to a company or business the Operator sets up to run the App — and will notify you if we do. You may not transfer your rights under these Terms without our consent.',
+          '• Notices to you may be sent by email to the address of your account or shown in the App. Notices to us must be sent to the email address below.',
+          '• These Terms are written in English. If we provide a translation, the English version applies in case of any conflict, except where mandatory law requires otherwise.',
+        ],
+      },
+      {
+        heading: '22. Contact',
+        paragraphs: [
+          `For any question, request, complaint, or legal notice about these Terms or the App, contact ${OPERATOR_NAME} at: ${SUPPORT_EMAIL}`,
         ],
       },
     ],
   },
   {
     id: 'privacy',
-    title: 'Part B — Privacy Policy',
-    blocks: [
-      {
-        heading: '1. General',
-        paragraphs: [
-          'This policy explains what information Vitrack collects, how it is stored and used, with whom it may be shared, and what rights you have regarding it. "Personal information" is any information relating to an identified or identifiable person.',
-          `The data controller is currently ${OPERATOR_NAME}, an independent private developer, with no registered business entity, who can be contacted at: ${SUPPORT_EMAIL}.`,
-        ],
-      },
-      {
-        heading: '2. What information is collected',
-        paragraphs: [
-          '• Personal/health profile from the questionnaire: age, biological sex, weight, height, activity level, and diet type — stored by default only in local storage (localStorage) on your browser/device, and used to calculate estimated daily vitamin, mineral, calorie, and macronutrient targets.',
-          '• Meal photos and analysis results: when you photograph a meal, the photo is sent for automatic analysis (see section 3), and the analysis result (list of identified foods, estimated quantities, nutrient estimates, and confidence level) is stored together with the photo: locally on the device (IndexedDB) if you are not signed in, or in a cloud database if you signed in with a Google account.',
-          '• Account details: if you sign in with Google, we receive from it (via our authentication provider) your name, email address, and profile picture as provided by Google.',
-          '• Subscription and billing status: the plan type selected (monthly/yearly) and active/inactive status, recorded by the App once a purchase is completed through Paddle. We do not collect or store your payment method details (such as card numbers) — these are entered directly into Paddle\'s checkout and handled solely by Paddle, as described in section 5 below.',
-          '• Basic technical information: like any online service, the hosting, authentication, and AI infrastructure we use may naturally process basic connection data (such as IP address, browser type, timestamps) necessary to operate and secure the Service.',
-        ],
-      },
-      {
-        heading: '3. AI-based image analysis',
-        paragraphs: [
-          `Food recognition from a photo happens in two stages: (a) live, on-device recognition only (using a machine-learning model that runs in the browser) that helps frame the shot in real time — this stage does not send any data to a server; (b) final analysis of the photo you captured, performed by sending the photo to the App's server, which forwards it for processing by ${AI_PROVIDER_NAME} for food recognition and nutrient estimation.`,
-          `This means the meal photo you choose to analyze is transferred to ${AI_PROVIDER_NAME} as an external third party, even if you are not signed in and even if the analysis result is ultimately stored only locally on your device. This processing is also subject to OpenAI's own privacy policy and terms of use (openai.com). If we change or add AI providers in the future, we will update this section accordingly.`,
-          'Do not upload especially sensitive photos (such as ones that clearly show a third party\'s face, personal documents, or information unrelated to a meal) for analysis.',
-        ],
-      },
-      {
-        heading: '4. How we use information',
-        paragraphs: [
-          '• Providing the core functionality: calculating personal nutritional targets, recognizing food in photos, tracking daily/weekly vitamin, mineral, calorie, and macronutrient intake, and computing progress shown in gauges and achievement badges.',
-          '• Managing accounts, sign-in, and syncing across devices for those who choose to sign in.',
-          '• Managing subscriptions and payments, processed through Paddle.',
-          '• Responding to support requests sent to our email address.',
-          '• Maintaining the security of the Service and preventing misuse.',
-          '• Complying with legal requirements where applicable.',
-          'We do not sell personal information to third parties, and we do not use your data for targeted advertising.',
-        ],
-      },
-      {
-        heading: '5. Who information is shared with',
-        paragraphs: [
-          '• Supabase — the database, authentication, and cloud storage infrastructure provider we use for signed-in users.',
-          '• Vercel — the hosting provider used to serve the App.',
-          '• Google — for the sign-in process (Google Sign-In).',
-          `• ${AI_PROVIDER_NAME} — the AI-based image analysis provider, used for food recognition and nutrient estimation in the photos you take, as described in section 3 above.`,
-          '• Paddle.com Market Ltd and its group companies ("Paddle") — our payment processor and Merchant of Record for paid subscriptions. When you subscribe, Paddle collects and processes your payment details, billing address, and email directly, subject to Paddle\'s own privacy policy (paddle.com/legal). The Operator receives only your subscription plan and active/inactive status — never your full payment details.',
-          '• Law enforcement authorities or competent bodies — only to the extent required by law, court order, or to protect rights, property, or safety.',
-          '• In the event of a sale, merger, acquisition, or transfer of business assets — information may be transferred to the acquiring/merging party, with reasonable notice given where possible.',
-        ],
-      },
-      {
-        heading: '6. Storage, data security, and international transfer',
-        paragraphs: [
-          'We take reasonable, standard measures to protect information, but no method of storage or transmission over the internet is guaranteed to be 100% secure, and we cannot promise absolute security of information.',
-          `The infrastructure providers we use (Supabase, Vercel, Google, Paddle, and ${AI_PROVIDER_NAME}) may store or process information on servers located outside Israel, including in the US and Europe. By using the App, you consent to such transfer of information.`,
-        ],
-      },
-      {
-        heading: '7. Data retention and deletion',
-        paragraphs: [
-          'Information stored only locally (without an account) stays on your device only and can be deleted immediately and irreversibly via "Clear all data" in Settings, and is also deleted if you clear your browser storage or remove the App.',
-          'Account information (for signed-in users) is retained as long as the account is active. Deleting an account via "Delete account" in Settings deletes the information associated with it from the services under our control; copies may be retained briefly in technical backups before final deletion, and third-party providers (such as the image-analysis provider) may retain their own independent retention policies.',
-          `You can also request deletion, review, or correction of information manually by contacting ${SUPPORT_EMAIL}.`,
-        ],
-      },
-      {
-        heading: '8. Your rights',
-        paragraphs: [
-          `Subject to applicable law, you may have the right to: review the information stored about you; correct inaccurate information; request its deletion; object to certain processing; and receive a copy of your information in an accessible format (data portability). Some of these rights can be exercised directly through the Settings screen (deleting data/account), and others by contacting ${SUPPORT_EMAIL}. We will endeavor to respond to requests within a reasonable time.`,
-          'Residents of the European Union may enjoy additional rights under the GDPR; residents of Israel may enjoy rights under the Israeli Privacy Protection Law, 1981, and its regulations.',
-        ],
-      },
-      {
-        heading: '9. Children\'s privacy',
-        paragraphs: [
-          'See the "Minimum age — adults only" section in Part A (Terms of Use) above, which also applies to this policy: the Service is intended for those aged 18 and over only, and we do not knowingly collect information from minors.',
-        ],
-      },
-      {
-        heading: '10. Changes to this Privacy Policy',
-        paragraphs: [
-          'We may update this policy from time to time. Material changes will be reflected by updating the "Last updated" date at the top of the document, and where necessary, a notice will be shown within the App.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'cookies',
-    title: 'Part C — Cookie and local storage policy',
-    blocks: [
-      {
-        heading: '1. What technologies we use',
-        paragraphs: [
-          'The App does not currently use advertising cookies or third-party ad tracking. We do use browser storage technologies essential to operating the App:',
-          '• Local Storage — to save the state of your personal questionnaire, your calculated nutritional targets, your calorie/macro-tracking display preference, and your subscription status on your device.',
-          '• IndexedDB — to save your meal log on your device when you are not signed in.',
-          '• Sign-in related storage — if you sign in with Google, our authentication provider (Supabase, via Google) may store session tokens in local storage or cookies, to keep you signed in between visits.',
-        ],
-      },
-      {
-        heading: '2. Purpose of use',
-        paragraphs: [
-          'These technologies are essential to the basic functioning of the App (saving your progress, recognizing your subscription, storing a local meal log) and are not used by us for cross-site advertising tracking.',
-        ],
-      },
-      {
-        heading: '3. Management and deletion',
-        paragraphs: [
-          'You can delete all local data at any time via "Clear all data" and/or "Delete account" in the Settings screen, or by clearing site/browser data in your browser settings. Note that doing so may sign you out of your account and reset your accumulated data.',
-          'If we add usage-analytics or advertising tools in the future, we will update this policy accordingly and request your consent where required by law.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'business',
-    title: 'Part D — Business status disclosure',
+    title: 'Privacy Policy',
     blocks: [
       {
         heading: '',
         paragraphs: [
-          `Vitrack is currently operated at an early stage by ${OPERATOR_NAME}, a private individual, without a registered business or a registered limited company. This may change in the future, in which case these terms will be updated accordingly and notice will be given within the App.`,
-          'Until a formal business entity is established, the exclusive contact address for any matter relating to the App — including privacy requests, support, complaints, or legal demands — is the email address below.',
+          `This Privacy Policy explains what personal information Vitrack collects, why, where it is kept, who receives it, and what rights you have. It applies to the Vitrack web app, the Android app, and the website at ${WEBSITE} (together, "the App"). "Personal information" means any information about an identified or identifiable person.`,
+        ],
+      },
+      {
+        heading: '1. Who is responsible for your information',
+        paragraphs: [
+          `The App is operated by ${OPERATOR_NAME}, an individual based in Israel, who is the controller (the "database owner") of the personal information described here. Contact: ${SUPPORT_EMAIL}.`,
+        ],
+      },
+      {
+        heading: '2. The short version',
+        paragraphs: [
+          '• If you do not sign in, almost everything you enter stays on your device.',
+          `• Meal photos, typed food names, and chat messages are sent to ${AI_PROVIDER_NAME} to be analyzed — even when you are not signed in.`,
+          '• If you sign in with Google, your data is synced to our cloud database so you can use it on other devices.',
+          '• Your city (but not your name or email) is visible to other signed-in players.',
+          '• We use the TikTok Pixel to measure our ads. TikTok receives page visits and checkout events — never your meals, photos, health information, or chat messages.',
+          '• We never see your card details, and we do not sell your personal information.',
+          '• You can delete your data and your account at any time in Settings.',
+        ],
+      },
+      {
+        heading: '3. Information we collect',
+        paragraphs: [
+          '• Questionnaire and targets: age, biological sex, weight, height, activity level, diet type, and the daily targets calculated from them. Stored on your device; if you sign in, also synced to our cloud database.',
+          '• Meals: the photos you take or upload, food names you type, barcodes you scan, the AI analysis results (foods, estimated portions, nutrients, calories, macronutrients, confidence, notes, and whether a food was flagged as junk food), and the date and time of each meal. Stored on your device if you are not signed in, or in our cloud database (including the photo itself) if you are.',
+          '• Chat: the messages you type and the assistant\'s replies, the chat mode and personality you chose, and your calorie and protein targets, which are sent with each message so replies fit your plan. Your chat history is saved on your device; it is not stored in our database.',
+          '• Other things you enter: workouts, goals and challenges, favorites, achievements, experience points, settings, and language. Stored on your device; workouts and goals are also synced to our cloud database if you sign in.',
+          '• City game: your game progress is saved on your device. If you are signed in and open the city, a snapshot (city layout, level, food guards, avatar appearance, and the city name you choose) is stored in our database and shown to other signed-in players, and we keep a record of food guards sent between players (sender, recipient, and date).',
+          '• Account: if you sign in with Google, we receive your name, email address, profile picture, and Google account identifier, and our authentication provider records basic sign-in information (such as sign-in times).',
+          '• Subscription: your Paddle subscription and customer identifiers, plan, status (for example, trialing, active, or canceled), and the end date of the current period. Paddle collects your payment details, billing address, country, and email directly; we never receive your full card details.',
+          '• Support: if you contact us by email or WhatsApp, we receive your contact details and the content of your messages.',
+          '• Technical information: IP address, device and browser type, app version, timestamps, and error logs, which our hosting, database, and AI providers process to run and secure the Service. We also store your IP address briefly in rate-limit records to prevent abuse of the AI features.',
+          '• Advertising measurement: see section 8 (TikTok Pixel).',
+        ],
+      },
+      {
+        heading: '4. Health-related information and your consent',
+        paragraphs: [
+          'Some of the information you give us — such as your weight, height, diet type, the food you eat, and your nutrient intake — may be considered health-related or sensitive information under privacy laws, including the Israeli Privacy Protection Law, 1981 (as amended), the EU/UK GDPR, and certain US state laws.',
+          'You are not under any legal obligation to provide this information. Providing it is your choice, but the App cannot calculate targets or analyze meals without it. By entering it into the App, you explicitly consent to us processing it for the purposes described in this policy, including sending meal content to our AI provider. You can withdraw your consent at any time by deleting the information or your account in Settings; this does not affect processing already carried out.',
+          'We use health-related information only to provide the App\'s features to you. We do not sell it, we do not use it for advertising, and we do not share it with advertising partners.',
+        ],
+      },
+      {
+        heading: '5. How we use information, and our legal bases',
+        paragraphs: [
+          '• To provide the App: calculate targets, analyze meals, show tracking and insights, run the chat and the game, and sync your data — based on our agreement with you (performing the contract) and, for health-related information, your explicit consent.',
+          '• To manage subscriptions, payments, refunds, and access to paid features — based on performing the contract.',
+          '• To show your city to other players and run the online game features — based on performing the contract.',
+          '• To answer support requests — based on performing the contract and our legitimate interest in helping users.',
+          '• To keep the App secure, prevent abuse and fraud, and enforce our Terms (for example, rate limits and moderation of city names) — based on our legitimate interests.',
+          '• To measure the effectiveness of our ads with the TikTok Pixel — based on our legitimate interests and, where the law requires it, your consent.',
+          '• To keep accounting and tax records and comply with legal obligations — based on legal obligation.',
+          'We do not make decisions about you that have legal or similarly significant effects based solely on automated processing.',
+        ],
+      },
+      {
+        heading: '6. AI processing',
+        paragraphs: [
+          `When you analyze a meal photo, type a food name for analysis, or send a chat message, that content (and, for chat, the recent conversation together with your calorie and protein targets) is sent through our server to ${AI_PROVIDER_NAME} to generate the result. This happens even if you are not signed in and even if the result is then stored only on your device.`,
+          'Before the photo is taken, a small machine-learning model runs on your device to help frame the shot; that step does not send anything to a server.',
+          `${AI_PROVIDER_NAME} processes this content as our service provider, under its own API terms and privacy policy (openai.com/policies). Under OpenAI's API terms at the time of writing, content sent through its API is not used to train its models by default and may be kept for a limited period (typically up to 30 days) for abuse monitoring. If we change or add AI providers, we will update this policy.`,
+          'Please do not include other people\'s faces, documents, or private information in photos or chat messages.',
+        ],
+      },
+      {
+        heading: '7. Who we share information with',
+        paragraphs: [
+          'We share personal information only as needed to run the App, with:',
+          '• Supabase — database, authentication, and server functions (for signed-in users\' data and for AI requests).',
+          '• Vercel — hosting of the App and website.',
+          '• Google — sign-in with Google.',
+          `• ${AI_PROVIDER_NAME} — AI analysis of meal photos, typed foods, and chat messages (section 6).`,
+          '• Paddle.com Market Ltd and its group companies — payments, as our Merchant of Record. Paddle processes your purchase information as an independent controller under its own privacy policy (paddle.com/legal).',
+          '• TikTok — advertising measurement (section 8).',
+          '• Open Food Facts — when you scan a barcode, your device sends the barcode number directly to Open Food Facts to look up the product name. No account information is sent, though Open Food Facts, like any website, receives your IP address.',
+          '• WhatsApp (Meta) and Google (Gmail) — if you choose to contact us through them.',
+          '• Other players — your city snapshot and city name, as described in section 3.',
+          '• Authorities — when required by law, court order, or to protect the rights, property, or safety of users, the Operator, or others.',
+          '• A successor — if the App is transferred to a company or business set up by the Operator, or sold, merged, or reorganized, in which case this policy will continue to apply to your information.',
+          'We do not sell your personal information for money. Our use of the TikTok Pixel may be considered "sharing" or "targeted advertising" under some US state laws; see section 13 for how to opt out.',
+        ],
+      },
+      {
+        heading: '8. Advertising measurement — TikTok Pixel',
+        paragraphs: [
+          'The web app and the Android app include the TikTok Pixel, a measurement tool from TikTok. It lets us understand how many people arrive from our TikTok ads and whether they start a checkout or subscribe, so we can measure and improve our advertising.',
+          'The TikTok Pixel receives: the fact that a page of the App was loaded and its address; checkout events (starting a checkout, adding payment information, and a confirmed purchase) together with the plan, price identifier, amount, and currency; and technical information such as your IP address, browser and device information, and cookies or similar identifiers (such as "_ttp") that TikTok sets. TikTok may link this to your TikTok account if you have one, and processes it under its own privacy policy (tiktok.com/legal).',
+          'We do not send TikTok your meals, photos, questionnaire answers, health information, chat messages, name, or email address.',
+          'To limit this tracking you can block or clear third-party cookies in your browser, use a browser or extension that blocks trackers, adjust your ad-personalization settings in the TikTok app, or contact us.',
+        ],
+      },
+      {
+        heading: '9. Cookies and local storage',
+        paragraphs: [
+          'The App uses storage on your device that is essential for it to work:',
+          '• Local storage — your questionnaire answers and targets, settings, language, subscription status, chat history, goals, favorites, achievements, workouts, and game progress.',
+          '• IndexedDB — your meal log (including photos) when you are not signed in.',
+          '• Sign-in storage — session tokens set by our authentication provider to keep you signed in.',
+          '• Session storage — temporary checkout information used to complete a purchase.',
+          'In addition, the TikTok Pixel sets its own cookies and identifiers, as described in section 8.',
+          'You can delete the data stored on your device at any time with "Clear all data" in Settings, or by clearing site or app data in your browser or device settings. This may sign you out and erase data that was not synced.',
+        ],
+      },
+      {
+        heading: '10. International transfers',
+        paragraphs: [
+          'Our service providers may store or process information on servers outside Israel, including in the United States and the European Union. Where we transfer personal information outside Israel or the EU/UK, we rely on our providers\' contractual commitments and recognized safeguards (such as Standard Contractual Clauses where applicable) to protect it.',
+        ],
+      },
+      {
+        heading: '11. How long we keep information',
+        paragraphs: [
+          '• Information on your device stays there until you delete it, clear your browser or app data, or uninstall the App.',
+          '• Cloud data of signed-in users (meals and photos, questionnaire and targets, goals, workouts, city snapshot, food-guard records) is kept while your account is active and deleted when you delete your account. Deleted data may remain in encrypted backups for a limited period (typically up to 30 days) before it is overwritten.',
+          '• Subscription records (Paddle identifiers, plan, status, and dates) are kept after account deletion, disconnected from your deleted account, for as long as needed for accounting, tax, chargeback, and legal purposes (in Israel, generally up to 7 years).',
+          '• Rate-limit records containing IP addresses are overwritten continuously and are not kept longer than needed to prevent abuse.',
+          '• Support messages are kept as long as needed to handle your request and any follow-up.',
+          '• Information held by third parties (such as OpenAI, Paddle, Google, and TikTok) is kept according to their own policies.',
+        ],
+      },
+      {
+        heading: '12. Security',
+        paragraphs: [
+          'We use reasonable technical and organizational measures to protect personal information, including encryption in transit (HTTPS), access controls that let each user read only their own data, and keeping secret keys only on the server. No method of storage or transmission is 100% secure, and we cannot guarantee absolute security. If a security incident affects your personal information, we will notify you and the relevant authorities where the law requires it.',
+        ],
+      },
+      {
+        heading: '13. Your rights and choices',
+        paragraphs: [
+          'Depending on where you live, you may have the right to: access the personal information we hold about you; correct it; delete it; receive a copy in a portable format; restrict or object to certain processing; withdraw consent at any time; and opt out of targeted advertising or "sharing".',
+          '• Israel: you have the rights to review and correct your information under the Privacy Protection Law, 1981, and its regulations.',
+          '• EU / UK: you have the rights listed above under the GDPR, and the right to complain to your local data protection authority.',
+          '• United States: residents of states with privacy laws (such as California, Colorado, Virginia, Connecticut, and others) may have the rights listed above, including to opt out of targeted advertising, and we will not discriminate against you for using them. If you live in a state with a consumer health data law (such as Washington or Nevada), we collect consumer health data only to provide the features you request, and we do not sell it or share it for advertising.',
+          `You can delete your data and account yourself in Settings. For any other request, email ${SUPPORT_EMAIL}. We may need to verify your identity, and we will respond within 30 days or any shorter period required by law. If we refuse a request, we will explain why, where the law requires it.`,
+        ],
+      },
+      {
+        heading: '14. Children',
+        paragraphs: [
+          'The App is intended only for people aged 18 and over, and we do not knowingly collect personal information from anyone under 18. If you believe a minor has given us personal information, contact us and we will delete it.',
+        ],
+      },
+      {
+        heading: '15. Changes to this policy',
+        paragraphs: [
+          'We may update this policy from time to time. The "Last updated" date at the top shows the latest version. If a change is material, we will notify you in the App or by email, and where the law requires it, we will ask for your consent.',
+        ],
+      },
+      {
+        heading: '16. Contact',
+        paragraphs: [
+          `For any question, request, or complaint about this policy or your personal information, contact ${OPERATOR_NAME} at: ${SUPPORT_EMAIL}`,
         ],
       },
     ],
   },
   {
-    id: 'contact',
-    title: 'Part E — Contact',
+    id: 'refund',
+    title: 'Refund Policy',
     blocks: [
       {
         heading: '',
         paragraphs: [
-          'For any question, request, complaint, or inquiry regarding the Terms of Use, Privacy Policy, cookies, your personal information, or any other matter relating to Vitrack, you can contact us at:',
-          SUPPORT_EMAIL,
+          'This Refund Policy explains how free trials, renewals, cancellations, and refunds work for Vitrack Pro subscriptions. It is part of our Terms & Conditions.',
+        ],
+      },
+      {
+        heading: '1. Who bills you',
+        paragraphs: [
+          'Vitrack Pro subscriptions are sold and billed by Paddle.com Market Ltd ("Paddle"), our Merchant of Record and authorized reseller. Your receipt or invoice and the charge on your statement come from Paddle. Paddle\'s Buyer Terms (paddle.com/legal) also apply to your purchase.',
+        ],
+      },
+      {
+        heading: '2. Free trials',
+        paragraphs: [
+          'Some plans include a free trial (for example, a 3-day trial on the monthly plan), as shown before checkout. If you cancel before the trial ends, you will not be charged. If you do not cancel, your subscription starts automatically when the trial ends and you are charged the full plan price.',
+        ],
+      },
+      {
+        heading: '3. Automatic renewal',
+        paragraphs: [
+          'Your subscription renews automatically at the end of each billing period (monthly or yearly, depending on your plan) at the then-current price, until you cancel. A price change never applies to a period you have already paid for, and we give reasonable notice before a new price applies to a renewal.',
+        ],
+      },
+      {
+        heading: '4. How to cancel',
+        paragraphs: [
+          '• In the App: Settings → Subscription → Cancel; or',
+          '• Through the link in your Paddle receipt email or Paddle\'s customer portal; or',
+          `• By emailing ${SUPPORT_EMAIL} — we will cancel it for you.`,
+          'After you cancel, no further charges are made and you keep access until the end of the period you already paid for. Deleting your account, uninstalling the App, or clearing your data does NOT cancel your subscription — please cancel first.',
+        ],
+      },
+      {
+        heading: '5. When you can get a refund',
+        paragraphs: [
+          '• First payment: if you are not satisfied, you can get a full refund of the first payment for a new subscription (including the first charge after a free trial) if you ask within 14 days of that payment.',
+          '• Yearly renewals: if you were charged for a yearly renewal you did not intend, you can get a full refund of that renewal charge if you ask within 14 days of it.',
+          '• Mistakes: duplicate charges, charges after a cancellation that was properly made, and charges for a period in which a technical problem on our side prevented you from using the paid features will be refunded.',
+          '• Monthly renewals are otherwise not refundable once the period has started, except where required by law. You can cancel at any time to stop future renewals.',
+          'Any other refund request is considered case by case, at our discretion. Paddle may also review and grant refunds under its own Buyer Terms, regardless of our decision.',
+        ],
+      },
+      {
+        heading: '6. Your statutory rights (Israel and elsewhere)',
+        paragraphs: [
+          'If you are a consumer in Israel, you may cancel a distance transaction under the Consumer Protection Law, 1981, within 14 days from the day of the transaction or the day you received the transaction details, whichever is later, by notifying us by email or by any other means the law allows. We will refund the amount paid within the time required by law, less any cancellation fee the law permits (no more than 5% of the price or ILS 100, whichever is lower). You may also end an ongoing (subscription) transaction at any time, and it will end within the time set by law.',
+          'If you are a consumer in the EU or UK, or anywhere else with mandatory consumer rights, those rights apply in addition to this policy. Nothing in this policy limits any right you have under mandatory law.',
+        ],
+      },
+      {
+        heading: '7. How to request a refund',
+        paragraphs: [
+          `Email ${SUPPORT_EMAIL} with the email address you used at checkout, your Paddle order or transaction ID (shown in your receipt email), and the reason for your request. You can also contact Paddle directly through its support channels.`,
+        ],
+      },
+      {
+        heading: '8. How refunds are paid',
+        paragraphs: [
+          'Approved refunds are paid by Paddle to your original payment method. The time it takes for the money to appear depends on Paddle and your bank or card issuer, usually 5–10 business days. When a refund is issued, the subscription it relates to ends and access to paid features stops.',
+        ],
+      },
+      {
+        heading: '9. Chargebacks',
+        paragraphs: [
+          'If you have a problem with a charge, please contact us first — we can usually resolve it faster than a bank dispute. If you open a chargeback or payment dispute, access to paid features may be suspended until it is resolved.',
+        ],
+      },
+      {
+        heading: '10. Contact',
+        paragraphs: [
+          `For anything about billing, cancellations, or refunds, contact ${OPERATOR_NAME} at: ${SUPPORT_EMAIL}`,
         ],
       },
     ],
   },
   {
     id: 'credits',
-    title: 'Part F — Credits',
+    title: 'Credits',
     blocks: [
       {
         heading: '',
         paragraphs: [
-          'Illustrations and icons: justicon — Flaticon (flaticon.com/free-icons/avocado), used under Flaticon\'s applicable license.',
+          '• Illustrations and icons: justicon — Flaticon (flaticon.com/free-icons/avocado), used under Flaticon\'s applicable license.',
+          '• Product data looked up by barcode: Open Food Facts (openfoodfacts.org), made available under the Open Database License (ODbL).',
         ],
       },
     ],

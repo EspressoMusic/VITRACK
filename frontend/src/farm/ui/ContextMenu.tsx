@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { FARM_STRINGS } from '../../lib/i18n/farmPanel'
 import { AREAS_BY_ID } from '../data/areas'
+import { FRIENDS_BY_AREA } from '../data/friends'
 import { CROPS_BY_ID } from '../data/crops'
 import { OBJECTS_BY_ID } from '../data/objects'
 import { useNow } from '../hooks/useNow'
@@ -237,6 +238,7 @@ function AreaMenu({ areaId, onUnlock }: { areaId: string; onUnlock: (areaId: str
   const state = useGame((s) => s)
   const area = AREAS_BY_ID[areaId]
   if (!area) return null
+  const friend = FRIENDS_BY_AREA[areaId]
   const levelOk = state.player.level >= area.requiredLevel
   const coinsOk = state.player.coins >= area.cost
   return (
@@ -245,6 +247,11 @@ function AreaMenu({ areaId, onUnlock }: { areaId: string; onUnlock: (areaId: str
       <p className="text-[0.65rem] font-bold" style={{ color: '#52514e' }}>
         {t.lockedLand}
       </p>
+      {friend && (
+        <p className="max-w-44 text-center text-[0.65rem] font-extrabold" style={{ color: '#b04a2a' }}>
+          {t.friendCaged(friend.name[lang])}
+        </p>
+      )}
       <div className="flex items-center gap-2 text-xs font-extrabold">
         <span style={{ color: levelOk ? '#2e7d32' : '#b3261e' }}>⭐ {t.levelShort(area.requiredLevel)}</span>
         <CoinAmount value={area.cost} className={coinsOk ? 'text-green-800' : 'text-red-700'} />

@@ -32,7 +32,7 @@ function purchaseDetailsFromCheckout(data: CheckoutData | undefined, plan: Billi
 }
 
 export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
-  const { user } = useAuth()
+  const { user, ensureUser } = useAuth()
   const { lang, dir } = useLanguage()
   const t = PAYWALL_PANEL_STRINGS[lang]
   const [plan, setPlan] = useState<BillingPlan>('yearly')
@@ -52,7 +52,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
   // it's linked to a signed-in account. Paddle's own "checkout.completed" event fires
   // client-side and can't prove that on its own, so this reconciles with the server before
   // letting the user into the app.
-  async function handleCheckoutCompleted(checkoutData: CheckoutData | undefined) {
+  async function handleCheckoutCompleted(checkoutData: CheckoutData | undefined, buyer: typeof user) {
     const purchaseDetails = purchaseDetailsFromCheckout(checkoutData, plan)
 
     // No accounts system configured at all (self-hosted, fully local build) — there's no
@@ -65,7 +65,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
       return
     }
 
-    if (!user) {
+    if (!buyer) {
       // Safety valve for the rare case anonymous sign-in itself failed (offline, blocked
       // storage, etc.) — never leave someone who already paid stuck behind a sign-in wall.
       // Stash the real transaction amount so Purchase can still fire, exactly once, at the
@@ -99,14 +99,16 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
     // Without a user id (anonymous or real) to attach, this purchase could never be linked
     // to any account afterward — an anonymous user has no email to fall back to matching by
     // (see link-paddle-subscription), so it would become permanently unmanageable: no way to
-    // see it or cancel it from Settings. Block checkout entirely rather than let that happen;
-    // the button below is disabled for the same reason, this is just defense in depth.
-    if (isSupabaseConfigured && !user) {
+    // see it or cancel it from Settings. Block checkout entirely rather than let that happen.
+    // The launch-time anonymous sign-in can fail on a flaky network, so retry it here.
+    setCheckoutError(null)
+    setProcessing(true)
+    const buyer = isSupabaseConfigured ? await ensureUser() : user
+    if (isSupabaseConfigured && !buyer) {
+      setProcessing(false)
       setCheckoutError(t.errors.accountSetup)
       return
     }
-    setCheckoutError(null)
-    setProcessing(true)
     try {
       await openPaddleCheckout(
         plan,
@@ -118,7 +120,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             const details = purchaseDetailsFromCheckout(event.data, plan)
             if (details) trackAddPaymentInfo(details)
           } else if (event.name === 'checkout.completed') {
-            void handleCheckoutCompleted(event.data)
+            void handleCheckoutCompleted(event.data, buyer)
           } else if (event.name === 'checkout.closed') {
             setProcessing(false)
           } else if (event.name === 'checkout.error') {
@@ -126,7 +128,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
             setCheckoutError(t.errors.checkoutFailed)
           }
         },
-        user ? { supabase_user_id: user.id } : undefined
+        buyer ? { supabase_user_id: buyer.id } : undefined
       )
     } catch {
       setProcessing(false)
@@ -232,7 +234,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           </div>
           <button
             onClick={handleSubscribe}
-            disabled={processing || (isSupabaseConfigured && !user)}
+            disabled={processing}
             className={`w-full rounded-full py-1.5 text-sm font-semibold text-white transition ${!agreed ? 'opacity-40' : ''}`}
             style={{
               backgroundColor: 'var(--accent-strong)',
@@ -249,7 +251,9 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
           )}
           <p className="mt-1 text-center text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
             {t.footerNote}
-            {isSupabaseConfigured && (
+            {/* Already signed in with Google (onboarding requires it) — signing in again can't
+                restore anything syncProfileWithCloud hasn't already, so don't offer it. */}
+            {isSupabaseConfigured && user?.is_anonymous !== false && (
               <>
                 {' '}
                 <span className="relative inline-block">
@@ -277,7 +281,7 @@ export function PaywallPanel({ onSubscribed }: { onSubscribed: () => void }) {
         </div>
       </div>
 
-      <div className="absolute top-0 end-0 z-20 p-3" style={{ pointerEvents: 'none' }}>
+      <div className="absolute top-0 end-0 z-20 px-3 pt-12" style={{ pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto' }}>
           <SupportMenu t={t} dir={dir} />
         </div>
@@ -340,7 +344,7 @@ function PlanCard({
           </span>
         </div>
         {note && (
-          <div className="truncate text-xs" style={{ color: isGold ? '#5c3d10' : 'var(--text-secondary)' }}>
+          <div className="text-xs leading-tight" style={{ color: isGold ? '#5c3d10' : 'var(--text-secondary)' }}>
             {note}
           </div>
         )}

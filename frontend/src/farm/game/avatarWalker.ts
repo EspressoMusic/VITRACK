@@ -22,7 +22,7 @@ const key = (x: number, y: number) => y * MAP_WIDTH + x
 const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT
 
 /** 1 = the character may stand here: open land with nothing on it, or a path. */
-function walkableGrid(state: GameState): Uint8Array {
+export function walkableGrid(state: GameState): Uint8Array {
   const byUid = new Map(state.objects.map((o) => [o.uid, o]))
   const occupied = buildOccupancy(state)
   const grid = new Uint8Array(MAP_WIDTH * MAP_HEIGHT)
@@ -39,7 +39,7 @@ function walkableGrid(state: GameState): Uint8Array {
 }
 
 /** Breadth-first search over walkable tiles (8 directions, no corner cutting). The start tile may be blocked. */
-function search(grid: Uint8Array, from: Point, maxDist = Infinity) {
+export function search(grid: Uint8Array, from: Point, maxDist = Infinity) {
   const prev = new Int32Array(grid.length).fill(-1)
   const dist = new Int16Array(grid.length).fill(-1)
   const start = key(from.x, from.y)
@@ -79,7 +79,7 @@ function standSpots(f: Point): { x: number; y: number; bias: number }[] {
   return spots
 }
 
-function pathTo(prev: Int32Array, goal: number): Point[] {
+export function pathTo(prev: Int32Array, goal: number): Point[] {
   const path: Point[] = []
   for (let k = goal; prev[k] !== -1; k = prev[k]) path.push({ x: k % MAP_WIDTH, y: Math.floor(k / MAP_WIDTH) })
   return path.reverse()

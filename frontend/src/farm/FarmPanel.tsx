@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { FARM_STRINGS } from '../lib/i18n/farmPanel'
 import { CROPS_BY_ID } from './data/crops'
 import { FOOD_GUARD_SPOTS } from './data/foodGuards'
+import { FRIENDS_BY_AREA } from './data/friends'
 import { GUARD } from './data/guards'
 import { OBJECTS_BY_ID } from './data/objects'
 import { type CanvasController, FarmCanvas, type TapInfo } from './game/FarmCanvas'
@@ -26,7 +27,7 @@ import { type FoodGuardNote, FoodGuardToast } from './ui/FoodGuardToast'
 import { FxLayer } from './ui/FxLayer'
 import { GermFoundToast } from './ui/GermFoundToast'
 import { GermLibrarySheet } from './ui/GermLibrarySheet'
-import { HouseSheet } from './ui/HouseSheet'
+import { HouseSheet, VisitHouseSheet } from './ui/HouseSheet'
 import { CoinAmount, GameButton } from './ui/kit'
 import { LevelUpModal } from './ui/LevelUpModal'
 import { ModeBar, RoundAction } from './ui/ModeBar'
@@ -60,6 +61,8 @@ export function FarmPanel() {
   /** Someone else's city on screen (read-only), and whether this player already sent it a guard today. */
   const [visit, setVisit] = useState<(VisitedCity & { sent: boolean }) | null>(null)
   const [sending, setSending] = useState(false)
+  /** The visited player's home, while looking around inside it. */
+  const [visitHouseUid, setVisitHouseUid] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
   /** Food guards from this week's meals, and the note about them on screen (new arrivals, or the one just tapped). */
   const foodGuards = useWeekFoodGuards()
@@ -146,6 +149,7 @@ export function FarmPanel() {
     setSheet(null)
     setProductionUid(null)
     setHouseUid(null)
+    setVisitHouseUid(null)
     setPlantingCropId(null)
   }
 
@@ -175,6 +179,12 @@ export function FarmPanel() {
 
   const handleTap = ({ tile, obj, screen, client }: TapInfo) => {
     const now = Date.now()
+
+    // Someone else's city is look-only — except their home, which visitors can step into.
+    if (visit) {
+      if (obj && OBJECTS_BY_ID[obj.defId].kind === 'home') setVisitHouseUid(obj.uid)
+      return
+    }
 
     if (placing) {
       const def = OBJECTS_BY_ID[placing.defId]
@@ -253,6 +263,8 @@ export function FarmPanel() {
   const placingDef = placing ? OBJECTS_BY_ID[placing.defId] : null
   const placingValid = placing ? canPlace(state, placing.defId, placing.x, placing.y, placing.uid) : false
   const plantingCrop = plantingCropId ? CROPS_BY_ID[plantingCropId] : null
+  const visitHome = visit?.state.objects.find((o) => OBJECTS_BY_ID[o.defId].kind === 'home')
+  const visitHouse = visitHouseUid ? visit?.state.objects.find((o) => o.uid === visitHouseUid) : undefined
 
   return (
     <div className="relative h-full w-full select-none overflow-hidden" style={{ backgroundColor: '#86d3e6' }}>
@@ -285,6 +297,14 @@ export function FarmPanel() {
           const city = neighbors?.find((n) => n.userId === userId)
           if (city) void openCity(city, city.helped)
         }}
+        onFriendFreed={(areaId) => {
+          const friend = FRIENDS_BY_AREA[areaId]
+          if (friend) say(tRef.current.friendFreed(friend.name[lang]), 'good')
+        }}
+        onFriendTap={(areaId) => {
+          const friend = FRIENDS_BY_AREA[areaId]
+          if (friend) say(tRef.current.friendHello(friend.name[lang]), 'info')
+        }}
       />
 
       <TopBar
@@ -302,7 +322,11 @@ export function FarmPanel() {
           sent={visit.sent}
           busy={sending}
           onSend={(e) => void sendGuardToVisit(e)}
-          onHome={() => setVisit(null)}
+          onHouse={visitHome ? () => setVisitHouseUid(visitHome.uid) : undefined}
+          onHome={() => {
+            setVisitHouseUid(null)
+            setVisit(null)
+          }}
         />
       ) : placing && placingDef ? (
         <ModeBar>
@@ -374,6 +398,7 @@ export function FarmPanel() {
       {sheet === 'germs' && <GermLibrarySheet initialId={libraryGerm} onClose={() => setSheet(null)} />}
       {productionUid && <ProductionSheet uid={productionUid} onClose={() => setProductionUid(null)} />}
       {houseUid && <HouseSheet uid={houseUid} onClose={() => setHouseUid(null)} />}
+      {visit && visitHouse && <VisitHouseSheet home={visitHouse} city={visit.state} name={cityName(visit)} onClose={() => setVisitHouseUid(null)} />}
 
       {guardNote && !sheet && !placing && !visit && (
         <FoodGuardToast
@@ -399,7 +424,7 @@ export function FarmPanel() {
         />
       )}
 
-      <FxLayer quietBackground={!!houseUid} />
+      <FxLayer quietBackground={!!houseUid || !!visitHouse} />
       {notice && <NoticePill key={notice.id} notice={notice} />}
 
       {levelUp && <LevelUpModal from={levelUp.from} to={levelUp.to} onClose={() => setLevelUp(null)} />}

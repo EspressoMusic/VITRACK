@@ -58,7 +58,7 @@ export const PAYWALL_PANEL_STRINGS: Record<Lang, PaywallPanelStrings> = {
       'התראות על חוסרים וטיפים לתזונה',
     ],
     yearly: { title: 'שנתי', note: '~$7.42/חודש', period: '/שנה' },
-    monthly: { title: 'חודשי', period: '/חודש', note: 'תקופת ניסיון של 3 ימים בחינם' },
+    monthly: { title: 'חודשי', period: '/חודש', note: '3 ימי ניסיון בחינם' },
     agreePrefix: 'אני מאשר/ת את ',
     agreeLinkLabel: 'תנאי השימוש ומדיניות הפרטיות',
     agreeErrorModal: 'יש לאשר קודם את תנאי השימוש',

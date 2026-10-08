@@ -131,6 +131,16 @@ export const GERM = {
   miniCoins: 25,
 }
 
+/** Junk food comes out of the candy cave on its own clock (each type's stats live in ./junkFoods). */
+export const JUNK_RAID = {
+  /** Seconds between two junk foods coming out. */
+  spawnMin: 9,
+  spawnMax: 15,
+  maxAlive: 4,
+  /** How far junk food can throw, in tiles. */
+  range: 6.5,
+}
+
 /** Food characters standing on top of the front wall beside the gate, throwing stones at germs on the road.
  *  The crew grows with the gate: gate level + 1 of them, filling `spots` in order. */
 export const WALL_CREW = {
@@ -149,6 +159,12 @@ export const WALL_CREW = {
   power: 1,
   /** Seconds a thrower holds the stone up before letting go. */
   windUp: 0.35,
+  /** Hits from junk food a thrower takes before it's knocked down. */
+  hp: 3,
+  /** Seconds a knocked-down thrower stays dizzy (no throwing) before it's back up with full health. */
+  downTime: 6,
+  /** A hurt thrower gets one health point back after this many seconds without being hit. */
+  healEvery: 8,
 }
 
 /** A food friend standing on top of the gate, animated like the player's character, throwing its food at germs.

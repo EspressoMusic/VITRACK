@@ -12,7 +12,7 @@ import { ONBOARDING_STRINGS } from '../lib/i18n/onboarding'
 import { NUTRIENT_CONTENT } from '../lib/i18n/nutrientContent'
 import { CAMERA_PANEL_STRINGS } from '../lib/i18n/cameraPanel'
 import { ActivityIcon, CakeIcon, CameraIcon, LeafIcon, LockIcon, RulerIcon, ScaleIcon, SparkleIcon, TargetIcon, UserIcon } from './icons'
-import { GoogleConsentGate } from './GoogleConsentGate'
+import { GoogleConsentGate, useConsentState } from './GoogleConsentGate'
 import { STATUS_VAR, STATUS_SOFT_VAR } from './StatusDot'
 
 type Step = 'welcome' | 'signin' | 'age' | 'sex' | 'weight' | 'height' | 'activity' | 'diet' | 'goal' | 'calculating' | 'summary'
@@ -170,10 +170,10 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
         <div className="h-9 w-9" />
       </div>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-2 pb-24">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-2 pb-48">
         <div key={step} className="step-enter flex min-h-0 flex-1 flex-col">
           {step === 'welcome' && <WelcomeStep t={t} />}
-          {step === 'signin' && <SignInStep t={t} onDevSkip={goNext} />}
+          {step === 'signin' && <SignInStep t={t} onGuest={goNext} />}
           {step === 'age' && <AgeStep t={t} value={draft.age} onChange={(age) => setDraft((d) => ({ ...d, age }))} />}
           {step === 'sex' && <SexStep t={t} value={draft.sex} onChange={(sex) => setDraft((d) => ({ ...d, sex }))} />}
           {step === 'weight' && (
@@ -201,7 +201,7 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
       </main>
 
       {step !== 'calculating' && step !== 'signin' && (
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-9 pt-8">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-32 pt-8">
           <button
             key={continuePulse}
             data-sound="off"
@@ -997,12 +997,13 @@ function WelcomeStep({ t }: { t: OnboardingStrings }) {
   )
 }
 
-function SignInStep({ t, onDevSkip }: { t: OnboardingStrings; onDevSkip?: () => void }) {
+function SignInStep({ t, onGuest }: { t: OnboardingStrings; onGuest: () => void }) {
   const { dir } = useLanguage()
+  const consent = useConsentState()
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
       <StepCard icon={<UserIcon className="h-5 w-5" />} title={t.signIn.title}>
-        <GoogleConsentGate t={t.signIn} dir={dir}>
+        <GoogleConsentGate t={t.signIn} dir={dir} consent={consent}>
           <button
             type="button"
             tabIndex={-1}
@@ -1014,16 +1015,15 @@ function SignInStep({ t, onDevSkip }: { t: OnboardingStrings; onDevSkip?: () => 
           </button>
         </GoogleConsentGate>
       </StepCard>
-      {import.meta.env.DEV && onDevSkip && (
-        <button
-          type="button"
-          onClick={onDevSkip}
-          className="mt-4 text-xs underline"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          Skip (dev)
-        </button>
-      )}
+      {/* Temporary: guests skip Google and keep the anonymous session; they can link Google later from Settings. */}
+      <button
+        type="button"
+        onClick={() => (consent.agreed ? onGuest() : consent.setShowError(true))}
+        className="mt-4 text-sm font-semibold underline"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        {t.signIn.guestLabel}
+      </button>
     </div>
   )
 }

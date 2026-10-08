@@ -1,5 +1,6 @@
 import { GATE_LEVELS, GATE_REPAIR_COST_PER_HP, GERM } from '../data/city'
 import { GERMS_BY_ID, germStatKey } from '../data/germs'
+import { JUNK_FOODS_BY_ID } from '../data/junkFoods'
 import { OBJECTS_BY_ID } from '../data/objects'
 import type { GameState, PlacedObject, Result } from '../types'
 import { objectLevel, upgradeObject } from './BuildingSystem'
@@ -46,12 +47,12 @@ export function damageGate(state: GameState, amount: number, now: number): GameS
   return updateObject(state, gate.uid, (o) => ({ ...o, hp, hpAt: now }))
 }
 
-/** Coins a stopped germ pays: tough ones pay for every tap they'd take by hand, a Flu Bug's little ones a bit. */
+/** Coins a stopped germ (or junk food) pays: tough ones pay for every tap they'd take by hand, a Flu Bug's little ones a bit. */
 export function germCoins(germId: string, mini: boolean): number {
-  return mini ? GERM.miniCoins : GERM.killCoins * (GERMS_BY_ID[germId]?.taps ?? 1)
+  return mini ? GERM.miniCoins : GERM.killCoins * ((GERMS_BY_ID[germId] ?? JUNK_FOODS_BY_ID[germId])?.taps ?? 1)
 }
 
-/** A germ was stopped — by a tap, the gate, a guard or a stone — and pays out. */
+/** A germ or junk food was stopped — by a tap, the gate, a guard or a stone — and pays out. */
 export function germStopped(state: GameState, germId: string, mini: boolean): Result {
   const coins = germCoins(germId, mini)
   const counted = bumpStat(bumpStat(state, 'germsStopped'), germStatKey(germId))

@@ -11,12 +11,9 @@ import { NUTRIENT_BUCKETS, type NutrientBucket } from '../lib/nutrientBuckets'
 import { getSavedSuperfoodIds, setSavedSuperfoodIds } from '../lib/savedSuperfoods'
 import { getSavedMeals, unsaveMeal, type SavedMeal } from '../lib/savedMeals'
 import { FAVORITES_PANEL_STRINGS } from '../lib/i18n/favoritesPanel'
-import { getAllMeals } from '../lib/db'
-import { resolveFoodEmoji } from '../lib/foodEmoji'
-import type { MealEntry, NutrientId } from '../types'
+import type { NutrientId } from '../types'
 import { BotIcon, ChevronDownIcon, CloseIcon, FilterIcon, SearchIcon, StarIcon } from './icons'
 import { SavedMealCard } from './FavoritesPanel'
-import { MealDetailModal } from './MealDetailModal'
 import { ConfettiBurst } from './ConfettiBurst'
 
 function NutrientInfoModal({ id, onClose }: { id: NutrientId; onClose: () => void }) {
@@ -354,20 +351,11 @@ export function SuperfoodsPanel({ onAskBot }: { onAskBot?: () => void }) {
   const [query, setQuery] = useState('')
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set(getSavedSuperfoodIds()))
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>(() => getSavedMeals())
-  const [recentMeals, setRecentMeals] = useState<MealEntry[]>([])
-  const [selectedMeal, setSelectedMeal] = useState<MealEntry | null>(null)
   const filterZoneRef = useRef<HTMLDivElement>(null)
   const filterChrome = NUTRIENT_FILTER_CHROME[lang]
   const t = SUPERFOODS_PANEL_CHROME[lang]
   const ft = FAVORITES_PANEL_STRINGS[lang]
   const showMeals = activeFilter === 'meal'
-
-  useEffect(() => {
-    getAllMeals().then((meals) => {
-      const sorted = [...meals].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      setRecentMeals(sorted.slice(0, 8))
-    })
-  }, [])
 
   const toggleSaved = (id: string) => {
     setSavedIds((prev) => {
@@ -434,34 +422,10 @@ export function SuperfoodsPanel({ onAskBot }: { onAskBot?: () => void }) {
 
   const anyFilterActive = activeFilter !== null || activeMealPurpose !== null || likedOnly || searchTerm !== ''
 
-  const gridFlushTop = recentMeals.length === 0 && !(showMeals && savedMeals.length > 0)
+  const gridFlushTop = !(showMeals && savedMeals.length > 0)
 
   return (
     <div className={`relative mx-auto flex h-full max-w-md flex-col gap-2 px-4 ${gridFlushTop ? '' : 'pt-5'}`}>
-      {recentMeals.length > 0 && (
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
-            {t.recentlyEatenTitle}
-          </span>
-          <div className="grid grid-cols-4 gap-1.5">
-            {recentMeals.map((meal) => (
-              <button
-                key={meal.id}
-                onClick={() => setSelectedMeal(meal)}
-                aria-label={meal.foods[0]?.name ?? t.recentlyEatenTitle}
-                className="relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg px-1 transition-transform active:translate-y-0.5 active:shadow-none"
-                style={{ backgroundColor: 'var(--surface-cream)', border: '2px solid #000000', boxShadow: '0 3px 0 #000000' }}
-              >
-                <span className="text-2xl leading-none">{resolveFoodEmoji(meal.foods[0]?.name)}</span>
-                <span className="w-full truncate text-center text-[9px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                  {meal.foods[0]?.name ?? ''}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="-mx-4 flex min-h-0 flex-1 flex-col overflow-hidden px-4">
         {showMeals && savedMeals.length > 0 && (
           <div className="flex shrink-0 flex-col gap-1.5 pb-2" style={{ maxHeight: '38%' }}>
@@ -492,14 +456,16 @@ export function SuperfoodsPanel({ onAskBot }: { onAskBot?: () => void }) {
         </div>
       </div>
 
-      {/* Keeps the grid clear of the app NavBar (~70px tall), which overlays the panel. */}
-      <div className="-mt-2 shrink-0" style={{ height: 70 }} aria-hidden />
+      {/* Keeps the grid clear of the app NavBar, which overlays the panel. Its height is rem-based
+          (h-14 + py-1.5 + 2px border), so these offsets are too — px values fall behind when Android's
+          system font size scales rem up, and the bar then covers the filter button. */}
+      <div className="-mt-2 shrink-0" style={{ height: 'calc(4.25rem + 2px)' }} aria-hidden />
 
       {/* Floating filter button: opens a wrapping panel with search plus every filter. */}
       <div
         ref={filterZoneRef}
         className="pointer-events-none absolute inset-x-4 z-20 flex items-end justify-end gap-2"
-        style={{ bottom: 80 }}
+        style={{ bottom: 'calc(5rem + 2px)' }}
       >
         {filterOpen && (
           <div
@@ -642,7 +608,6 @@ export function SuperfoodsPanel({ onAskBot }: { onAskBot?: () => void }) {
         />
       )}
 
-      {selectedMeal && <MealDetailModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />}
     </div>
   )
 }

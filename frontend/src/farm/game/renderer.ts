@@ -1,4 +1,4 @@
-import { AREAS, AREAS_BY_ID, CONTINENT, DISTRICTS, GERM_ROAD, GERM_SIGN, ISLAND, MAP_HEIGHT, MAP_WIDTH, OUTSIDE, ownedRect } from '../data/areas'
+import { AREAS, AREAS_BY_ID, CONTINENT, DISTRICTS, GERM_ROAD, GERM_SIGN, ISLAND, JUNK_ROAD, MAP_HEIGHT, MAP_WIDTH, OUTSIDE, ownedRect } from '../data/areas'
 import { CROPS_BY_ID } from '../data/crops'
 import { nearFoodGuardSpot } from '../data/foodGuards'
 import { nearGuardSpot } from '../data/guards'
@@ -15,6 +15,7 @@ import { type Camera, footprintCorners, tileCenter, tileToWorld, worldToScreen, 
 import {
   drawDeadTree,
   drawGermNest,
+  drawJunkNest,
   drawGoo,
   drawHeart,
   drawRock,
@@ -24,9 +25,10 @@ import {
   drawWallSegment,
   gateZapPoint,
 } from './citySprites'
+import { CAGE_RISE } from './friends'
 import { type GermDrawable, type GermSwarm, OUTSIDE_DEPTH, paintGermPortrait } from './germs'
 import { INK_THIN, Inker, boxAround, inkForSize } from './ink'
-import { LOCK_SPOTS, drawContinent, drawLandGround, drawLandSky, landStanding } from './land'
+import { CAGE_SPOTS, drawContinent, drawLandGround, drawLandSky, landStanding, nearCage } from './land'
 import { type NeighborIsland, drawNeighborPlots, drawNeighborTags, neighborStanding } from './neighbors'
 import { LOCKED_SHADE, drawFog, shaded } from './worlds'
 import { OUTLINE, drawCrop, drawFieldSoil, drawObjectSprite, drawPine, drawTree, fillStroke, hash, isAnimatedLook, isFlat, poly, spriteBounds, spriteHeight } from './sprites'
@@ -116,7 +118,7 @@ const WILD_TREES: { x: number; y: number; areaId: string; pine: boolean }[] = []
 for (let y = 0; y < MAP_HEIGHT; y++) {
   for (let x = 0; x < MAP_WIDTH; x++) {
     const area = areaAt(x, y)
-    if (area && area.cost > 0 && hash(x, y, 99) < 0.17) WILD_TREES.push({ x, y, areaId: area.id, pine: hash(x, y, 7) < 0.5 })
+    if (area && area.cost > 0 && hash(x, y, 99) < 0.17 && !nearCage(x, y)) WILD_TREES.push({ x, y, areaId: area.id, pine: hash(x, y, 7) < 0.5 })
   }
 }
 
@@ -132,10 +134,31 @@ const WAVES: Point[] = Array.from({ length: 260 }, (_, i) => ({
   y: SEA.y + hash(i, 5, 2) * SEA.h,
 }))
 
-// ---------- the outside: the germs' road, their swamp, and some gloomy wild land ----------
+// ---------- the outside: the germs' road and swamp, the junk food's trail and candy cave, and some gloomy wild land ----------
+
+interface Trail {
+  /** Tile coordinates. */
+  points: Point[]
+  width: number
+  fill: string
+  edge: string
+  /** Pebbles (or chocolate chips) along it. */
+  bits: string
+  seed: number
+}
 
 /** Road from the swamp into the gate's doorway. */
-const ROAD_POINTS = [...GERM_ROAD, { x: GERM_ROAD[GERM_ROAD.length - 1].x, y: OUTSIDE.y - 0.1 }]
+const GERM_TRAIL: Trail = {
+  points: [...GERM_ROAD, { x: GERM_ROAD[GERM_ROAD.length - 1].x, y: OUTSIDE.y - 0.1 }],
+  width: 23,
+  fill: '#d6bd8f',
+  edge: '#8f7550',
+  bits: '#bfa274',
+  seed: 4,
+}
+
+/** Chocolate-chip trail from the candy cave to where the junk food stands. */
+const JUNK_TRAIL: Trail = { points: JUNK_ROAD, width: 17, fill: '#c99a6e', edge: '#7a5236', bits: '#6b3f26', seed: 9 }
 
 const SIGN_AT = tileToWorld(GERM_SIGN.x, GERM_SIGN.y)
 
@@ -144,11 +167,11 @@ export function germSignHit(wx: number, wy: number): boolean {
   return Math.abs(wx - SIGN_AT.x) < 24 && wy > SIGN_AT.y - 62 && wy < SIGN_AT.y + 6
 }
 
-function distToRoad(x: number, y: number): number {
+function distToRoad(x: number, y: number, points: Point[]): number {
   let best = Infinity
-  for (let i = 1; i < ROAD_POINTS.length; i++) {
-    const a = ROAD_POINTS[i - 1]
-    const b = ROAD_POINTS[i]
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]
+    const b = points[i]
     const len2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
     const k = len2 ? Math.max(0, Math.min(1, ((x - a.x) * (b.x - a.x) + (y - a.y) * (b.y - a.y)) / len2)) : 0
     best = Math.min(best, Math.hypot(x - (a.x + (b.x - a.x) * k), y - (a.y + (b.y - a.y) * k)))
@@ -160,7 +183,10 @@ type OutsideDecor = { x: number; y: number; kind: 'deadTree' | 'rock' | 'goo' | 
 const OUTSIDE_DECOR: OutsideDecor[] = []
 for (let y = OUTSIDE.y + 1; y < OUTSIDE.y + OUTSIDE.h; y++) {
   for (let x = OUTSIDE.x; x < OUTSIDE.x + OUTSIDE.w; x++) {
-    if (distToRoad(x + 0.5, y + 0.5) < 1.6 || Math.hypot(x + 0.5 - GERM_SIGN.x, y + 0.5 - GERM_SIGN.y) < 1.6 || nearFoodGuardSpot(x + 0.5, y + 0.5) || nearGuardSpot(x + 0.5, y + 0.5)) continue
+    const cx = x + 0.5
+    const cy = y + 0.5
+    if (distToRoad(cx, cy, GERM_TRAIL.points) < 1.6 || Math.hypot(cx - GERM_SIGN.x, cy - GERM_SIGN.y) < 1.6 || nearFoodGuardSpot(cx, cy) || nearGuardSpot(cx, cy)) continue
+    if (distToRoad(cx, cy, JUNK_ROAD) < 1.6 || Math.hypot(cx - JUNK_ROAD[0].x, cy - JUNK_ROAD[0].y) < 2.2) continue
     const r = hash(x, y, 31)
     const kind = r < 0.1 ? 'deadTree' : r < 0.17 ? 'rock' : r < 0.23 ? 'goo' : r < 0.28 ? 'shrooms' : null
     if (kind) OUTSIDE_DECOR.push({ x, y, kind, size: 0.75 + hash(x, y, 5) * 0.5 })
@@ -350,7 +376,8 @@ export class FarmRenderer {
     drawLandGround(ctx, unlocked, t, view, z, villages)
     if (villages) drawNeighborPlots(ctx, s.neighbors!, view, inker.enabled)
     this.drawGround(ctx, state, visible)
-    this.drawRoad(ctx)
+    this.drawRoad(ctx, GERM_TRAIL)
+    this.drawRoad(ctx, JUNK_TRAIL)
     for (const d of OUTSIDE_DECOR) if (d.kind === 'goo' && visible(tileCenter(d.x, d.y))) drawGoo(ctx, d.x, d.y, t)
 
     const movingUid = ui.placing?.uid
@@ -474,6 +501,13 @@ export class FarmRenderer {
         draw: () => inker.draw(ctx, 'nest', `${frame}`, boxAround(nest.x, nest.y, 48, 42, 24), (c) => drawGermNest(c, nest, t), NEST_INK),
       })
     }
+    const cave = tileToWorld(JUNK_ROAD[0].x, JUNK_ROAD[0].y + 0.35)
+    if (visible(cave)) {
+      standing.push({
+        depth: OUTSIDE_DEPTH + JUNK_ROAD[0].x + JUNK_ROAD[0].y - 0.5,
+        draw: () => inker.draw(ctx, 'candyCave', `${frame}`, boxAround(cave.x, cave.y, 50, 50, 24), (c) => drawJunkNest(c, cave, t), NEST_INK),
+      })
+    }
     if (visible(SIGN_AT)) {
       standing.push({
         depth: OUTSIDE_DEPTH + GERM_SIGN.x + GERM_SIGN.y - 1,
@@ -502,11 +536,13 @@ export class FarmRenderer {
         draw: () => {
           // Alpha goes on the finished sprite, so a fading germ's ink fades with it.
           ctx.globalAlpha = g.alpha
-          if (g.lift) ctx.translate(0, -g.lift)
+          const dx = g.shift?.x ?? 0
+          const dy = (g.shift?.y ?? 0) - (g.lift ?? 0)
+          if (dx || dy) ctx.translate(dx, dy)
           if (g.noInk) g.draw(ctx)
           else if (g.cache) inker.draw(ctx, g.cache.id, g.cache.key, g.box, g.draw, g.ink ?? INK_THIN)
           else inker.drawLive(ctx, g.box, g.draw, g.ink ?? INK_THIN)
-          if (g.lift) ctx.translate(0, g.lift)
+          if (dx || dy) ctx.translate(-dx, -dy)
           ctx.globalAlpha = 1
         },
       })
@@ -579,8 +615,8 @@ export class FarmRenderer {
     ctx.stroke()
   }
 
-  private drawRoad(ctx: Ctx) {
-    const pts = ROAD_POINTS.map((p) => tileToWorld(p.x, p.y))
+  private drawRoad(ctx: Ctx, trail: Trail) {
+    const pts = trail.points.map((p) => tileToWorld(p.x, p.y))
     const path = () => {
       ctx.beginPath()
       ctx.moveTo(pts[0].x, pts[0].y)
@@ -593,20 +629,20 @@ export class FarmRenderer {
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     path()
-    ctx.strokeStyle = this.inker.enabled ? OUTLINE : '#8f7550'
-    ctx.lineWidth = this.inker.enabled ? 28 : 27
+    ctx.strokeStyle = this.inker.enabled ? OUTLINE : trail.edge
+    ctx.lineWidth = trail.width + (this.inker.enabled ? 5 : 4)
     ctx.stroke()
     path()
-    ctx.strokeStyle = '#d6bd8f'
-    ctx.lineWidth = 23
+    ctx.strokeStyle = trail.fill
+    ctx.lineWidth = trail.width
     ctx.stroke()
-    ctx.fillStyle = '#bfa274'
+    ctx.fillStyle = trail.bits
     for (let i = 0; i < 18; i++) {
       const k = i / 18
       const seg = Math.min(pts.length - 2, Math.floor(k * (pts.length - 1)))
       const f = k * (pts.length - 1) - seg
-      const x = pts[seg].x + (pts[seg + 1].x - pts[seg].x) * f + (hash(i, 1, 4) - 0.5) * 14
-      const y = pts[seg].y + (pts[seg + 1].y - pts[seg].y) * f + (hash(i, 2, 4) - 0.5) * 6
+      const x = pts[seg].x + (pts[seg + 1].x - pts[seg].x) * f + (hash(i, 1, trail.seed) - 0.5) * trail.width * 0.6
+      const y = pts[seg].y + (pts[seg + 1].y - pts[seg].y) * f + (hash(i, 2, trail.seed) - 0.5) * 6
       ctx.beginPath()
       ctx.ellipse(x, y, 2.6, 1.4, 0, 0, Math.PI * 2)
       ctx.fill()
@@ -935,8 +971,11 @@ export class FarmRenderer {
     for (const area of AREAS) {
       if (state.unlockedAreas.includes(area.id)) continue
       const r = ownedRect(area)
-      const w = LOCK_SPOTS[area.id] ?? tileCenter(r.x, r.y, r.w, r.h)
+      const cage = CAGE_SPOTS[area.id]
+      const w = cage ? tileToWorld(cage.x, cage.y) : tileCenter(r.x, r.y, r.w, r.h)
       const p = worldToScreen(cam, viewW, viewH, w.x, w.y)
+      // floating over the land's cage, the price tag just clear of its top
+      if (cage) p.y -= CAGE_RISE * cam.zoom + 46
       if (p.x < -60 || p.y < -60 || p.x > viewW + 60 || p.y > viewH + 60) continue
       ctx.beginPath()
       ctx.arc(p.x, p.y, 19, 0, Math.PI * 2)

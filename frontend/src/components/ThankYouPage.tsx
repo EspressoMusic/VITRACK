@@ -8,7 +8,7 @@ import { THANK_YOU_PAGE_STRINGS } from '../lib/i18n/thankYouPage'
 
 /** Static post-purchase landing screen at #thank-you — used as the TikTok ad conversion URL. */
 export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const { lang, dir } = useLanguage()
   const t = THANK_YOU_PAGE_STRINGS[lang]
 
@@ -48,7 +48,7 @@ export function ThankYouPage({ onContinue }: { onContinue: () => void }) {
             {t.subtitle}
           </p>
         </div>
-        {isSupabaseConfigured && user && !user.is_anonymous ? (
+        {isSupabaseConfigured && loading ? null : isSupabaseConfigured && user && !user.is_anonymous ? (
           <>
             <button
               onClick={onContinue}

@@ -13,7 +13,6 @@ import { GearIcon } from './components/icons'
 import { NAV_BAR_STRINGS } from './lib/i18n/navBar'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import { PaywallPanel } from './components/PaywallPanel'
-import { ThankYouPage } from './components/ThankYouPage'
 import {
   activateSubscription,
   deactivateSubscription,
@@ -138,7 +137,7 @@ function AppShell() {
     >
       <main className="relative min-h-0 flex-1 overflow-hidden">
         <div key={tab} className="panel-enter h-full">
-          {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} onChallengeUpdate={bumpRefresh} />}
+          {tab === 'calendar' && <CalendarPanel refreshSignal={refreshSignal} />}
           {tab === 'insights' && <InsightsPanel refreshSignal={refreshSignal} onLogged={bumpRefresh} />}
           {tab === 'superfoods' && <SuperfoodsPanel onAskBot={BOT_ENABLED ? () => setTab('chat') : undefined} />}
           {tab === 'chat' && <ChatPanel />}
@@ -207,7 +206,8 @@ function shouldDevShowPaywall(): boolean {
 }
 
 /** Dev-only: jump straight to the onboarding questionnaire for local testing, regardless of
- *  whether it was already completed on this device. Visit `?onboarding=1`. */
+ *  whether it was already completed on this device, then the paywall even if subscribed.
+ *  Visit `?onboarding=1`. */
 function shouldDevShowOnboarding(): boolean {
   return import.meta.env.DEV && new URLSearchParams(window.location.search).get('onboarding') === '1'
 }
@@ -232,7 +232,6 @@ export default function App() {
     }
     return isSubscribed()
   })
-  const [showThankYou, setShowThankYou] = useState(() => window.location.hash === '#thank-you')
 
   useEffect(() => {
     loadPersistedGoals()
@@ -244,21 +243,23 @@ export default function App() {
     <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
-          {showThankYou ? (
-            <ThankYouPage
-              onContinue={() => {
-                window.location.hash = ''
-                setShowThankYou(false)
+          {!onboarded ? (
+            <OnboardingFlow
+              onComplete={() => {
+                setOnboarded(true)
+                // Signing in mid-questionnaire may have restored a subscription without reloading
+                // (see AuthContext's reloadAfterSync), so re-read it rather than show the paywall.
+                // Dev `?onboarding=1` previews the full new-user flow, so the paywall shows regardless
+                // (state only — the stored subscription is untouched).
+                setSubscribed(shouldDevShowOnboarding() ? false : isSubscribed())
               }}
             />
-          ) : !onboarded ? (
-            <OnboardingFlow onComplete={() => setOnboarded(true)} />
           ) : !subscribed ? (
             <PaywallPanel
               onSubscribed={() => {
+                // Keep the #thank-you hash for the TikTok conversion URL; the thank-you screen itself is disabled for now.
                 window.location.hash = 'thank-you'
                 setSubscribed(true)
-                setShowThankYou(true)
               }}
             />
           ) : (
